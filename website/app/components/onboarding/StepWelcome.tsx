@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface StepWelcomeProps {
   onNext: () => void;
 }
@@ -34,13 +32,13 @@ export default function StepWelcome({ onNext }: StepWelcomeProps) {
             </div>
           </div>
           <p className="text-lg text-gray-600">
-            Let's get you set up to improve your English skills
+            Let&apos;s get you set up to improve your English skills
           </p>
         </div>
 
         <div className="bg-gray-50 p-4 rounded-lg mb-8">
           <h3 className="text-lg font-medium text-gray-900 mb-3">
-            What you'll get:
+            What you&apos;ll get:
           </h3>
           <ul className="text-left text-gray-600 space-y-2">
             <li className="flex items-center">
@@ -87,7 +85,7 @@ export default function StepWelcome({ onNext }: StepWelcomeProps) {
           onClick={onNext}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          Let's get started
+          Let&apos;s get started
         </button>
       </div>
     </div>

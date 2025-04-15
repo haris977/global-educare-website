@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Image from "next/image";
 
 const teamMembers = [
   {
@@ -180,11 +180,13 @@ export default function AboutPage() {
                 {teamMembers.map((member) => (
                   <div key={member.name} className="bg-gray-50 rounded-lg pb-4">
                     <div className="space-y-4">
-                      <div className="aspect-w-3 aspect-h-3">
-                        <img 
-                          className="object-cover h-60 w-full rounded-lg rounded-b-none" 
+                      <div className="aspect-w-3 aspect-h-3 relative h-60 w-full">
+                        <Image 
+                          className="object-cover rounded-lg rounded-b-none" 
                           src={member.image} 
-                          alt={member.name} 
+                          alt={member.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         />
                       </div>
                       <div className="space-y-2 px-4">

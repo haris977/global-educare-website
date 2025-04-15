@@ -8,7 +8,7 @@ interface StepPersonalInfoProps {
   formData: {
     name: string;
     country: string;
-    [key: string]: any;
+    [key: string]: string | string[] | boolean;
   };
   updateFormData: (data: { name: string; country: string }) => void;
 }

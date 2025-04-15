@@ -9,7 +9,7 @@ interface StepConfirmationProps {
     email: string;
     languageLevel: string;
     learningGoals: string[];
-    [key: string]: any;
+    [key: string]: string | string[] | boolean;
   };
 }
 
@@ -44,7 +44,7 @@ export default function StepConfirmation({ formData }: StepConfirmationProps) {
   
   const handleGoToDashboard = () => {
     // Here you would normally complete registration and redirect
-    // For now, we'll just redirect to the homepage or dashboard
+    // For now, we&apos;ll just redirect to the homepage or dashboard
     router.push("/dashboard");
   };
   
@@ -101,7 +101,7 @@ export default function StepConfirmation({ formData }: StepConfirmationProps) {
             </div>
             <div className="ml-3 flex-1">
               <p className="text-sm text-blue-700">
-                We've sent a confirmation email to <span className="font-medium">{formData.email}</span>. 
+                We&apos;ve sent a confirmation email to <span className="font-medium">{formData.email}</span>. 
                 Please verify your email to ensure you receive important updates.
               </p>
             </div>

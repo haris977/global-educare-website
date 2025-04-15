@@ -12,7 +12,7 @@ export default function OnboardingFlow() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     languageLevel: "",
-    learningGoals: [],
+    learningGoals: [] as string[],
     name: "",
     email: "",
     password: "",

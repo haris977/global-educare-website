@@ -10,7 +10,7 @@ interface StepCreateAccountProps {
     email: string;
     password: string;
     agreeTerms: boolean;
-    [key: string]: any;
+    [key: string]: string | string[] | boolean;
   };
   updateFormData: (data: { email: string; password: string; agreeTerms: boolean }) => void;
 }
@@ -222,7 +222,7 @@ export default function StepCreateAccount({
             </div>
             <div className="ml-3">
               <p className="text-sm text-gray-700">
-                By creating an account, you'll start your 3-day free trial. No payment information required.
+                By creating an account, you&apos;ll start your 3-day free trial. No payment information required.
               </p>
             </div>
           </div>

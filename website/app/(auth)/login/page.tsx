@@ -34,8 +34,8 @@ export default function LoginPage() {
       // For now, just show success in the UI
       alert("Login successful! Redirecting to dashboard...");
       
-    } catch (err: any) {
-      setError(err.message || "Login failed. Please try again.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +50,7 @@ export default function LoginPage() {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Don't have an account yet?
+            Don&apos;t have an account yet?
           </p>
           <div className="mt-3 text-center">
             <Link 

@@ -5,7 +5,7 @@ interface StepLearningGoalsProps {
   onPrev: () => void;
   formData: {
     learningGoals: string[];
-    [key: string]: any;
+    [key: string]: string | string[] | boolean;
   };
   updateFormData: (data: { learningGoals: string[] }) => void;
 }

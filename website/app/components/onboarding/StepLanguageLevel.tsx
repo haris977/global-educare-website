@@ -5,7 +5,7 @@ interface StepLanguageLevelProps {
   onPrev: () => void;
   formData: {
     languageLevel: string;
-    [key: string]: any;
+    [key: string]: string | string[] | boolean;
   };
   updateFormData: (data: { languageLevel: string }) => void;
 }
@@ -63,7 +63,7 @@ export default function StepLanguageLevel({
     <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          What's your English level?
+          What&apos;s your English level?
         </h2>
         <p className="mt-2 text-sm text-gray-600">
           This helps us personalize your learning experience
