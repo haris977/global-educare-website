@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -9,53 +8,25 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <div className="relative bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-            <svg
-              className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-white transform translate-x-1/2"
-              fill="currentColor"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <polygon points="50,0 100,0 50,100 0,100" />
-            </svg>
-
-            <div className="relative pt-6 px-4 sm:px-6 lg:px-8">
-              {/* Navigation content is in the Navbar component */}
-            </div>
-
-            <div className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-              <div className="sm:text-center lg:text-left">
-                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                  <span className="block xl:inline">Achieve Your Target</span>{" "}
-                  <span className="block text-indigo-600 xl:inline">IELTS Score</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Comprehensive preparation for all four IELTS modules - Listening, Reading, Writing, and Speaking. Structured by difficulty levels to help you reach your target band score.
-                </p>
-                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                  <div className="rounded-md shadow">
-                    <Link href="/register" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
-                      Start Free Trial
-                    </Link>
-                  </div>
-                  <div className="mt-3 sm:mt-0 sm:ml-3">
-                    <Link href="/modules" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10">
-                      Explore Modules
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-          <div className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-            <div className="text-white text-center p-8">
-              <h2 className="text-3xl font-bold mb-4">Start Your IELTS Journey Today</h2>
-              <p className="text-xl">Prepare with confidence for all four IELTS modules</p>
+      <div className="relative isolate px-6 pt-14 lg:px-8">
+        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+              Improve your English skills with expert guidance
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-gray-600">
+              Join thousands of students mastering English through our proven methodology. Get personalized learning paths tailored to your goals.
+            </p>
+            <div className="mt-10 flex items-center justify-center gap-x-6">
+              <a
+                href="/register"
+                className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Start your free trial
+              </a>
+              <a href="/about" className="text-sm font-semibold leading-6 text-gray-900">
+                Learn more <span aria-hidden="true">→</span>
+              </a>
             </div>
           </div>
         </div>
@@ -185,7 +156,7 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  "The structured approach to all four modules helped me achieve my target band score. The practice tests were very similar to the actual IELTS exam."
+                  &ldquo;The structured approach to all four modules helped me achieve my target band score. The practice tests were very similar to the actual IELTS exam.&rdquo;
                 </p>
               </div>
 
@@ -201,7 +172,7 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  "The writing feedback was invaluable. It helped me understand where I was going wrong and how to improve my essays. Highly recommend!"
+                  &ldquo;The writing feedback was invaluable. It helped me understand where I was going wrong and how to improve my essays. Highly recommend!&rdquo;
                 </p>
               </div>
 
@@ -217,7 +188,7 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  "The speaking module practice was exceptional. Recording myself and comparing with model answers helped me gain confidence for the actual test."
+                  &ldquo;The speaking module practice was exceptional. Recording myself and comparing with model answers helped me gain confidence for the actual test.&rdquo;
                 </p>
               </div>
             </div>
