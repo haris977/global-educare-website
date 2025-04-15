@@ -1,103 +1,231 @@
 import Image from "next/image";
+import Link from "next/link";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <div className="relative bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+            <svg
+              className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-white transform translate-x-1/2"
+              fill="currentColor"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <polygon points="50,0 100,0 50,100 0,100" />
+            </svg>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="relative pt-6 px-4 sm:px-6 lg:px-8">
+              {/* Navigation content is in the Navbar component */}
+            </div>
+
+            <div className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+              <div className="sm:text-center lg:text-left">
+                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                  <span className="block xl:inline">Achieve Your Target</span>{" "}
+                  <span className="block text-indigo-600 xl:inline">IELTS Score</span>
+                </h1>
+                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                  Comprehensive preparation for all four IELTS modules - Listening, Reading, Writing, and Speaking. Structured by difficulty levels to help you reach your target band score.
+                </p>
+                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                  <div className="rounded-md shadow">
+                    <Link href="/register" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
+                      Start Free Trial
+                    </Link>
+                  </div>
+                  <div className="mt-3 sm:mt-0 sm:ml-3">
+                    <Link href="/modules" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10">
+                      Explore Modules
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+          <div className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+            <div className="text-white text-center p-8">
+              <h2 className="text-3xl font-bold mb-4">Start Your IELTS Journey Today</h2>
+              <p className="text-xl">Prepare with confidence for all four IELTS modules</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:text-center">
+            <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Comprehensive Preparation</h2>
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Master All IELTS Modules
+            </p>
+            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+              Our platform provides targeted preparation across all four IELTS modules, structured by difficulty levels aligned with IELTS band scores.
+            </p>
+          </div>
+
+          <div className="mt-10">
+            <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+              {/* Feature 1 */}
+              <div className="relative">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                  </svg>
+                </div>
+                <div className="ml-16">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Listening</h3>
+                  <p className="mt-2 text-base text-gray-500">
+                    Basic to advanced audio comprehension exercises with transcripts and explanations to improve your listening skills.
+                  </p>
+                </div>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="relative">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div className="ml-16">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Reading</h3>
+                  <p className="mt-2 text-base text-gray-500">
+                    Diverse text passages with varying complexity and question types to enhance your reading comprehension.
+                  </p>
+                </div>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="relative">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </div>
+                <div className="ml-16">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Writing</h3>
+                  <p className="mt-2 text-base text-gray-500">
+                    Task-based practice from informal letters to formal essays, with model answers and evaluation criteria.
+                  </p>
+                </div>
+              </div>
+
+              {/* Feature 4 */}
+              <div className="relative">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <div className="ml-16">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Speaking</h3>
+                  <p className="mt-2 text-base text-gray-500">
+                    Guided speaking practice with prompts, timer, and opportunities for self-recording and review.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-indigo-50">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+            <span className="block">Ready to boost your IELTS score?</span>
+            <span className="block text-indigo-600">Start your free trial today.</span>
+          </h2>
+          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+            <div className="inline-flex rounded-md shadow">
+              <Link href="/register" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Get started
+              </Link>
+            </div>
+            <div className="ml-3 inline-flex rounded-md shadow">
+              <Link href="/about" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50">
+                Learn more
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonials Section */}
+      <div className="bg-white py-16 sm:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:text-center">
+            <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Testimonials</h2>
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Success Stories from Our Students
+            </p>
+          </div>
+          <div className="mt-10">
+            <div className="space-y-8 md:space-y-0 md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-10">
+              {/* Testimonial 1 */}
+              <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xl">
+                    S
+                  </div>
+                  <div className="ml-4">
+                    <h4 className="text-lg font-medium text-gray-900">Sarah J.</h4>
+                    <p className="text-gray-500">IELTS Band 8.0</p>
+                  </div>
+                </div>
+                <p className="text-gray-600">
+                  "The structured approach to all four modules helped me achieve my target band score. The practice tests were very similar to the actual IELTS exam."
+                </p>
+              </div>
+
+              {/* Testimonial 2 */}
+              <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xl">
+                    M
+                  </div>
+                  <div className="ml-4">
+                    <h4 className="text-lg font-medium text-gray-900">Michael T.</h4>
+                    <p className="text-gray-500">IELTS Band 7.5</p>
+                  </div>
+                </div>
+                <p className="text-gray-600">
+                  "The writing feedback was invaluable. It helped me understand where I was going wrong and how to improve my essays. Highly recommend!"
+                </p>
+              </div>
+
+              {/* Testimonial 3 */}
+              <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xl">
+                    A
+                  </div>
+                  <div className="ml-4">
+                    <h4 className="text-lg font-medium text-gray-900">Anita K.</h4>
+                    <p className="text-gray-500">IELTS Band 8.5</p>
+                  </div>
+                </div>
+                <p className="text-gray-600">
+                  "The speaking module practice was exceptional. Recording myself and comparing with model answers helped me gain confidence for the actual test."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </main>
   );
 }
