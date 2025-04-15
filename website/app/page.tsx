@@ -8,26 +8,30 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <div className="relative isolate px-6 pt-14 lg:px-8">
-        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Improve your English skills with expert guidance
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Join thousands of students mastering English through our proven methodology. Get personalized learning paths tailored to your goals.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <a
-                href="/register"
-                className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Start your free trial
-              </a>
-              <a href="/about" className="text-sm font-semibold leading-6 text-gray-900">
-                Learn more <span aria-hidden="true">→</span>
-              </a>
-            </div>
+      <div className="relative bg-indigo-600">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-900 to-indigo-500 mix-blend-multiply" />
+        </div>
+        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Improve your English skills with expert guidance
+          </h1>
+          <p className="mt-6 max-w-3xl text-xl text-indigo-100">
+            Join thousands of students mastering English through our proven methodology. Get personalized learning paths tailored to your goals.
+          </p>
+          <div className="mt-10 flex flex-wrap gap-4">
+            <Link 
+              href="/register" 
+              className="rounded-md bg-white px-5 py-3 text-base font-medium text-indigo-600 shadow hover:bg-indigo-50"
+            >
+              Start your free trial
+            </Link>
+            <Link 
+              href="/about" 
+              className="rounded-md bg-indigo-700 bg-opacity-60 px-5 py-3 text-base font-medium text-white hover:bg-opacity-70"
+            >
+              Learn more
+            </Link>
           </div>
         </div>
       </div>
