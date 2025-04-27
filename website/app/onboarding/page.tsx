@@ -149,12 +149,12 @@ const onboardingSteps = [
   },
   {
     id: 'complete',
-    title: 'You're All Set!',
+    title: 'You\'re All Set!',
     description: 'Start your IELTS preparation journey',
     content: (
       <div className="space-y-4">
         <p>
-          You're now ready to begin your IELTS preparation journey with Global Edu Care!
+          You\'re now ready to begin your IELTS preparation journey with Global Edu Care!
         </p>
         <p>
           We recommend starting with a diagnostic test to assess your current level and create a personalized study plan.

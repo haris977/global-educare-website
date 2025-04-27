@@ -198,7 +198,7 @@ export default function PracticeTestDetailPage() {
             <div className="bg-white rounded-xl shadow-sm p-6 text-center">
               <h1 className="text-2xl font-bold text-gray-900">Test Not Found</h1>
               <p className="mt-2 text-gray-600">
-                The practice test you're looking for could not be found.
+                The practice test you\'re looking for could not be found.
               </p>
               <Link 
                 href="/practice-tests" 

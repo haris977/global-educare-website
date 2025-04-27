@@ -38,8 +38,45 @@ const moduleColors = {
   },
 };
 
+// Define TypeScript interfaces
+interface Question {
+  id: number;
+  type: 'multiple-choice' | 'text-input';
+  question: string;
+  options?: string[];
+  correctAnswer: string;
+}
+
+interface TheorySection {
+  type: 'introduction' | 'theory' | 'example' | 'tips';
+  title: string;
+  content: string;
+}
+
+interface ExerciseSection {
+  type: 'exercise' | 'introduction';
+  title: string;
+  content?: string;
+  questions?: Question[];
+}
+
+type ContentSection = TheorySection | ExerciseSection;
+
+interface ContentData {
+  id: string;
+  moduleId: string;
+  title: string;
+  type: 'lesson' | 'exercise';
+  difficulty: string;
+  topic: string;
+  duration: string;
+  description: string;
+  completionStatus: string;
+  sections: ContentSection[];
+}
+
 // Mock content generator
-const generateMockContent = (moduleId, contentId) => {
+const generateMockContent = (moduleId: string, contentId: string): ContentData => {
   // Extract info from contentId format: moduleId-topic-difficulty-number
   const parts = contentId.split('-');
   const topic = parts.slice(1, -2).join('-');
@@ -48,7 +85,7 @@ const generateMockContent = (moduleId, contentId) => {
   // Determine content type from contentId
   const isExercise = contentId.includes('exercise') || Math.random() > 0.7;
   
-  let content = {
+  let content: ContentData = {
     id: contentId,
     moduleId: moduleId,
     title: `${topic.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}: ${isExercise ? 'Practice' : 'Lesson'}`,
@@ -170,11 +207,11 @@ const generateMockContent = (moduleId, contentId) => {
 export default function ContentDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { id: moduleId, contentId } = params;
+  const { id: moduleId, contentId } = params as { id: string; contentId: string };
   
-  const [content, setContent] = useState(null);
+  const [content, setContent] = useState<ContentData | null>(null);
   const [currentSection, setCurrentSection] = useState(0);
-  const [userAnswers, setUserAnswers] = useState({});
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [progress, setProgress] = useState(0);
   
@@ -188,7 +225,7 @@ export default function ContentDetailPage() {
     setProgress(0);
   }, [moduleId, contentId]);
   
-  const handleAnswerSelection = (questionId, answer) => {
+  const handleAnswerSelection = (questionId: number, answer: string) => {
     setUserAnswers(prev => ({
       ...prev,
       [questionId]: answer

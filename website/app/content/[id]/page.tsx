@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 // Function to determine moduleId from content ID format (e.g., listening-conversations-beginner-1)
-const getModuleIdFromContentId = (contentId) => {
+const getModuleIdFromContentId = (contentId: string) => {
   // Content IDs should be prefixed with the module ID
   const parts = contentId.split('-');
   
@@ -15,14 +15,14 @@ const getModuleIdFromContentId = (contentId) => {
     return moduleId;
   }
   
-  // Fallback to listening if we can't determine the module
+  // Fallback to listening if we can\'t determine the module
   return 'listening';
 };
 
 export default function ContentRedirectPage() {
   const params = useParams();
   const router = useRouter();
-  const contentId = params.id;
+  const contentId = params.id as string;
   
   useEffect(() => {
     if (contentId) {

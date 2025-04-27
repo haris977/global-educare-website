@@ -216,7 +216,7 @@ export default function FullPracticeTestsPage() {
           </div>
           
           <div className="mt-10 text-center">
-            <p className="text-gray-600">Can't find what you're looking for?</p>
+            <p className="text-gray-600">Can\'t find what you\'re looking for?</p>
             <p className="mt-1">
               <Link href="/practice-tests/mini" className="text-blue-600 hover:text-blue-800 font-medium">
                 Try our mini practice tests →

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
@@ -31,7 +31,7 @@ const pricingPlans = [
   }
 ];
 
-export default function PaymentPage() {
+function PaymentPageContent() {
   const searchParams = useSearchParams();
   const planId = searchParams.get('plan') || 'monthly';
   
@@ -216,7 +216,7 @@ export default function PaymentPage() {
           <div className="space-y-8">
             <div>
               <h1 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">Complete Your Subscription</h1>
-              <p className="mt-2 text-sm text-gray-600">You're just one step away from accessing our premium IELTS preparation platform.</p>
+              <p className="mt-2 text-sm text-gray-600">You\'re just one step away from accessing our premium IELTS preparation platform.</p>
             </div>
             
             <div className="mt-12 lg:grid lg:grid-cols-12 lg:gap-x-8">
@@ -492,5 +492,15 @@ export default function PaymentPage() {
       
       <Footer />
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">Loading payment information...</div>
+    </div>}>
+      <PaymentPageContent />
+    </Suspense>
   );
 } 
