@@ -37,11 +37,113 @@ model User {
   // Practice tests and content engagement
   practiceTests      PracticeTest[]
   userScores         UserScore[]
+  testAttempts       TestAttempt[]
+  responses          Response[]
   
   // Many-to-many relationship with institutions
   institutions       UsersOnInstitutions[]
 }
 
+// Enhanced Test Models for IELTS
+model Test {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  difficulty      TestDifficulty @default(MEDIUM)
+  moduleType      ModuleType
+  totalTime       Int       // In minutes
+  totalQuestions  Int
+  totalMarks      Float
+  isPublished     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Content sections
+  sections        Section[]
+  
+  // User attempts
+  attempts        TestAttempt[]
+}
+
+model Section {
+  id              String    @id @default(uuid())
+  testId          String
+  title           String
+  instructions    String?
+  order           Int
+  timeLimit       Int?      // In minutes, null for unlimited
+  
+  // Relationship
+  test            Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  
+  // Questions in this section
+  questions       Question[]
+}
+
+model Question {
+  id                String    @id @default(uuid())
+  sectionId         String
+  questionText      String
+  questionType      QuestionType
+  questionImage     String?   // URL to image if applicable
+  audioFile         String?   // URL to audio file for listening questions
+  additionalInfo    String?   // Additional text, instructions, etc.
+  order             Int
+  marks             Float     @default(1.0)
+  
+  // Specific content based on question type
+  options           Json?     // For MCQ, matching, etc.
+  correctAnswer     String?   // For text input, essay questions will be null (manual review)
+  
+  // Relationship
+  section           Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  
+  // User responses
+  responses         Response[]
+}
+
+// User attempt at a test
+model TestAttempt {
+  id              String    @id @default(uuid())
+  userId          String
+  testId          String
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  lastSavedAt     DateTime  @default(now())
+  totalScore      Float?
+  status          AttemptStatus @default(IN_PROGRESS)
+  currentSection  Int       @default(0) // Tracks which section user is on
+  timeRemaining   Int?      // Remaining time in seconds
+  
+  // Relationships
+  user            User      @relation(fields: [userId], references: [id])
+  test            Test      @relation(fields: [testId], references: [id])
+  
+  // User responses for this attempt
+  responses       Response[]
+}
+
+// User response to a question
+model Response {
+  id              String    @id @default(uuid())
+  userId          String
+  testAttemptId   String
+  questionId      String
+  userAnswer      String?
+  audioRecording  String?   // For speaking questions
+  isCorrect       Boolean?
+  marksAwarded    Float?
+  feedback        String?
+  reviewStatus    ReviewStatus @default(PENDING)
+  submittedAt     DateTime  @default(now())
+  
+  // Relationships
+  user            User      @relation(fields: [userId], references: [id])
+  testAttempt     TestAttempt @relation(fields: [testAttemptId], references: [id], onDelete: Cascade)
+  question        Question  @relation(fields: [questionId], references: [id])
+}
+
+// Original models
 model PracticeTest {
   id          String    @id @default(uuid())
   userId      String
@@ -85,6 +187,7 @@ model UsersOnInstitutions {
   @@id([userId, institutionId])
 }
 
+// Original enums
 enum Role {
   USER
   ADMIN
@@ -129,4 +232,46 @@ enum ModuleType {
   READING
   WRITING
   SPEAKING
+}
+
+// New enums for enhanced test functionality
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_BLANK
+  SHORT_ANSWER
+  ESSAY
+  MATCHING
+  GAP_FILLING
+  NOTE_COMPLETION
+  FLOW_CHART
+  TABLE_COMPLETION
+  DIAGRAM_LABELLING
+  SUMMARY_COMPLETION
+  SENTENCE_COMPLETION
+  SPEAKING_SHORT_ANSWER
+  SPEAKING_LONG_ANSWER
+  SPEAKING_CUE_CARD
+  SPEAKING_DISCUSSION
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  EXPIRED
+  EVALUATED
+}
+
+enum ReviewStatus {
+  PENDING
+  REVIEWED
+  SKIPPED
+}
+
+enum TestDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  VERY_HARD
 } 

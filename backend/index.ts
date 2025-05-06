@@ -5,7 +5,7 @@ import express, { Request, Response } from "express";
 import os from "os";
 
 // routes
-import { userRoutes } from "./routes";
+import { userRoutes, testRoutes } from "./routes";
 
 dotenv.config();
 
@@ -42,6 +42,7 @@ const getLocalIpAddress = (): string | null => {
 
 // API routes
 app.use("/api/users", userRoutes);
+app.use("/api/tests", testRoutes);
 
 // Base route
 app.get("/", (req: Request, res: Response) => {
