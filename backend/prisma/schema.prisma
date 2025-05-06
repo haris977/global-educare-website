@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with roles based on the PRD
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  name              String
+  phone             String?
+  role              Role      @default(USER)
+  profilePicture    String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Subscription related fields
+  subscriptionStatus SubscriptionStatus? @default(INACTIVE)
+  subscriptionPlan   SubscriptionPlan?
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  freeTrialUsed        Boolean   @default(false)
+  refundRequested      Boolean   @default(false)
+  refundStatus         RefundStatus? @default(NONE)
+  refundRequestDate    DateTime?
+  refundProcessedDate  DateTime?
+
+  // User activity tracking
+  lastLoginAt        DateTime?
+  progressData       Json? // Stores user progress data in JSON format
+  
+  // Practice tests and content engagement
+  practiceTests      PracticeTest[]
+  userScores         UserScore[]
+  
+  // Many-to-many relationship with institutions
+  institutions       UsersOnInstitutions[]
+}
+
+model PracticeTest {
+  id          String    @id @default(uuid())
+  userId      String
+  testType    TestType
+  testScore   Float?
+  completedAt DateTime?
+  startedAt   DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model UserScore {
+  id          String    @id @default(uuid())
+  userId      String
+  moduleType  ModuleType
+  score       Float
+  recordedAt  DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Institution {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Many-to-many relationship with users
+  users       UsersOnInstitutions[]
+}
+
+// Join table for many-to-many relationship between User and Institution
+model UsersOnInstitutions {
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+  assignedAt    DateTime    @default(now())
+
+  @@id([userId, institutionId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+  STUDY_MATERIAL_ADMIN
+  DOUBTS_SOLVING_ADMIN
+  KEY_ACCOUNT_ADMIN
+  TECHNICAL_ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+  EXPIRED
+}
+
+enum SubscriptionPlan {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
+enum RefundStatus {
+  NONE
+  REQUESTED
+  PROCESSING
+  APPROVED
+  REJECTED
+}
+
+enum TestType {
+  LISTENING
+  READING
+  WRITING
+  SPEAKING
+  FULL
+}
+
+enum ModuleType {
+  LISTENING
+  READING
+  WRITING
+  SPEAKING
+} 

@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+// Define possible role types
+type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'STUDY_MATERIAL_ADMIN' | 'DOUBTS_SOLVING_ADMIN' | 'KEY_ACCOUNT_ADMIN' | 'TECHNICAL_ADMIN';
+
 interface DecodedToken {
   id: string;
-  role: string;
+  role: Role;
   email: string;
 }
 
@@ -27,16 +30,16 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
   }
 };
 
-export const checkRole = (roles: string[]) => {
+export const checkRole = (roles: Role[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role as Role)) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
     next();
   };
-}; 
+};
