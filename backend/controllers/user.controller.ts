@@ -358,4 +358,18 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
   } catch (error) {
     return sendErrorResponse(res, 'Error deleting user', 500, error);
   }
+};
+
+// Validate token
+export const validateToken = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return sendErrorResponse(res, 'Invalid token', 401);
+    }
+
+    // If the middleware allowed the request to reach here, the token is valid
+    return sendSuccessResponse(res, { valid: true }, 'Token is valid');
+  } catch (error) {
+    return sendErrorResponse(res, 'Error validating token', 500, error);
+  }
 }; 

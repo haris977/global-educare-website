@@ -9,6 +9,7 @@ import {
   startFreeTrial,
   subscribeUser,
   updateUser,
+  validateToken,
 } from "../controllers/user.controller";
 import { authMiddleware, checkRole } from "../middleware/auth.middleware";
 
@@ -17,6 +18,9 @@ const router = Router();
 // Public routes
 router.post("/register", createUser as any);
 router.post("/login", loginUser as any);
+
+// Token validation route
+router.get("/validate-token", authMiddleware as any, validateToken as any);
 
 // Protected routes
 router.get(

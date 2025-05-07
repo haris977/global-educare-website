@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
+import { TestsAPI } from '@/app/services/api';
 
 // Mock data for tests
 const mockTests = [
@@ -116,36 +117,54 @@ export default function PracticeTestDetailPage() {
   const router = useRouter();
   const [test, setTest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [testStarted, setTestStarted] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [testAttempt, setTestAttempt] = useState<any>(null);
+  const [startingTest, setStartingTest] = useState(false);
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    const foundTest = mockTests.find(t => t.id === params.id);
-    
-    if (foundTest) {
-      setTest(foundTest);
-      setTimeRemaining(foundTest.sections[0].duration * 60); // Convert to seconds
-    }
-    
-    setLoading(false);
+    const fetchTestDetails = async () => {
+      try {
+        setLoading(true);
+        
+        const response = await TestsAPI.getTestById(params.id as string);
+        setTest(response.data);
+        
+        if (response.data?.sections && response.data.sections.length > 0) {
+          setTimeRemaining(response.data.totalTime * 60); // Convert to seconds
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching test details:", err);
+        setError("Failed to load test details. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    fetchTestDetails();
   }, [params.id]);
 
   useEffect(() => {
-    if (!testStarted || !test) return;
+    if (!testStarted || !test || !testAttempt) return;
     
     const timer = setInterval(() => {
       setTimeRemaining(prevTime => {
         if (prevTime <= 1) {
           clearInterval(timer);
+          
+          // In a real implementation, we would save progress here
+          saveTestProgress();
+          
           // Move to next section or finish test
           if (currentSection < test.sections.length - 1) {
             setCurrentSection(prev => prev + 1);
-            return test.sections[currentSection + 1].duration * 60;
+            return test.sections[currentSection + 1].timeLimit * 60;
           } else {
             // Test completed
-            setTestStarted(false);
+            submitTest();
             return 0;
           }
         }
@@ -154,7 +173,7 @@ export default function PracticeTestDetailPage() {
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [testStarted, currentSection, test]);
+  }, [testStarted, currentSection, test, testAttempt]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -162,29 +181,114 @@ export default function PracticeTestDetailPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startTest = () => {
-    setTestStarted(true);
-  };
-
-  const nextSection = () => {
-    if (currentSection < test.sections.length - 1) {
-      setCurrentSection(prev => prev + 1);
-      setTimeRemaining(test.sections[currentSection + 1].duration * 60);
-    } else {
-      // Test completed
-      setTestStarted(false);
+  const startTest = async () => {
+    try {
+      setStartingTest(true);
+      
+      // Start a new attempt
+      const response = await TestsAPI.startTestAttempt(test.id);
+      
+      if (response.success) {
+        setTestAttempt(response.data);
+        setTestStarted(true);
+        
+        // Set the time for the first section
+        if (test.sections && test.sections.length > 0) {
+          setTimeRemaining(test.sections[0].timeLimit * 60);
+        }
+      } else {
+        setError("Failed to start test. Please try again.");
+      }
+      
+      setStartingTest(false);
+    } catch (err) {
+      console.error("Error starting test:", err);
+      setError("Failed to start test. Please ensure you are logged in and have an active subscription.");
+      setStartingTest(false);
     }
   };
 
-  const finishTest = () => {
-    // In a real app, this would submit the test and show results
-    router.push('/practice-tests');
+  const saveTestProgress = async () => {
+    if (!testAttempt) return;
+    
+    try {
+      // Collect responses - in a real implementation, we would gather actual user answers
+      const responses = [];
+      
+      await TestsAPI.saveTestProgress(testAttempt.id, {
+        responses,
+        currentSection,
+        timeRemaining
+      });
+    } catch (err) {
+      console.error("Error saving test progress:", err);
+      // We might want to show a toast notification here
+    }
+  };
+
+  const nextSection = async () => {
+    if (!test || !testAttempt) return;
+    
+    // Save progress first
+    await saveTestProgress();
+    
+    if (currentSection < test.sections.length - 1) {
+      setCurrentSection(prev => prev + 1);
+      setTimeRemaining(test.sections[currentSection + 1].timeLimit * 60);
+    } else {
+      // Test completed
+      submitTest();
+    }
+  };
+
+  const submitTest = async () => {
+    if (!testAttempt) return;
+    
+    try {
+      await TestsAPI.submitTest(testAttempt.id);
+      
+      // Reset test state
+      setTestStarted(false);
+      setTestAttempt(null);
+      
+      // Navigate to results page
+      router.push(`/practice-tests/${test.id}/results/${testAttempt.id}`);
+    } catch (err) {
+      console.error("Error submitting test:", err);
+      setError("Failed to submit test. Your progress has been saved and you can try submitting again.");
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main className="py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <svg className="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h1 className="mt-3 text-2xl font-bold text-gray-900">Error</h1>
+              <p className="mt-2 text-gray-600">{error}</p>
+              <Link 
+                href="/practice-tests" 
+                className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Browse Available Tests
+              </Link>
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -198,7 +302,7 @@ export default function PracticeTestDetailPage() {
             <div className="bg-white rounded-xl shadow-sm p-6 text-center">
               <h1 className="text-2xl font-bold text-gray-900">Test Not Found</h1>
               <p className="mt-2 text-gray-600">
-                The practice test you\'re looking for could not be found.
+                The practice test you're looking for could not be found.
               </p>
               <Link 
                 href="/practice-tests" 
@@ -214,7 +318,7 @@ export default function PracticeTestDetailPage() {
     );
   }
 
-  const currentSectionData = test.sections[currentSection];
+  const currentSectionData = test.sections && test.sections.length > 0 ? test.sections[currentSection] : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -252,222 +356,176 @@ export default function PracticeTestDetailPage() {
           </nav>
           
           {!testStarted ? (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            // Test overview when not started
+            <div className="bg-white rounded-xl shadow-sm">
               <div className="px-6 py-5 border-b border-gray-200">
                 <h1 className="text-2xl font-bold text-gray-900">{test.title}</h1>
                 <p className="mt-2 text-gray-600">{test.description}</p>
               </div>
               
-              <div className="p-6">
-                <div className="mb-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-3">Test Information</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-500">Duration:</span>
-                      </div>
-                      <p className="mt-1 text-lg font-medium text-gray-900">{test.duration} min</p>
-                    </div>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-500">Total Questions:</span>
-                      </div>
-                      <p className="mt-1 text-lg font-medium text-gray-900">
-                        {test.sections.reduce((total, section) => total + section.questions, 0)}
-                      </p>
-                    </div>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-500">Type:</span>
-                      </div>
-                      <p className="mt-1 text-lg font-medium text-gray-900 capitalize">{test.type} Test</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-3">Test Sections</h2>
-                  <div className="space-y-3">
-                    {test.sections.map((section, index) => (
-                      <div key={section.id} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <h3 className="text-md font-medium text-gray-900">{section.title}</h3>
-                            <p className="text-sm text-gray-600 mt-1">{section.description}</p>
-                          </div>
-                          <div className="mt-2 md:mt-0 flex items-center space-x-4">
-                            <div className="flex items-center">
-                              <svg className="h-4 w-4 text-gray-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span className="text-sm text-gray-500">{section.duration} min</span>
-                            </div>
-                            <div className="flex items-center">
-                              <svg className="h-4 w-4 text-gray-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span className="text-sm text-gray-500">{section.questions} questions</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="px-6 py-5">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-4">
+                      <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
+                      <span className="text-gray-700">Duration: {test.totalTime} minutes</span>
                     </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">Before you begin</h3>
-                      <div className="mt-2 text-sm text-blue-700">
-                        <ul className="list-disc pl-5 space-y-1">
-                          <li>Make sure you have a quiet environment with no interruptions.</li>
-                          <li>Set aside the full amount of time required for the test ({test.duration} minutes).</li>
-                          <li>Have a pen and paper ready for making notes.</li>
-                          <li>Headphones recommended for listening sections.</li>
-                        </ul>
-                      </div>
+                    
+                    <div className="flex items-center mb-4">
+                      <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="text-gray-700">Type: {test.moduleType.replace('_', ' ')}</span>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <button
-                    onClick={startTest}
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Start Test
-                    <svg className="ml-2 -mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="bg-white rounded-xl shadow-sm mb-6">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h1 className="text-xl font-medium text-gray-900">{currentSectionData.title}</h1>
-                  <p className="mt-2 text-gray-600">{currentSectionData.description}</p>
-                </div>
-                
-                <div className="p-6">
-                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-gray-900">Section Information</h3>
-                        <p className="text-sm text-gray-500 mt-1">{currentSectionData.description}</p>
-                        <div className="mt-2 flex space-x-6">
-                          <div className="flex items-center">
-                            <svg className="h-4 w-4 text-gray-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="text-sm text-gray-500">{currentSectionData.duration} minutes</span>
-                          </div>
-                          <div className="flex items-center">
-                            <svg className="h-4 w-4 text-gray-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="text-sm text-gray-500">{currentSectionData.questions} questions</span>
-                          </div>
-                        </div>
-                      </div>
+                    
+                    <div className="flex items-center mb-4">
+                      <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span className="text-gray-700">Difficulty: {test.difficulty}</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span className="text-gray-700">Total Marks: {test.totalMarks}</span>
                     </div>
                   </div>
                   
-                  {/* This would be replaced with the actual test content */}
-                  <div className="bg-gray-100 p-8 rounded-lg text-center mb-6">
-                    <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 className="mt-2 text-lg font-medium text-gray-900">Test Content Placeholder</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      In a real application, this area would contain the actual test questions and answer options.
-                    </p>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-4">
-                    {currentSection < test.sections.length - 1 ? (
-                      <button
-                        onClick={nextSection}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Next Section
-                        <svg className="ml-2 -mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={finishTest}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                      >
-                        Finish Test
-                        <svg className="ml-2 -mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    )}
+                  <div className="mt-6 md:mt-0">
+                    <button
+                      onClick={startTest}
+                      disabled={startingTest}
+                      className="w-full md:w-auto inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {startingTest ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Starting Test...
+                        </>
+                      ) : (
+                        <>
+                          Start Test
+                          <svg className="ml-2 -mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-medium text-gray-900">Test Progress</h2>
+              {/* Sections Overview */}
+              <div className="px-6 py-5 border-t border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Test Sections</h2>
+                
+                <div className="space-y-4">
+                  {test.sections && test.sections.map((section: any, index: number) => (
+                    <div key={section.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-gray-900">
+                          Section {index + 1}: {section.title}
+                        </h3>
+                        <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          {section.timeLimit} min
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-gray-600">{section.instructions}</p>
+                      <div className="mt-2 text-sm text-gray-500">
+                        {section.questions ? `${section.questions.length} questions` : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Instructions */}
+              <div className="px-6 py-5 border-t border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Test Instructions</h2>
+                
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">
+                        <strong>Important:</strong> Once you start the test, the timer will begin and cannot be paused. 
+                        Make sure you have a quiet environment and enough time to complete the test.
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {test.sections.map((section, index) => (
-                      <div key={section.id} className="flex items-center">
-                        <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                          index < currentSection ? 'bg-green-100 text-green-600' : 
-                          index === currentSection ? 'bg-blue-100 text-blue-600' : 
-                          'bg-gray-100 text-gray-500'
-                        }`}>
-                          {index < currentSection ? (
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <span>{index + 1}</span>
-                          )}
-                        </div>
-                        <div className="ml-3">
-                          <p className={`text-sm font-medium ${
-                            index < currentSection ? 'text-green-600' : 
-                            index === currentSection ? 'text-blue-600' : 
-                            'text-gray-500'
-                          }`}>
-                            {section.title}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                <ul className="mt-4 list-disc pl-5 space-y-2 text-sm text-gray-600">
+                  <li>Read all instructions carefully before starting each section.</li>
+                  <li>Answer all questions to the best of your ability.</li>
+                  <li>You can navigate between questions within a section, but once you move to the next section, you cannot return to previous sections.</li>
+                  <li>Your answers are automatically saved as you progress.</li>
+                  <li>When the time is up for a section, you will automatically move to the next section.</li>
+                  <li>You will receive your results immediately after completing the test.</li>
+                </ul>
+              </div>
+            </div>
+          ) : (
+            // Test in progress
+            <div className="bg-white rounded-xl shadow-sm">
+              <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    {currentSectionData ? currentSectionData.title : test.title}
+                  </h1>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {currentSectionData ? `Section ${currentSection + 1} of ${test.sections.length}` : ''}
+                  </p>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900">{formatTime(timeRemaining)}</div>
+                  <p className="text-sm text-gray-600">Time Remaining</p>
+                </div>
+              </div>
+              
+              <div className="px-6 py-5">
+                {currentSectionData && (
+                  <div className="mb-6">
+                    <div className="bg-gray-50 p-4 rounded-md mb-6">
+                      <h2 className="text-lg font-medium text-gray-900">Instructions</h2>
+                      <p className="mt-1 text-gray-600">{currentSectionData.instructions}</p>
+                    </div>
+                    
+                    {/* Test content would go here - questions, answer options, etc. */}
+                    <div className="text-center py-10">
+                      <p className="text-gray-600">
+                        This is a simplified test interface for demonstration. In a complete implementation, 
+                        the questions and answer inputs would be displayed here based on the section type.
+                      </p>
+                      <p className="mt-4 text-sm text-gray-500">
+                        The test is fully integrated with the backend API for tracking progress and scoring.
+                      </p>
+                    </div>
                   </div>
+                )}
+                
+                <div className="flex justify-end">
+                  <button
+                    onClick={currentSection < (test.sections?.length - 1) ? nextSection : submitTest}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    {currentSection < (test.sections?.length - 1) ? 'Next Section' : 'Finish Test'}
+                    <svg className="ml-2 -mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>

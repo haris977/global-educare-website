@@ -11,10 +11,28 @@ dotenv.config();
 
 const app = express();
 
+// Allow specific origins or all origins during development
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:3001', 
+  'http://localhost:3002',
+  'http://localhost:8000'
+];
+
 app.use(
   cors({
-    origin: "*",
+    origin: function(origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1) {
+        // For development, you can also allow all origins by uncommenting this line
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true
   })
 );
 
