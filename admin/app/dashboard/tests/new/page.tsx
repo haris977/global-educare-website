@@ -224,6 +224,43 @@ export default function CreateTestPage() {
       console.log("Backend response:", JSON.stringify(response, null, 2));
       
       if (response.success) {
+        // If there are questions, add them to the default section
+        if (form.questions.length > 0 && response.data.sections && response.data.sections.length > 0) {
+          const defaultSectionId = response.data.sections[0].id;
+          
+          // Add each question to the default section
+          for (const question of form.questions) {
+            // Prepare the question data based on its type
+            const questionData = {
+              questionText: question.text,
+              questionType: question.type,
+              options: question.type === "MULTIPLE_CHOICE" ? 
+                JSON.stringify(question.options.filter(opt => opt.trim())) : 
+                question.type === "TRUE_FALSE" ?
+                JSON.stringify(["true", "false"]) :
+                undefined,
+              correctAnswer: question.type === "TRUE_FALSE" ? 
+                question.correctAnswer.toLowerCase() : // Ensure lowercase for true/false answers
+                question.correctAnswer,
+              marks: question.points,
+              order: form.questions.indexOf(question) + 1
+            };
+            
+            // Add debugging logs
+            console.log("Creating question with data:", JSON.stringify(questionData, null, 2));
+            
+            // Create the question in the section
+            const questionResponse = await api.Tests.createQuestion(defaultSectionId, questionData);
+            
+            // Log the response from the question creation API
+            console.log("Question creation response:", JSON.stringify(questionResponse, null, 2));
+            
+            if (!questionResponse.success) {
+              console.error("Failed to create question:", questionResponse.message);
+            }
+          }
+        }
+        
         // Navigate to the test details page
         router.push(`/dashboard/tests/${response.data.id}`);
       } else {
@@ -375,7 +412,7 @@ export default function CreateTestPage() {
                     required
                     value={form.title}
                     onChange={handleInputChange}
-                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 bg-white text-gray-900"
+                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
                     placeholder="Enter test title"
                   />
                 </div>
@@ -388,7 +425,7 @@ export default function CreateTestPage() {
                     rows={4}
                     value={form.description}
                     onChange={handleInputChange}
-                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 bg-white text-gray-900"
+                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
                     placeholder="Provide a brief description of the test"
                   />
                 </div>
@@ -404,7 +441,7 @@ export default function CreateTestPage() {
                         min={1}
                         value={form.totalTime}
                         onChange={handleInputChange}
-                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 bg-white text-gray-900"
+                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                         <span className="text-gray-500 sm:text-sm">min</span>
@@ -423,7 +460,7 @@ export default function CreateTestPage() {
                         max={100}
                         value={form.passingScore}
                         onChange={handleInputChange}
-                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 bg-white text-gray-900"
+                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                         <span className="text-gray-500 sm:text-sm">%</span>
@@ -440,7 +477,7 @@ export default function CreateTestPage() {
                       id="moduleType"
                       value={form.moduleType}
                       onChange={handleInputChange}
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 bg-white text-gray-900"
+                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
                     >
                       {moduleTypes.map(type => (
                         <option key={type} value={type}>{type.charAt(0) + type.slice(1).toLowerCase()}</option>
@@ -454,7 +491,7 @@ export default function CreateTestPage() {
                       name="difficulty"
                       id="difficulty"
                       defaultValue="MEDIUM"
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 bg-white text-gray-900 disabled:bg-gray-100"
+                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 disabled:bg-gray-100"
                       disabled
                     >
                       {difficultyLevels.map(level => (

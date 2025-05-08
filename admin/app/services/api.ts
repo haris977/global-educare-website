@@ -211,6 +211,8 @@ const TestsAPI = {
   // Test sections
   createSection: async (testId: string, sectionData: any) => {
     try {
+      console.log("Creating section with data:", JSON.stringify(sectionData, null, 2));
+      
       return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/tests/${testId}/sections`, {
         method: 'POST',
         body: JSON.stringify(sectionData),
@@ -259,6 +261,9 @@ const TestsAPI = {
   // Test questions
   createQuestion: async (sectionId: string, questionData: any) => {
     try {
+      console.log("Creating question for sectionId:", sectionId);
+      console.log("Question data:", JSON.stringify(questionData, null, 2));
+      
       return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/tests/sections/${sectionId}/questions`, {
         method: 'POST',
         body: JSON.stringify(questionData),
@@ -273,9 +278,30 @@ const TestsAPI = {
     }
   },
   
+  // Create complete IELTS test with all sections and questions
+  createCompleteIELTSTest: async (testData: any) => {
+    try {
+      console.log("Creating complete IELTS test with data:", JSON.stringify(testData, null, 2));
+      
+      return await fetchWithAuth<{success: boolean; message: string; data: any}>('/tests/ielts/complete', {
+        method: 'POST',
+        body: JSON.stringify(testData),
+      });
+    } catch (error: any) {
+      console.error("API Error - createCompleteIELTSTest:", error);
+      console.error("Test data that failed:", JSON.stringify(testData, null, 2));
+      
+      return {
+        success: false,
+        message: error.message || "Failed to create IELTS test",
+        data: null
+      };
+    }
+  },
+  
   updateQuestion: async (questionId: string, questionData: any) => {
     try {
-      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/tests/questions/${questionId}`, {
+      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/questions/${questionId}`, {
         method: 'PUT',
         body: JSON.stringify(questionData),
       });
@@ -291,7 +317,7 @@ const TestsAPI = {
   
   deleteQuestion: async (questionId: string) => {
     try {
-      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/tests/questions/${questionId}`, {
+      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/questions/${questionId}`, {
         method: 'DELETE',
       });
     } catch (error: any) {

@@ -1,0 +1,215 @@
+{
+  "title": "IELTS Academic Test - Practice 1",
+  "description": "A complete IELTS Academic practice test covering all four modules: Listening, Reading, Writing, and Speaking.",
+  "difficulty": "MEDIUM",
+  "moduleType": "IELTS_ACADEMIC",
+  "totalTime": 180,
+  "isPublished": true,
+  "testCategory": "Practice",
+  "isFeatured": true,
+  "sections": [
+    {
+      "title": "Listening Module",
+      "instructions": "You will hear a number of different recordings and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. The recordings will be played once only. The test is in four sections. Write your answers on the question paper as you listen. At the end of the test, you will have 10 minutes to transfer your answers to an answer sheet.",
+      "order": 1,
+      "timeLimit": 40,
+      "questions": [
+        {
+          "questionText": "What is the woman's name?",
+          "questionType": "FILL_BLANK",
+          "audioFile": "listening/section1/recording1.mp3",
+          "order": 1,
+          "marks": 1.0,
+          "correctAnswer": "Sarah Johnson"
+        },
+        {
+          "questionText": "Which floor is the apartment on?",
+          "questionType": "MULTIPLE_CHOICE",
+          "audioFile": "listening/section1/recording1.mp3",
+          "order": 2,
+          "marks": 1.0,
+          "options": [
+            "First floor",
+            "Second floor",
+            "Third floor",
+            "Fourth floor"
+          ],
+          "correctAnswer": "Second floor"
+        }
+      ]
+    },
+    {
+      "title": "Reading Module",
+      "instructions": "You should spend about 60 minutes on this section. There are three reading passages with a total of 40 questions. Answer all the questions. Write your answers on the answer sheet.",
+      "order": 2,
+      "timeLimit": 60,
+      "questions": [
+        {
+          "questionText": "According to the passage, what was the main cause of urban migration in the 19th century?",
+          "questionType": "MULTIPLE_CHOICE",
+          "order": 1,
+          "marks": 1.0,
+          "passage": "The Industrial Revolution of the late 18th and early 19th centuries had a profound effect on the social structure of Britain. As new factories and mills sprang up across the country, people flocked from rural areas to urban centers in search of work. This mass migration created huge, overcrowded cities with poor living conditions for many workers. The wealthy industrialists built grand houses away from the smoke and dirt of the factories, while workers often lived in cramped, unsanitary housing close to their places of employment.",
+          "options": [
+            "Natural disasters in rural areas",
+            "Government policies encouraging urban living",
+            "Industrialization and availability of factory jobs",
+            "Higher wages in teaching and administrative roles"
+          ],
+          "correctAnswer": "Industrialization and availability of factory jobs"
+        },
+        {
+          "questionText": "Does the passage mention poor living conditions for factory workers?",
+          "questionType": "YES_NO_NOT_GIVEN",
+          "order": 2,
+          "marks": 1.0,
+          "passage": "The Industrial Revolution of the late 18th and early 19th centuries had a profound effect on the social structure of Britain. As new factories and mills sprang up across the country, people flocked from rural areas to urban centers in search of work. This mass migration created huge, overcrowded cities with poor living conditions for many workers. The wealthy industrialists built grand houses away from the smoke and dirt of the factories, while workers often lived in cramped, unsanitary housing close to their places of employment.",
+          "correctAnswer": "YES"
+        }
+      ]
+    },
+    {
+      "title": "Writing Module",
+      "instructions": "You should spend about 60 minutes on this task. The Writing module consists of two tasks. Complete both tasks.",
+      "order": 3,
+      "timeLimit": 60,
+      "questions": [
+        {
+          "questionText": "The chart below shows the percentage of households with access to the internet in three different countries between 2000 and 2020. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionType": "ESSAY",
+          "questionImage": "writing/task1/internet_access_chart.png",
+          "order": 1,
+          "marks": 9.0,
+          "additionalInfo": "Write at least 150 words.",
+          "bandDescriptors": {
+            "Task Achievement": [
+              "Fully satisfies all requirements of the task",
+              "Clearly presents a fully developed response",
+              "Presents, highlights and illustrates key features clearly and appropriately"
+            ],
+            "Coherence and Cohesion": [
+              "Logically organizes information and ideas",
+              "Clear progression throughout",
+              "Uses cohesive devices effectively"
+            ],
+            "Lexical Resource": [
+              "Uses a wide range of vocabulary fluently and flexibly",
+              "Skillfully uses uncommon lexical items",
+              "Makes only rare minor errors in word choice"
+            ],
+            "Grammatical Range": [
+              "Uses a wide range of structures",
+              "Majority of sentences are error-free",
+              "Makes only occasional errors"
+            ]
+          },
+          "sampleAnswer": "The line graph illustrates the percentage of households with internet access in three countries (Country A, Country B, and Country C) over a 20-year period from 2000 to 2020.\n\nIn 2000, Country A had the highest proportion of households connected to the internet at 30%, followed by Country B with 20%, while Country C lagged significantly behind at just 5%. Over the next decade, all three countries experienced steady growth in internet penetration, with Country A maintaining its lead, reaching 60% by 2010, compared to 45% in Country B and 30% in Country C.\n\nThe period from 2010 to 2020 saw dramatic changes in the relative positions. Country C demonstrated remarkable growth, overtaking both other countries with an impressive rise to 90% household internet access by 2020. Country B also showed substantial progress, reaching 80% by the end of the period. Surprisingly, Country A, despite being the early leader, showed the slowest growth rate in the second decade, ending at 75% in 2020, thus falling behind both other nations.\n\nOverall, while Country A dominated internet access in the early years, Country C demonstrated the most dramatic improvement over the 20-year period, transforming from the lowest to the highest rate of household internet connectivity."
+        },
+        {
+          "questionText": "Some people believe that hosting international sports events is beneficial for a country, while others think it is costly and not worthwhile. Discuss both views and give your own opinion.",
+          "questionType": "ESSAY",
+          "order": 2,
+          "marks": 9.0,
+          "additionalInfo": "Write at least 250 words.",
+          "bandDescriptors": {
+            "Task Response": [
+              "Addresses all parts of the task",
+              "Presents a well-developed position",
+              "Presents, extends and supports main ideas"
+            ],
+            "Coherence and Cohesion": [
+              "Logically organizes information and ideas",
+              "Clear progression throughout",
+              "Uses cohesive devices effectively"
+            ],
+            "Lexical Resource": [
+              "Uses a wide range of vocabulary fluently and flexibly",
+              "Skillfully uses uncommon lexical items",
+              "Makes only rare minor errors in word choice"
+            ],
+            "Grammatical Range": [
+              "Uses a wide range of structures",
+              "Majority of sentences are error-free",
+              "Makes only occasional errors"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Speaking Module",
+      "instructions": "The Speaking module consists of a face-to-face interview with a certified examiner. It lasts between 11 and 14 minutes and is divided into three parts.",
+      "order": 4,
+      "timeLimit": 15,
+      "questions": [
+        {
+          "questionText": "Introduction and Interview",
+          "questionType": "SPEAKING_TASK_1",
+          "order": 1,
+          "marks": 9.0,
+          "speakingPrompts": [
+            "Could you tell me your full name, please?",
+            "What should I call you?",
+            "Can I see your identification, please?",
+            "Now I'd like to ask you some questions about yourself.",
+            "Let's talk about your home town or village. What's it like?",
+            "What do you like most about living there?",
+            "Would you like to live somewhere else in the future?"
+          ],
+          "bandDescriptors": {
+            "Fluency and Coherence": [
+              "Speaks fluently with only rare repetition or self-correction",
+              "Speaks coherently with fully appropriate cohesive features",
+              "Develops topics fully and appropriately"
+            ],
+            "Lexical Resource": [
+              "Uses vocabulary with full flexibility and precision",
+              "Uses idiomatic language naturally and accurately",
+              "Skillfully uses uncommon lexical items"
+            ],
+            "Grammatical Range": [
+              "Uses a full range of structures naturally and appropriately",
+              "Produces consistently accurate structures",
+              "Makes only very occasional errors or inappropriacies"
+            ],
+            "Pronunciation": [
+              "Uses a full range of pronunciation features with precision and subtlety",
+              "Sustains flexible use of features throughout",
+              "Is effortless to understand"
+            ]
+          }
+        },
+        {
+          "questionText": "Individual Long Turn",
+          "questionType": "SPEAKING_TASK_2",
+          "order": 2,
+          "marks": 9.0,
+          "cueCard": "Describe a museum that you have visited. You should say:\nwhere it is\nwhy you went there\nwhat you particularly remember\nand explain why you found this museum interesting.",
+          "additionalInfo": "You will have to talk about the topic for 1 to 2 minutes. You have one minute to think about what you're going to say. You can make some notes to help you if you wish.",
+          "bandDescriptors": {
+            "Fluency and Coherence": [
+              "Speaks fluently with only rare repetition or self-correction",
+              "Speaks coherently with fully appropriate cohesive features",
+              "Develops topics fully and appropriately"
+            ],
+            "Lexical Resource": [
+              "Uses vocabulary with full flexibility and precision",
+              "Uses idiomatic language naturally and accurately",
+              "Skillfully uses uncommon lexical items"
+            ],
+            "Grammatical Range": [
+              "Uses a full range of structures naturally and appropriately",
+              "Produces consistently accurate structures",
+              "Makes only very occasional errors or inappropriacies"
+            ],
+            "Pronunciation": [
+              "Uses a full range of pronunciation features with precision and subtlety",
+              "Sustains flexible use of features throughout",
+              "Is effortless to understand"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+} 

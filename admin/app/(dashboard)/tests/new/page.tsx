@@ -9,11 +9,13 @@ import api from "../../../../services/api";
 interface TestFormData {
   title: string;
   description: string;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  moduleType: "READING" | "WRITING" | "LISTENING" | "SPEAKING" | "FULL_TEST";
+  difficulty: "EASY" | "MEDIUM" | "HARD" | "VERY_HARD";
+  moduleType: "READING" | "WRITING" | "LISTENING" | "SPEAKING" | "IELTS_GENERAL" | "IELTS_ACADEMIC" | "COMBINED";
   totalTime: number;
   totalMarks: number;
   isPublished: boolean;
+  isFeatured: boolean;
+  testCategory: string;
 }
 
 export default function CreateTestPage() {
@@ -24,10 +26,12 @@ export default function CreateTestPage() {
     title: "",
     description: "",
     difficulty: "MEDIUM",
-    moduleType: "FULL_TEST",
+    moduleType: "READING",
     totalTime: 60,
     totalMarks: 100,
-    isPublished: false
+    isPublished: false,
+    isFeatured: false,
+    testCategory: "Practice"
   });
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -196,7 +200,9 @@ export default function CreateTestPage() {
                   <option value="WRITING">Writing</option>
                   <option value="LISTENING">Listening</option>
                   <option value="SPEAKING">Speaking</option>
-                  <option value="FULL_TEST">Full Test</option>
+                  <option value="IELTS_GENERAL">IELTS General</option>
+                  <option value="IELTS_ACADEMIC">IELTS Academic</option>
+                  <option value="COMBINED">Combined</option>
                 </select>
               </div>
             </div>
@@ -217,11 +223,29 @@ export default function CreateTestPage() {
                   <option value="EASY">Easy</option>
                   <option value="MEDIUM">Medium</option>
                   <option value="HARD">Hard</option>
+                  <option value="VERY_HARD">Very Hard</option>
                 </select>
               </div>
               <div className="mt-2 flex items-center">
                 <span className="text-xs text-gray-500 mr-2">Selected:</span>
                 <DifficultyBadge difficulty={formData.difficulty} />
+              </div>
+            </div>
+            
+            <div className="sm:col-span-3">
+              <label htmlFor="testCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                Test Category
+              </label>
+              <div>
+                <input
+                  type="text"
+                  id="testCategory"
+                  name="testCategory"
+                  value={formData.testCategory}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+                  placeholder="e.g., Practice, Mock, Official"
+                />
               </div>
             </div>
             
@@ -290,6 +314,29 @@ export default function CreateTestPage() {
                   <div className="ml-3">
                     <label htmlFor="isPublished" className="font-medium text-gray-700">Publish Immediately</label>
                     <p className="text-sm text-gray-500 mt-1">Make this test available to students right away</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="sm:col-span-3">
+              <div className="flex items-center h-full">
+                <div className="relative flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="isFeatured"
+                      name="isFeatured"
+                      type="checkbox"
+                      checked={formData.isFeatured}
+                      onChange={handleChange}
+                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                    />
+                  </div>
+                  <div className="ml-3 text-sm">
+                    <label htmlFor="isFeatured" className="font-medium text-gray-700">
+                      Feature Test
+                    </label>
+                    <p className="text-gray-500">Highlight this test on the dashboard</p>
                   </div>
                 </div>
               </div>

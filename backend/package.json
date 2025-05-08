@@ -9,7 +9,9 @@
     "dev": "nodemon",
     "start": "ts-node index.ts",
     "db:studio": "npx prisma studio --schema=./prisma/schema.prisma",
-    "db:migrate": "npx prisma migrate dev --schema=./prisma/schema.prisma"
+    "db:migrate": "npx prisma migrate dev --schema=./prisma/schema.prisma",
+    "db:ielts-migrate": "ts-node scripts/apply-ielts-migration.ts",
+    "test:ielts-upload": "ts-node scripts/test-ielts-upload.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -27,6 +29,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.1",
+    "axios": "^1.6.7",
     "bcryptjs": "^3.0.2",
     "body-parser": "^1.20.3",
     "cookie-parser": "^1.4.7",

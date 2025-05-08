@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "../../../services/api";
+import React from "react";
 
 // Type definitions for backend data
 interface Question {
@@ -40,9 +41,10 @@ interface Test {
   sections: Section[];
 }
 
-export default function TestDetailPage({ params }: { params: { id: string } }) {
+export default function TestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { id } = params;
+  const resolvedParams = React.use(params);
+  const { id } = resolvedParams;
   
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);

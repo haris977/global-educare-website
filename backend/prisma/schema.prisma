@@ -55,6 +55,8 @@ model Test {
   totalQuestions  Int
   totalMarks      Float
   isPublished     Boolean   @default(false)
+  isFeatured      Boolean   @default(false)
+  testCategory    String?   // For categorizing tests (e.g., "Practice", "Mock", "Official")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -94,6 +96,13 @@ model Question {
   // Specific content based on question type
   options           Json?     // For MCQ, matching, etc.
   correctAnswer     String?   // For text input, essay questions will be null (manual review)
+  
+  // IELTS specific fields
+  passage           String?   // For reading passages
+  cueCard           String?   // For speaking task 2
+  speakingPrompts   Json?     // For speaking tasks
+  bandDescriptors   Json?     // Assessment criteria for writing/speaking
+  sampleAnswer      String?   // Sample answer for writing/speaking tasks
   
   // Relationship
   section           Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
@@ -232,6 +241,9 @@ enum ModuleType {
   READING
   WRITING
   SPEAKING
+  IELTS_GENERAL
+  IELTS_ACADEMIC
+  COMBINED
 }
 
 // New enums for enhanced test functionality
@@ -249,10 +261,16 @@ enum QuestionType {
   DIAGRAM_LABELLING
   SUMMARY_COMPLETION
   SENTENCE_COMPLETION
-  SPEAKING_SHORT_ANSWER
-  SPEAKING_LONG_ANSWER
-  SPEAKING_CUE_CARD
-  SPEAKING_DISCUSSION
+  MAP_LABELLING
+  PROCESS_DIAGRAM
+  YES_NO_NOT_GIVEN
+  TRUE_FALSE_NOT_GIVEN
+  HEADING_MATCHING
+  INFORMATION_MATCHING
+  FEATURES_MATCHING
+  SPEAKING_TASK_1 // Personal introduction and interview
+  SPEAKING_TASK_2 // Individual long turn (cue card)
+  SPEAKING_TASK_3 // Two-way discussion
 }
 
 enum AttemptStatus {

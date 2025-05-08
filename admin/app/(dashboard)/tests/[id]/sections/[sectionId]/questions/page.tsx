@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "../../../../../../services/api";
+import { use } from "react";
 
 // Type definitions
 interface Question {
@@ -33,7 +34,9 @@ interface Test {
 
 export default function QuestionsPage({ params }: { params: { id: string; sectionId: string } }) {
   const router = useRouter();
-  const { id: testId, sectionId } = params;
+  // Unwrap params using React.use() to fix the warning
+  const unwrappedParams = use(params);
+  const { id: testId, sectionId } = unwrappedParams;
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,6 +63,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       try {
         // Get test data
         const testResponse = await api.Tests.getTestById(testId);
+        console.log("Test response:", testResponse);
         if (testResponse.success && testResponse.data) {
           setTest({
             id: testResponse.data.id,
@@ -171,23 +175,49 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     setError("");
     
     try {
+      // Filter out empty options first
+      const filteredOptions = currentQuestion.options.filter(opt => opt.trim());
+      
       // Prepare the question data
       const questionData = {
         questionText: currentQuestion.questionText,
         questionType: currentQuestion.questionType,
-        // Stringify options for backend
-        options: JSON.stringify(currentQuestion.options.filter(opt => opt.trim())),
-        correctAnswer: currentQuestion.correctAnswer,
+        // For multiple choice, properly format the options as expected by the backend
+        options: currentQuestion.questionType === "MULTIPLE_CHOICE" ? JSON.stringify(filteredOptions) : undefined,
+        // Format correctAnswer based on question type
+        correctAnswer: 
+          currentQuestion.questionType === "MULTIPLE_CHOICE" && filteredOptions[parseInt(currentQuestion.correctAnswer)]
+            ? filteredOptions[parseInt(currentQuestion.correctAnswer)] // For multiple choice, send the actual option text
+            : currentQuestion.correctAnswer, // For other question types, send as is
         marks: currentQuestion.marks,
         order: questions.length + 1
       };
       
+      console.log("Sending question data:", JSON.stringify(questionData, null, 2));
+      
       // Call API to create question
+      console.log("About to make API call to create question for section:", sectionId);
       const response = await api.Tests.createQuestion(sectionId, questionData);
+      console.log("API response for createQuestion:", JSON.stringify(response, null, 2));
       
       if (response.success && response.data) {
+        console.log("Question created successfully:", response.data);
         // Add new question to the list
         setQuestions(prev => [...prev, response.data]);
+        
+        // Refresh test data to get latest state
+        const testResponse = await api.Tests.getTestById(testId);
+        if (testResponse.success && testResponse.data) {
+          // Find the updated section
+          const updatedSection = testResponse.data.sections.find(
+            (section: any) => section.id === sectionId
+          );
+          
+          if (updatedSection && updatedSection.questions) {
+            // Update the questions list with the latest from the backend
+            setQuestions(updatedSection.questions);
+          }
+        }
         
         // Reset form
         setCurrentQuestion({
@@ -264,85 +294,41 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
   }
   
   return (
-    <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Breadcrumb navigation */}
-      <nav className="mb-8">
-        <ol className="flex items-center space-x-2 text-sm text-gray-500">
-          <li>
-            <Link href="/dashboard" className="hover:text-indigo-600 transition-colors">
-              Dashboard
-            </Link>
-          </li>
-          <li className="flex items-center">
-            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </li>
-          <li>
-            <Link href="/dashboard/tests" className="hover:text-indigo-600 transition-colors">
-              Tests
-            </Link>
-          </li>
-          <li className="flex items-center">
-            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </li>
-          <li>
-            <Link href={`/dashboard/tests/${testId}`} className="hover:text-indigo-600 transition-colors">
-              {test?.title || "Test"}
-            </Link>
-          </li>
-          <li className="flex items-center">
-            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </li>
-          <li className="text-indigo-600 font-medium">{section?.title || "Section"} Questions</li>
-        </ol>
-      </nav>
-      
-      {/* Page header */}
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Manage Questions</h1>
-        <p className="mt-2 text-lg text-gray-600">
-          {section?.title ? `${section.title} section` : "Loading..."} questions for {test?.title || "test"}
-        </p>
-      </header>
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {test?.title} - {section?.title}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage questions for this section
+          </p>
+        </div>
+        <Link
+          href={`/dashboard/tests/${testId}`}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+          <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back to Test
+        </Link>
+      </div>
       
       {/* Success message */}
       {successMessage && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-green-700">{successMessage}</p>
-            </div>
-          </div>
+        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{successMessage}</span>
         </div>
       )}
       
       {/* Error message */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{error}</span>
         </div>
       )}
       
-      {/* Add Question Form */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Add Question</h2>
         
@@ -562,21 +548,19 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         </div>
       </div>
       
-      {/* Questions List */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Questions ({questions.length})
-          </h2>
+      {/* List of questions */}
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 className="text-lg font-medium text-gray-900">Questions in this Section</h3>
         </div>
         
         {questions.length === 0 ? (
-          <div className="text-center py-16">
+          <div className="p-8 text-center">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No questions yet</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new question above.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No questions in this section</h3>
+            <p className="mt-1 text-sm text-gray-500">Get started by adding questions using the form above.</p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">

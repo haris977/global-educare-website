@@ -88,14 +88,15 @@ export default function TestsPage() {
     const colorClasses = {
       EASY: "bg-green-100 text-green-800",
       MEDIUM: "bg-yellow-100 text-yellow-800",
-      HARD: "bg-red-100 text-red-800"
+      HARD: "bg-red-100 text-red-800",
+      VERY_HARD: "bg-purple-100 text-purple-800"
     };
     
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
         colorClasses[difficulty as keyof typeof colorClasses] || "bg-gray-100 text-gray-800"
       }`}>
-        {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()}
+        {difficulty.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
       </span>
     );
   };
@@ -108,15 +109,26 @@ export default function TestsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Tests Management</h1>
           <p className="mt-2 text-base text-gray-500">Create, edit, and manage assessment tests</p>
         </div>
-        <Link 
-          href="/tests/new" 
-          className="inline-flex items-center px-5 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-200"
-        >
-          <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Create New Test
-        </Link>
+        <div className="flex space-x-4">
+          <Link 
+            href="/tests/new/ielts" 
+            className="inline-flex items-center px-5 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-all duration-200"
+          >
+            <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Create IELTS Test
+          </Link>
+          <Link 
+            href="/tests/new" 
+            className="inline-flex items-center px-5 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-200"
+          >
+            <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Create Test
+          </Link>
+        </div>
       </div>
       
       {/* Filters */}
@@ -140,7 +152,9 @@ export default function TestsPage() {
                 <option value="WRITING">Writing</option>
                 <option value="LISTENING">Listening</option>
                 <option value="SPEAKING">Speaking</option>
-                <option value="FULL_TEST">Full Test</option>
+                <option value="IELTS_GENERAL">IELTS General</option>
+                <option value="IELTS_ACADEMIC">IELTS Academic</option>
+                <option value="COMBINED">Combined</option>
               </select>
             </div>
             
@@ -157,6 +171,7 @@ export default function TestsPage() {
                 <option value="EASY">Easy</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="HARD">Hard</option>
+                <option value="VERY_HARD">Very Hard</option>
               </select>
             </div>
             
