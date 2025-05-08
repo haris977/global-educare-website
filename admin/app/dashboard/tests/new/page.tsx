@@ -275,7 +275,7 @@ export default function CreateTestPage() {
   };
   
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Create New Test</h1>
@@ -294,7 +294,7 @@ export default function CreateTestPage() {
           <div className="absolute inset-0 h-3 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
         </div>
         
-        <div className="px-6 py-8">
+        <div className="px-8 py-8">
           {/* Step indicator */}
           <nav className="mb-8" aria-label="Progress">
             <ol className="flex items-center">
@@ -412,7 +412,7 @@ export default function CreateTestPage() {
                     required
                     value={form.title}
                     onChange={handleInputChange}
-                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
                     placeholder="Enter test title"
                   />
                 </div>
@@ -425,7 +425,7 @@ export default function CreateTestPage() {
                     rows={4}
                     value={form.description}
                     onChange={handleInputChange}
-                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                    className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
                     placeholder="Provide a brief description of the test"
                   />
                 </div>
@@ -441,7 +441,7 @@ export default function CreateTestPage() {
                         min={1}
                         value={form.totalTime}
                         onChange={handleInputChange}
-                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                         <span className="text-gray-500 sm:text-sm">min</span>
@@ -460,7 +460,7 @@ export default function CreateTestPage() {
                         max={100}
                         value={form.passingScore}
                         onChange={handleInputChange}
-                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                         <span className="text-gray-500 sm:text-sm">%</span>
@@ -477,7 +477,7 @@ export default function CreateTestPage() {
                       id="moduleType"
                       value={form.moduleType}
                       onChange={handleInputChange}
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                     >
                       {moduleTypes.map(type => (
                         <option key={type} value={type}>{type.charAt(0) + type.slice(1).toLowerCase()}</option>
@@ -491,7 +491,7 @@ export default function CreateTestPage() {
                       name="difficulty"
                       id="difficulty"
                       defaultValue="MEDIUM"
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 disabled:bg-gray-100"
+                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 bg-gray-50"
                       disabled
                     >
                       {difficultyLevels.map(level => (
@@ -528,7 +528,7 @@ export default function CreateTestPage() {
                     <button
                       type="button"
                       onClick={() => form.title ? setCurrentStep(2) : setError("Test title is required")}
-                      className="inline-flex justify-center items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                      className="inline-flex justify-center items-center px-5 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                     >
                       Next: Add Questions
                       <svg className="ml-2 -mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -548,7 +548,7 @@ export default function CreateTestPage() {
                   <p className="text-sm text-gray-500">Create questions for your test</p>
                 </div>
                 
-                <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
+                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-8">
                   <div className="space-y-5">
                     <div>
                       <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">Question Text<span className="text-red-500">*</span></label>
@@ -558,7 +558,7 @@ export default function CreateTestPage() {
                         rows={2}
                         value={currentQuestion.text}
                         onChange={handleQuestionChange}
-                        className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                        className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
                         placeholder="Enter your question here"
                       />
                     </div>
@@ -571,7 +571,7 @@ export default function CreateTestPage() {
                           id="type"
                           value={currentQuestion.type}
                           onChange={handleQuestionChange}
-                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                         >
                           <option value="MULTIPLE_CHOICE">Multiple Choice</option>
                           <option value="TRUE_FALSE">True/False</option>
@@ -589,7 +589,7 @@ export default function CreateTestPage() {
                           min={1}
                           value={currentQuestion.points}
                           onChange={handleQuestionChange}
-                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
                     </div>
@@ -603,9 +603,9 @@ export default function CreateTestPage() {
                             <button
                               type="button"
                               onClick={addOption}
-                              className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                             >
-                              <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <svg className="-ml-0.5 mr-1.5 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                               </svg>
                               Add Option
@@ -629,7 +629,7 @@ export default function CreateTestPage() {
                                 value={option}
                                 onChange={(e) => handleOptionChange(index, e.target.value)}
                                 placeholder={`Option ${index + 1}`}
-                                className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 pr-8"
+                                className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400 pr-8"
                               />
                               {index > 1 && (
                                 <button
@@ -695,7 +695,7 @@ export default function CreateTestPage() {
                           id="correctAnswer"
                           value={currentQuestion.correctAnswer as string || ""}
                           onChange={handleQuestionChange}
-                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200"
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
                           placeholder="Enter the expected answer"
                         />
                       </div>
@@ -815,7 +815,7 @@ export default function CreateTestPage() {
                   <p className="text-sm text-gray-500">Review your test before submission</p>
                 </div>
                 
-                <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
+                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
                   <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Title</dt>
@@ -855,15 +855,47 @@ export default function CreateTestPage() {
                     
                     <div className="sm:col-span-2">
                       <dt className="text-sm font-medium text-gray-500">Questions</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        Questions can be added after test creation
+                      <dd className="mt-1 text-sm text-gray-900 flex items-center">
+                        <span>{form.questions.length} questions</span>
                         {form.questions.length > 0 && (
-                          <span className="ml-2 text-amber-600">({form.questions.length} questions prepared)</span>
+                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            Ready to submit
+                          </span>
                         )}
                       </dd>
                     </div>
                   </dl>
                 </div>
+                
+                {form.questions.length > 0 && (
+                  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-4">Questions Preview</h4>
+                    <div className="max-h-60 overflow-y-auto">
+                      <ul className="divide-y divide-gray-200">
+                        {form.questions.map((question, index) => (
+                          <li key={question.id} className="py-3">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5">
+                                <span className="text-xs font-medium">{index + 1}</span>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-900">{question.text}</p>
+                                <div className="mt-1 flex flex-wrap gap-2">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    {question.type.replace("_", " ")}
+                                  </span>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    {question.points} {question.points === 1 ? 'point' : 'points'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="pt-6 border-t border-gray-200">
                   <div className="flex justify-between">
@@ -880,7 +912,7 @@ export default function CreateTestPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-5 py-3 border border-transparent text-sm font-medium rounded-md shadow-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <>
