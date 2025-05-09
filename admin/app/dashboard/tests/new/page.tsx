@@ -25,6 +25,7 @@ interface TestForm {
   isPublished: boolean;
   questions: Question[];
   moduleType: string;
+  difficulty: string;
 }
 
 export default function CreateTestPage() {
@@ -42,7 +43,8 @@ export default function CreateTestPage() {
     passingScore: 70,
     isPublished: false,
     questions: [],
-    moduleType: "READING" // Default to READING (valid enum value)
+    moduleType: "READING", // Default to READING (valid enum value)
+    difficulty: "MEDIUM"   // Default difficulty level
   });
   
   // Current question being edited
@@ -209,7 +211,7 @@ export default function CreateTestPage() {
       const testData = {
         title: form.title,
         description: form.description || "",
-        difficulty: "MEDIUM", // Use a valid enum value from TestDifficulty
+        difficulty: form.difficulty, // Use selected difficulty from form
         moduleType: form.moduleType,
         totalTime: Number(form.totalTime),
         totalQuestions: 0, // Will be updated as questions are added
@@ -490,15 +492,14 @@ export default function CreateTestPage() {
                     <select
                       name="difficulty"
                       id="difficulty"
-                      defaultValue="MEDIUM"
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 bg-gray-50"
-                      disabled
+                      value={form.difficulty}
+                      onChange={handleInputChange}
+                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                     >
                       {difficultyLevels.map(level => (
                         <option key={level} value={level}>{level.charAt(0) + level.slice(1).toLowerCase()}</option>
                       ))}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">Currently set to Medium difficulty</p>
                   </div>
                 </div>
                 
