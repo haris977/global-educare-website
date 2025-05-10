@@ -6,7 +6,22 @@ import Link from "next/link";
 import api from "../../../services/api";
 
 // Type definitions
-type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
+type QuestionType = 
+  | "MULTIPLE_CHOICE" 
+  | "TRUE_FALSE" 
+  | "SHORT_ANSWER" 
+  | "ESSAY" 
+  | "PARA_HEADINGS" 
+  | "COMPLETE_SENTENCE" 
+  | "NAME_MATCHING" 
+  | "FILL_BLANK" 
+  | "TRUE_FALSE_NOT_GIVEN" 
+  | "YES_NO_NOT_GIVEN" 
+  | "MAP" 
+  | "SPEAKING_TASK_1" 
+  | "SPEAKING_TASK_2" 
+  | "SPEAKING_TASK_3" 
+  | "SPEAKING_FOLLOW_UPS";
 
 interface Question {
   id: string;
@@ -15,6 +30,15 @@ interface Question {
   options?: string[];
   correctAnswer?: string | string[];
   points: number;
+  passage?: string;
+  paragraphs?: string[];
+  sentences?: string[];
+  matchingPairs?: Record<string, string>;
+  mapLabels?: string[];
+  questionImage?: string;
+  cueCard?: string;
+  speakingPrompts?: string[];
+  followUpQuestions?: string[];
 }
 
 interface TestForm {
@@ -47,19 +71,76 @@ export default function CreateTestPage() {
     difficulty: "MEDIUM"   // Default difficulty level
   });
   
+  // Get initial question type based on default module
+  const initialQuestionType = "MULTIPLE_CHOICE"; // Valid for all modules
+  
   // Current question being edited
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
     id: "",
     text: "",
-    type: "MULTIPLE_CHOICE",
+    type: initialQuestionType,
     options: ["", "", "", ""],
     correctAnswer: "",
-    points: 1
+    points: 1,
+    passage: "",
+    paragraphs: [],
+    sentences: [],
+    matchingPairs: {},
+    mapLabels: [],
+    questionImage: "",
+    cueCard: "",
+    speakingPrompts: [],
+    followUpQuestions: []
   });
   
   // Available module types based on backend schema
   const moduleTypes = ["LISTENING", "READING", "WRITING", "SPEAKING"];
   const difficultyLevels = ["EASY", "MEDIUM", "HARD", "VERY_HARD"];
+  
+  // Get question types based on selected module type
+  const getQuestionTypesByModule = (moduleType: string): QuestionType[] => {
+    switch(moduleType) {
+      case "READING":
+        return [
+          "MULTIPLE_CHOICE",
+          "TRUE_FALSE",
+          "SHORT_ANSWER",
+          "ESSAY",
+          "PARA_HEADINGS",
+          "COMPLETE_SENTENCE",
+          "NAME_MATCHING",
+          "FILL_BLANK",
+          "TRUE_FALSE_NOT_GIVEN",
+          "YES_NO_NOT_GIVEN",
+          "MAP"
+        ];
+      case "LISTENING":
+        return [
+          "MULTIPLE_CHOICE",
+          "TRUE_FALSE",
+          "SHORT_ANSWER", 
+          "FILL_BLANK",
+          "MAP"
+        ];
+      case "WRITING":
+        return [
+          "ESSAY"
+        ];
+      case "SPEAKING":
+        return [
+          "SPEAKING_TASK_1",
+          "SPEAKING_TASK_2",
+          "SPEAKING_TASK_3",
+          "SPEAKING_FOLLOW_UPS"
+        ];
+      default:
+        return [
+          "MULTIPLE_CHOICE",
+          "TRUE_FALSE",
+          "SHORT_ANSWER"
+        ];
+    }
+  };
   
   // Handle basic form field changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -73,6 +154,19 @@ export default function CreateTestPage() {
           ? parseInt(value, 10) 
           : value
     }));
+
+    // When module type changes, update the current question type to be valid for the new module
+    if (name === "moduleType") {
+      const validQuestionTypes = getQuestionTypesByModule(value);
+      
+      // If current question type is not valid for the new module, change it to the first valid type
+      if (!validQuestionTypes.includes(currentQuestion.type as QuestionType)) {
+        setCurrentQuestion(prev => ({
+          ...prev,
+          type: validQuestionTypes[0]
+        }));
+      }
+    }
   };
   
   // Handle question field changes
@@ -164,14 +258,27 @@ export default function CreateTestPage() {
       questions: [...prev.questions, questionToAdd]
     }));
     
-    // Reset current question
+    // Get the first valid question type for the current module
+    const validQuestionTypes = getQuestionTypesByModule(form.moduleType);
+    const defaultQuestionType = validQuestionTypes[0];
+    
+    // Reset current question with appropriate type for the current module
     setCurrentQuestion({
       id: "",
       text: "",
-      type: "MULTIPLE_CHOICE",
-      options: ["", "", "", ""],
+      type: defaultQuestionType,
+      options: defaultQuestionType === "MULTIPLE_CHOICE" ? ["", "", "", ""] : [],
       correctAnswer: "",
-      points: 1
+      points: 1,
+      passage: "",
+      paragraphs: [],
+      sentences: [],
+      matchingPairs: {},
+      mapLabels: [],
+      questionImage: "",
+      cueCard: "",
+      speakingPrompts: [],
+      followUpQuestions: []
     });
     
     setError("");
@@ -574,10 +681,31 @@ export default function CreateTestPage() {
                           onChange={handleQuestionChange}
                           className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                         >
-                          <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-                          <option value="TRUE_FALSE">True/False</option>
-                          <option value="SHORT_ANSWER">Short Answer</option>
-                          <option value="ESSAY">Essay</option>
+                          {getQuestionTypesByModule(form.moduleType).map((type) => {
+                            // Convert enum values to readable format
+                            let displayName = "";
+                            switch(type) {
+                              case "MULTIPLE_CHOICE": displayName = "Multiple Choice"; break;
+                              case "TRUE_FALSE": displayName = "True/False"; break;
+                              case "SHORT_ANSWER": displayName = "Short Answer"; break;
+                              case "ESSAY": displayName = "Essay"; break;
+                              case "PARA_HEADINGS": displayName = "Para Headings"; break;
+                              case "COMPLETE_SENTENCE": displayName = "Complete the Sentence"; break;
+                              case "NAME_MATCHING": displayName = "Name Matching"; break;
+                              case "FILL_BLANK": displayName = "Fill up the Blanks"; break;
+                              case "TRUE_FALSE_NOT_GIVEN": displayName = "True/False/Not Given"; break;
+                              case "YES_NO_NOT_GIVEN": displayName = "Yes/No/Not Given"; break;
+                              case "MAP": displayName = "Map"; break;
+                              case "SPEAKING_TASK_1": displayName = "Speaking - Introduction"; break;
+                              case "SPEAKING_TASK_2": displayName = "Speaking - Cue Card"; break;
+                              case "SPEAKING_TASK_3": displayName = "Speaking - Discussion"; break;
+                              case "SPEAKING_FOLLOW_UPS": displayName = "Speaking - Follow Ups"; break;
+                              default: displayName = type;
+                            }
+                            return (
+                              <option key={type} value={type}>{displayName}</option>
+                            );
+                          })}
                         </select>
                       </div>
                       
@@ -698,6 +826,354 @@ export default function CreateTestPage() {
                           onChange={handleQuestionChange}
                           className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
                           placeholder="Enter the expected answer"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Reading Passage for Yes/No/Not Given and True/False/Not Given */}
+                    {(currentQuestion.type === "YES_NO_NOT_GIVEN" || currentQuestion.type === "TRUE_FALSE_NOT_GIVEN" || 
+                      currentQuestion.type === "PARA_HEADINGS" || currentQuestion.type === "COMPLETE_SENTENCE") && (
+                      <div className="mt-2">
+                        <label htmlFor="passage" className="block text-sm font-medium text-gray-700 mb-1">Reading Passage</label>
+                        <textarea
+                          name="passage"
+                          id="passage"
+                          rows={5}
+                          value={currentQuestion.passage || ""}
+                          onChange={handleQuestionChange}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter the reading passage"
+                        />
+                        
+                        {/* Additional fields for Yes/No/Not Given */}
+                        {currentQuestion.type === "YES_NO_NOT_GIVEN" && (
+                          <div className="mt-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">Correct Answer</label>
+                            <div className="flex space-x-6">
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="answerYes"
+                                  name="correctAnswer"
+                                  value="yes"
+                                  checked={currentQuestion.correctAnswer === "yes"}
+                                  onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "yes" }))}
+                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                                />
+                                <label htmlFor="answerYes" className="ml-2 block text-sm text-gray-700 cursor-pointer">Yes</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="answerNo"
+                                  name="correctAnswer"
+                                  value="no"
+                                  checked={currentQuestion.correctAnswer === "no"}
+                                  onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "no" }))}
+                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                                />
+                                <label htmlFor="answerNo" className="ml-2 block text-sm text-gray-700 cursor-pointer">No</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="answerNotGiven"
+                                  name="correctAnswer"
+                                  value="not-given"
+                                  checked={currentQuestion.correctAnswer === "not-given"}
+                                  onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "not-given" }))}
+                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                                />
+                                <label htmlFor="answerNotGiven" className="ml-2 block text-sm text-gray-700 cursor-pointer">Not Given</label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Additional fields for True/False/Not Given */}
+                        {currentQuestion.type === "TRUE_FALSE_NOT_GIVEN" && (
+                          <div className="mt-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">Correct Answer</label>
+                            <div className="flex space-x-6">
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="answerTrue"
+                                  name="correctAnswer"
+                                  value="true"
+                                  checked={currentQuestion.correctAnswer === "true"}
+                                  onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "true" }))}
+                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                                />
+                                <label htmlFor="answerTrue" className="ml-2 block text-sm text-gray-700 cursor-pointer">True</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="answerFalse"
+                                  name="correctAnswer"
+                                  value="false"
+                                  checked={currentQuestion.correctAnswer === "false"}
+                                  onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "false" }))}
+                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                                />
+                                <label htmlFor="answerFalse" className="ml-2 block text-sm text-gray-700 cursor-pointer">False</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="answerTFNotGiven"
+                                  name="correctAnswer"
+                                  value="not-given"
+                                  checked={currentQuestion.correctAnswer === "not-given"}
+                                  onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "not-given" }))}
+                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                                />
+                                <label htmlFor="answerTFNotGiven" className="ml-2 block text-sm text-gray-700 cursor-pointer">Not Given</label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Para Headings */}
+                    {currentQuestion.type === "PARA_HEADINGS" && (
+                      <div className="mt-2">
+                        <label htmlFor="paragraphs" className="block text-sm font-medium text-gray-700 mb-1">Paragraphs</label>
+                        <textarea
+                          name="paragraphs"
+                          id="paragraphs"
+                          rows={4}
+                          value={Array.isArray(currentQuestion.paragraphs) ? currentQuestion.paragraphs.join('\n') : ''}
+                          onChange={(e) => {
+                            const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                            setCurrentQuestion(prev => ({ ...prev, paragraphs }));
+                          }}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter each paragraph on a new line"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Enter each paragraph on a new line</p>
+                        
+                        <div className="mt-3">
+                          <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700 mb-1">Correct Heading</label>
+                          <input
+                            type="text"
+                            name="correctAnswer"
+                            id="correctAnswer"
+                            value={currentQuestion.correctAnswer as string || ""}
+                            onChange={handleQuestionChange}
+                            className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Enter the correct heading"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Complete the Sentence */}
+                    {currentQuestion.type === "COMPLETE_SENTENCE" && (
+                      <div className="mt-2">
+                        <label htmlFor="sentences" className="block text-sm font-medium text-gray-700 mb-1">Incomplete Sentences</label>
+                        <textarea
+                          name="sentences"
+                          id="sentences"
+                          rows={4}
+                          value={Array.isArray(currentQuestion.sentences) ? currentQuestion.sentences.join('\n') : ''}
+                          onChange={(e) => {
+                            const sentences = e.target.value.split('\n').filter(s => s.trim() !== '');
+                            setCurrentQuestion(prev => ({ ...prev, sentences }));
+                          }}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter incomplete sentences with '...' for blanks"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Use "..." to indicate where the sentence needs to be completed</p>
+                        
+                        <div className="mt-3">
+                          <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                          <input
+                            type="text"
+                            name="correctAnswer"
+                            id="correctAnswer"
+                            value={currentQuestion.correctAnswer as string || ""}
+                            onChange={handleQuestionChange}
+                            className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Enter the correct completion"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Name Matching */}
+                    {currentQuestion.type === "NAME_MATCHING" && (
+                      <div className="mt-2">
+                        <label htmlFor="matchingPairs" className="block text-sm font-medium text-gray-700 mb-1">Matching Pairs</label>
+                        <textarea
+                          name="matchingPairs"
+                          id="matchingPairs"
+                          rows={4}
+                          placeholder="Format: Name: Match (one per line)"
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          value={currentQuestion.matchingPairs ? Object.entries(currentQuestion.matchingPairs).map(([key, value]) => `${key}: ${value}`).join('\n') : ''}
+                          onChange={(e) => {
+                            const pairs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                            const matchingPairs: Record<string, string> = {};
+                            pairs.forEach(pair => {
+                              const [key, value] = pair.split(':').map(p => p.trim());
+                              if (key && value) matchingPairs[key] = value;
+                            });
+                            setCurrentQuestion(prev => ({ ...prev, matchingPairs }));
+                          }}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Enter each pair as "Name: Match" on a new line</p>
+                        
+                        <div className="mt-3">
+                          <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                          <input
+                            type="text"
+                            name="correctAnswer"
+                            id="correctAnswer"
+                            value={currentQuestion.correctAnswer as string || ""}
+                            onChange={handleQuestionChange}
+                            className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Enter the correct name-match pair"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Fill in the Blank */}
+                    {currentQuestion.type === "FILL_BLANK" && (
+                      <div className="mt-2">
+                        <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                        <input
+                          type="text"
+                          name="correctAnswer"
+                          id="correctAnswer"
+                          value={currentQuestion.correctAnswer as string || ""}
+                          onChange={handleQuestionChange}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter the correct answer"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">For multiple blanks, separate answers with commas</p>
+                      </div>
+                    )}
+                    
+                    {/* Map */}
+                    {currentQuestion.type === "MAP" && (
+                      <div className="mt-2">
+                        <label htmlFor="questionImage" className="block text-sm font-medium text-gray-700 mb-1">Map Image URL</label>
+                        <input
+                          type="text"
+                          name="questionImage"
+                          id="questionImage"
+                          value={currentQuestion.questionImage || ""}
+                          onChange={handleQuestionChange}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter the URL for the map image"
+                        />
+                        
+                        <div className="mt-3">
+                          <label htmlFor="mapLabels" className="block text-sm font-medium text-gray-700 mb-1">Map Labels</label>
+                          <textarea
+                            name="mapLabels"
+                            id="mapLabels"
+                            rows={4}
+                            value={Array.isArray(currentQuestion.mapLabels) ? currentQuestion.mapLabels.join('\n') : ''}
+                            onChange={(e) => {
+                              const labels = e.target.value.split('\n').filter(l => l.trim() !== '');
+                              setCurrentQuestion(prev => ({ ...prev, mapLabels: labels }));
+                            }}
+                            className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Enter each map label on a new line"
+                          />
+                        </div>
+                        
+                        <div className="mt-3">
+                          <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                          <input
+                            type="text"
+                            name="correctAnswer"
+                            id="correctAnswer"
+                            value={currentQuestion.correctAnswer as string || ""}
+                            onChange={handleQuestionChange}
+                            className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Enter the correct label placement"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Speaking Tasks */}
+                    {["SPEAKING_TASK_1", "SPEAKING_TASK_3"].includes(currentQuestion.type) && (
+                      <div className="mt-2">
+                        <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700 mb-1">Speaking Prompts</label>
+                        <textarea
+                          name="speakingPrompts"
+                          id="speakingPrompts"
+                          rows={4}
+                          value={Array.isArray(currentQuestion.speakingPrompts) ? currentQuestion.speakingPrompts.join('\n') : ''}
+                          onChange={(e) => {
+                            const prompts = e.target.value.split('\n').filter(p => p.trim() !== '');
+                            setCurrentQuestion(prev => ({ ...prev, speakingPrompts: prompts }));
+                          }}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter each prompt on a new line"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          {currentQuestion.type === "SPEAKING_TASK_1" 
+                            ? "These are introductory questions like 'Tell me about yourself'" 
+                            : "These are follow-up questions to the cue card topic"}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Speaking - Cue Card */}
+                    {currentQuestion.type === "SPEAKING_TASK_2" && (
+                      <div className="mt-2">
+                        <label htmlFor="cueCard" className="block text-sm font-medium text-gray-700 mb-1">Cue Card</label>
+                        <textarea
+                          name="cueCard"
+                          id="cueCard"
+                          rows={4}
+                          value={currentQuestion.cueCard || ""}
+                          onChange={handleQuestionChange}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter the cue card text"
+                        />
+                        
+                        <div className="mt-3">
+                          <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700 mb-1">Additional Prompts (Optional)</label>
+                          <textarea
+                            name="speakingPrompts"
+                            id="speakingPrompts"
+                            rows={3}
+                            value={Array.isArray(currentQuestion.speakingPrompts) ? currentQuestion.speakingPrompts.join('\n') : ''}
+                            onChange={(e) => {
+                              const prompts = e.target.value.split('\n').filter(p => p.trim() !== '');
+                              setCurrentQuestion(prev => ({ ...prev, speakingPrompts: prompts }));
+                            }}
+                            className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                            placeholder="Enter additional prompts (optional)"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Speaking - Follow Ups */}
+                    {currentQuestion.type === "SPEAKING_FOLLOW_UPS" && (
+                      <div className="mt-2">
+                        <label htmlFor="followUpQuestions" className="block text-sm font-medium text-gray-700 mb-1">Follow-up Questions</label>
+                        <textarea
+                          name="followUpQuestions"
+                          id="followUpQuestions"
+                          rows={4}
+                          value={Array.isArray(currentQuestion.followUpQuestions) ? currentQuestion.followUpQuestions.join('\n') : ''}
+                          onChange={(e) => {
+                            const questions = e.target.value.split('\n').filter(q => q.trim() !== '');
+                            setCurrentQuestion(prev => ({ ...prev, followUpQuestions: questions }));
+                          }}
+                          className="block w-full px-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter each follow-up question on a new line"
                         />
                       </div>
                     )}
@@ -926,7 +1402,7 @@ export default function CreateTestPage() {
                       ) : (
                         <>
                           <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8.586 10l4.293 4.293a1 1 0 010 1.414L10 11.414l4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
                           Create Test
                         </>

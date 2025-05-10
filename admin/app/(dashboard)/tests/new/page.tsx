@@ -197,13 +197,24 @@ export default function CreateTestPage() {
                   required
                 >
                   <option value="READING">Reading</option>
-                  <option value="WRITING">Writing</option>
                   <option value="LISTENING">Listening</option>
                   <option value="SPEAKING">Speaking</option>
+                  <option value="WRITING">Writing</option>
                   <option value="IELTS_GENERAL">IELTS General</option>
                   <option value="IELTS_ACADEMIC">IELTS Academic</option>
                   <option value="COMBINED">Combined</option>
                 </select>
+              </div>
+              <div className="mt-2">
+                <p className="text-xs text-gray-500">
+                  {formData.moduleType === "READING" && "Reading tests include MCQ, Para headings, Complete the sentence, Name matching, Fill up the blanks, True/False/Not given or Yes/No/Not given questions."}
+                  {formData.moduleType === "LISTENING" && "Listening tests include MCQ, Blanks, True/False, and Map questions."}
+                  {formData.moduleType === "SPEAKING" && "Speaking tests include Introduction, Cue Card, and Follow Ups questions."}
+                  {formData.moduleType === "WRITING" && "Writing tests typically include essay writing tasks."}
+                  {formData.moduleType === "IELTS_GENERAL" && "IELTS General includes a combination of Reading, Writing, Listening, and Speaking modules."}
+                  {formData.moduleType === "IELTS_ACADEMIC" && "IELTS Academic includes a combination of Reading, Writing, Listening, and Speaking modules."}
+                  {formData.moduleType === "COMBINED" && "Combined tests include a mix of different question types from various modules."}
+                </p>
               </div>
             </div>
             

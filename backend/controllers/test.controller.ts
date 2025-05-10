@@ -360,28 +360,23 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       marks,
       options,
       correctAnswer,
-      // IELTS specific fields
+      // Fields for various question types
       passage,
+      paragraphs,
+      sentences,
+      matchingPairs,
+      mapLabels,
       cueCard,
       speakingPrompts,
+      followUpQuestions,
       bandDescriptors,
       sampleAnswer
     } = req.body;
 
     console.log("Received question creation request for sectionId:", sectionId);
     console.log("Question data:", JSON.stringify(req.body, null, 2));
-    console.log("Request params:", JSON.stringify(req.params, null, 2));
-    console.log("Request path:", req.path);
 
-    // TEMPORARILY COMMENTED OUT FOR TESTING
-    /*
-    // Only allow admins and content creators to create questions
-    if (!req.user || !['ADMIN', 'SUPER_ADMIN', 'STUDY_MATERIAL_ADMIN'].includes(req.user.role)) {
-      return sendErrorResponse(res, 'Unauthorized', 403);
-    }
-    */
-
-    // Check if section exists
+    // Check if section exists and get module type from parent test
     const section = await prisma.section.findUnique({
       where: { id: sectionId },
       include: {
@@ -394,43 +389,36 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       return sendErrorResponse(res, `Section not found with ID: ${sectionId}`, 404);
     }
     
+    // Get the module type to validate question type
+    const moduleType = section.test.moduleType;
+    
+    // Validate if the question type is appropriate for the module type
+    if (!isQuestionTypeValidForModule(questionType, moduleType)) {
+      return sendErrorResponse(res, `Question type ${questionType} is not valid for module ${moduleType}`, 400);
+    }
+    
     // Validate required fields based on question type
     if (!validateQuestionFields(questionType, req.body)) {
       return sendErrorResponse(res, 'Missing required fields for this question type', 400);
     }
 
-    // Parse options if it's a string (it might come as JSON string from frontend)
-    let parsedOptions = options;
-    if (typeof options === 'string') {
-      try {
-        // The frontend is already sending a stringified JSON array, so we need to parse it
-        parsedOptions = JSON.parse(options);
-        console.log("Successfully parsed options:", parsedOptions);
-      } catch (error) {
-        console.error("Error parsing options:", error);
-        // If parsing fails, use the string as is
+    // Parse JSON strings if needed
+    const parseJsonField = (field: any) => {
+      if (typeof field === 'string') {
+        try {
+          return JSON.parse(field);
+        } catch (error) {
+          console.error(`Error parsing field:`, error);
+          return field;
+        }
       }
-    }
+      return field;
+    };
     
-    // Parse speakingPrompts if needed
-    let parsedSpeakingPrompts = speakingPrompts;
-    if (typeof speakingPrompts === 'string') {
-      try {
-        parsedSpeakingPrompts = JSON.parse(speakingPrompts);
-      } catch (error) {
-        console.error("Error parsing speakingPrompts:", error);
-      }
-    }
-    
-    // Parse bandDescriptors if needed
-    let parsedBandDescriptors = bandDescriptors;
-    if (typeof bandDescriptors === 'string') {
-      try {
-        parsedBandDescriptors = JSON.parse(bandDescriptors);
-      } catch (error) {
-        console.error("Error parsing bandDescriptors:", error);
-      }
-    }
+    // Parse various fields that might be JSON strings
+    const parsedOptions = parseJsonField(options);
+    const parsedSpeakingPrompts = parseJsonField(speakingPrompts);
+    const parsedBandDescriptors = parseJsonField(bandDescriptors);
 
     const question = await prisma.question.create({
       data: {
@@ -440,15 +428,27 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
         questionImage,
         audioFile,
         additionalInfo,
-        order,
+        order: order || (await prisma.question.count({ where: { sectionId } })) + 1,
         marks: marks || 1.0,
-        // Make sure we stringify the options for storage in the JSON field
+        // Stringify parsed JSON data for storage
         options: parsedOptions ? Array.isArray(parsedOptions) ? JSON.stringify(parsedOptions) : parsedOptions : undefined,
         correctAnswer,
-        // IELTS specific fields
+        
+        // Reading specific fields
         passage,
+        paragraphs,
+        sentences,
+        matchingPairs,
+        
+        // Listening specific fields
+        mapLabels,
+        
+        // Speaking specific fields
         cueCard,
         speakingPrompts: parsedSpeakingPrompts ? JSON.stringify(parsedSpeakingPrompts) : undefined,
+        followUpQuestions,
+        
+        // Assessment fields
         bandDescriptors: parsedBandDescriptors ? JSON.stringify(parsedBandDescriptors) : undefined,
         sampleAnswer
       }
@@ -476,30 +476,101 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
   }
 };
 
+// Helper function to check if question type is valid for the module type
+const isQuestionTypeValidForModule = (questionType: string, moduleType: string): boolean => {
+  const readingQuestionTypes = [
+    'MULTIPLE_CHOICE', 
+    'PARA_HEADINGS', 
+    'COMPLETE_SENTENCE', 
+    'NAME_MATCHING', 
+    'FILL_BLANK', 
+    'TRUE_FALSE_NOT_GIVEN', 
+    'YES_NO_NOT_GIVEN'
+  ];
+  
+  const listeningQuestionTypes = [
+    'MULTIPLE_CHOICE',
+    'FILL_BLANK',
+    'TRUE_FALSE',
+    'MAP'
+  ];
+  
+  const speakingQuestionTypes = [
+    'SPEAKING_TASK_1',
+    'SPEAKING_TASK_2',
+    'SPEAKING_TASK_3',
+    'SPEAKING_FOLLOW_UPS'
+  ];
+  
+  switch (moduleType) {
+    case 'READING':
+      return readingQuestionTypes.includes(questionType);
+    case 'LISTENING':
+      return listeningQuestionTypes.includes(questionType);
+    case 'SPEAKING':
+      return speakingQuestionTypes.includes(questionType);
+    case 'IELTS_GENERAL':
+    case 'IELTS_ACADEMIC':
+    case 'COMBINED':
+      // All question types allowed for combined tests
+      return true;
+    default:
+      return false;
+  }
+};
+
 // Helper function to validate question fields based on question type
 const validateQuestionFields = (questionType: string, questionData: any): boolean => {
+  // Common validation - all questions must have question text
+  if (!questionData.questionText) {
+    return false;
+  }
+
   switch (questionType) {
+    // Reading module question types
     case 'MULTIPLE_CHOICE':
-    case 'TRUE_FALSE':
       return !!questionData.options && !!questionData.correctAnswer;
     
+    case 'PARA_HEADINGS':
+      return !!questionData.paragraphs;
+    
+    case 'COMPLETE_SENTENCE':
+      return !!questionData.sentences && !!questionData.correctAnswer;
+    
+    case 'NAME_MATCHING':
+      return !!questionData.matchingPairs;
+    
     case 'FILL_BLANK':
+      return !!questionData.sentences && !!questionData.correctAnswer;
+    
+    case 'TRUE_FALSE_NOT_GIVEN':
+    case 'YES_NO_NOT_GIVEN':
+      return !!questionData.passage && !!questionData.correctAnswer;
+    
+    // Listening module question types
+    case 'TRUE_FALSE':
+      return !!questionData.correctAnswer;
+    
+    case 'MAP':
+      return !!questionData.questionImage && !!questionData.mapLabels;
+    
+    // Speaking module question types
+    case 'SPEAKING_TASK_1':
+      return !!questionData.speakingPrompts;
+    
+    case 'SPEAKING_TASK_2':
+      return !!questionData.cueCard;
+    
+    case 'SPEAKING_TASK_3':
+    case 'SPEAKING_FOLLOW_UPS':
+      return !!questionData.followUpQuestions;
+    
+    // Other question types
     case 'SHORT_ANSWER':
-    case 'GAP_FILLING':
-    case 'NOTE_COMPLETION':
-    case 'TABLE_COMPLETION':
-    case 'SENTENCE_COMPLETION':
       return !!questionData.correctAnswer;
     
     case 'ESSAY':
-    case 'WRITING_TASK_1':
-    case 'WRITING_TASK_2':
-      return !!questionData.questionText && !!questionData.bandDescriptors;
-    
-    case 'DIAGRAM_LABELLING':
-    case 'MAP_LABELLING':
-    case 'PROCESS_DIAGRAM':
-      return !!questionData.questionImage && !!questionData.correctAnswer;
+      return true; // No special validation needed
     
     case 'MATCHING':
     case 'HEADING_MATCHING':
@@ -507,14 +578,16 @@ const validateQuestionFields = (questionType: string, questionData: any): boolea
     case 'FEATURES_MATCHING':
       return !!questionData.options;
     
-    case 'YES_NO_NOT_GIVEN':
-    case 'TRUE_FALSE_NOT_GIVEN':
-      return !!questionData.questionText && !!questionData.correctAnswer;
+    case 'GAP_FILLING':
+    case 'NOTE_COMPLETION':
+    case 'TABLE_COMPLETION':
+    case 'SENTENCE_COMPLETION':
+      return !!questionData.correctAnswer;
     
-    case 'SPEAKING_TASK_1':
-    case 'SPEAKING_TASK_2':
-    case 'SPEAKING_TASK_3':
-      return !!questionData.speakingPrompts && !!questionData.bandDescriptors;
+    case 'DIAGRAM_LABELLING':
+    case 'MAP_LABELLING':
+    case 'PROCESS_DIAGRAM':
+      return !!questionData.questionImage && !!questionData.correctAnswer;
     
     default:
       return true; // Allow other question types without specific validation

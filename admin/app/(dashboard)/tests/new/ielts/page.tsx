@@ -41,6 +41,11 @@ interface QuestionFormData {
   speakingPrompts?: string[] | string;
   bandDescriptors?: Record<string, string[]> | string;
   sampleAnswer?: string;
+  paragraphs?: string[] | string;    // For para headings questions
+  sentences?: string[] | string;     // For complete the sentence questions
+  mapLabels?: string[] | string;     // For map labels
+  matchingPairs?: Record<string, string> | string;  // For name matching
+  followUpQuestions?: string[] | string;  // For speaking follow-ups
 }
 
 export default function CreateIELTSTestPage() {
@@ -193,9 +198,23 @@ export default function CreateIELTSTestPage() {
   
   // Add a new question to the current section
   const addQuestion = () => {
+    // Set default question type based on the section
+    let defaultQuestionType = "MULTIPLE_CHOICE";
+    const sectionTitle = formData.sections[currentSectionIndex].title;
+    
+    if (sectionTitle.includes("Listening")) {
+      defaultQuestionType = "FILL_BLANK";
+    } else if (sectionTitle.includes("Reading")) {
+      defaultQuestionType = "MULTIPLE_CHOICE";
+    } else if (sectionTitle.includes("Writing")) {
+      defaultQuestionType = "ESSAY";
+    } else if (sectionTitle.includes("Speaking")) {
+      defaultQuestionType = "SPEAKING_TASK_1";
+    }
+    
     const newQuestion: QuestionFormData = {
       questionText: "",
-      questionType: "MULTIPLE_CHOICE",
+      questionType: defaultQuestionType,
       order: formData.sections[currentSectionIndex].questions.length + 1,
       marks: 1.0,
       options: []
@@ -283,6 +302,51 @@ export default function CreateIELTSTestPage() {
     
     if (!question) return <div>No question selected</div>;
     
+    // Helper function to get recommended question types
+    const getRecommendedQuestionTypes = (sectionTitle: string) => {
+      if (sectionTitle.includes("Listening")) {
+        return (
+          <div className="mt-2 p-3 bg-blue-50 rounded-md">
+            <p className="font-medium text-sm text-blue-800">Recommended question types for Listening:</p>
+            <ul className="list-disc pl-5 mt-1 text-sm text-blue-600">
+              <li>Fill in the Blank</li>
+              <li>Multiple Choice</li>
+              <li>True/False</li>
+              <li>Map</li>
+            </ul>
+          </div>
+        );
+      } else if (sectionTitle.includes("Reading")) {
+        return (
+          <div className="mt-2 p-3 bg-blue-50 rounded-md">
+            <p className="font-medium text-sm text-blue-800">Recommended question types for Reading:</p>
+            <ul className="list-disc pl-5 mt-1 text-sm text-blue-600">
+              <li>Para Headings</li>
+              <li>Complete the Sentence</li>
+              <li>Name Matching</li>
+              <li>Fill up the Blanks</li>
+              <li>True/False/Not Given</li>
+              <li>Yes/No/Not Given</li>
+              <li>Multiple Choice</li>
+            </ul>
+          </div>
+        );
+      } else if (sectionTitle.includes("Speaking")) {
+        return (
+          <div className="mt-2 p-3 bg-blue-50 rounded-md">
+            <p className="font-medium text-sm text-blue-800">Recommended question types for Speaking:</p>
+            <ul className="list-disc pl-5 mt-1 text-sm text-blue-600">
+              <li>Speaking Task 1 (Introduction)</li>
+              <li>Speaking Task 2 (Cue Card)</li>
+              <li>Speaking Task 3 (Discussion)</li>
+              <li>Speaking Follow Ups</li>
+            </ul>
+          </div>
+        );
+      } 
+      return null;
+    };
+    
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -318,10 +382,16 @@ export default function CreateIELTSTestPage() {
             <option value="GAP_FILLING">Gap Filling</option>
             <option value="YES_NO_NOT_GIVEN">Yes/No/Not Given</option>
             <option value="TRUE_FALSE_NOT_GIVEN">True/False/Not Given</option>
+            <option value="PARA_HEADINGS">Para Headings</option>
+            <option value="COMPLETE_SENTENCE">Complete the Sentence</option>
+            <option value="NAME_MATCHING">Name Matching</option>
+            <option value="MAP">Map</option>
             <option value="SPEAKING_TASK_1">Speaking Task 1 (Introduction)</option>
             <option value="SPEAKING_TASK_2">Speaking Task 2 (Cue Card)</option>
             <option value="SPEAKING_TASK_3">Speaking Task 3 (Discussion)</option>
+            <option value="SPEAKING_FOLLOW_UPS">Speaking Follow Ups</option>
           </select>
+          {getRecommendedQuestionTypes(section.title)}
         </div>
         
         <div>
@@ -356,7 +426,7 @@ export default function CreateIELTSTestPage() {
         </div>
         
         {/* Show additional fields based on question type */}
-        {['MULTIPLE_CHOICE', 'TRUE_FALSE', 'MATCHING'].includes(question.questionType) && (
+        {['MULTIPLE_CHOICE', 'TRUE_FALSE', 'MATCHING', 'NAME_MATCHING'].includes(question.questionType) && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Options <span className="text-red-500">*</span>
@@ -377,7 +447,7 @@ export default function CreateIELTSTestPage() {
           </div>
         )}
         
-        {['MULTIPLE_CHOICE', 'TRUE_FALSE', 'FILL_BLANK', 'SHORT_ANSWER', 'GAP_FILLING'].includes(question.questionType) && (
+        {['MULTIPLE_CHOICE', 'TRUE_FALSE', 'FILL_BLANK', 'SHORT_ANSWER', 'GAP_FILLING', 'COMPLETE_SENTENCE', 'NAME_MATCHING', 'PARA_HEADINGS'].includes(question.questionType) && (
           <div>
             <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700 mb-1">
               Correct Answer <span className="text-red-500">*</span>
@@ -395,7 +465,7 @@ export default function CreateIELTSTestPage() {
         )}
         
         {/* Additional fields for reading passages */}
-        {['YES_NO_NOT_GIVEN', 'TRUE_FALSE_NOT_GIVEN'].includes(question.questionType) && (
+        {['YES_NO_NOT_GIVEN', 'TRUE_FALSE_NOT_GIVEN', 'PARA_HEADINGS', 'COMPLETE_SENTENCE'].includes(question.questionType) && (
           <div>
             <label htmlFor="passage" className="block text-sm font-medium text-gray-700 mb-1">
               Reading Passage
@@ -412,8 +482,162 @@ export default function CreateIELTSTestPage() {
           </div>
         )}
         
+        {/* Map specific fields */}
+        {question.questionType === 'MAP' && (
+          <>
+            <div>
+              <label htmlFor="questionImage" className="block text-sm font-medium text-gray-700 mb-1">
+                Map Image URL <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="questionImage"
+                name="questionImage"
+                value={question.questionImage || ''}
+                onChange={e => handleQuestionChange(e, currentSectionIndex, currentQuestionIndex)}
+                className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+                placeholder="Enter the URL for the map image"
+              />
+            </div>
+            <div>
+              <label htmlFor="mapLabels" className="block text-sm font-medium text-gray-700 mb-1">
+                Map Labels <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="mapLabels"
+                name="mapLabels"
+                value={Array.isArray(question.mapLabels) ? question.mapLabels.join('\n') : question.mapLabels || ''}
+                onChange={e => {
+                  const labels = e.target.value.split('\n').filter(label => label.trim() !== '');
+                  handleQuestionChange(
+                    { target: { name: 'mapLabels', value: labels } } as any, 
+                    currentSectionIndex, 
+                    currentQuestionIndex
+                  );
+                }}
+                rows={4}
+                className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+                placeholder="Enter each map label on a new line"
+              />
+            </div>
+          </>
+        )}
+        
+        {/* Para Headings specific fields */}
+        {question.questionType === 'PARA_HEADINGS' && (
+          <div>
+            <label htmlFor="paragraphs" className="block text-sm font-medium text-gray-700 mb-1">
+              Paragraphs <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="paragraphs"
+              name="paragraphs"
+              value={Array.isArray(question.paragraphs) ? question.paragraphs.join('\n\n') : question.paragraphs || ''}
+              onChange={e => {
+                const paragraphs = e.target.value.split('\n\n').filter(p => p.trim() !== '');
+                handleQuestionChange(
+                  { target: { name: 'paragraphs', value: paragraphs } } as any, 
+                  currentSectionIndex, 
+                  currentQuestionIndex
+                );
+              }}
+              rows={6}
+              className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+              placeholder="Enter each paragraph separated by two new lines"
+            />
+          </div>
+        )}
+
+        {/* Complete Sentence specific fields */}
+        {question.questionType === 'COMPLETE_SENTENCE' && (
+          <div>
+            <label htmlFor="sentences" className="block text-sm font-medium text-gray-700 mb-1">
+              Incomplete Sentences <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="sentences"
+              name="sentences"
+              value={Array.isArray(question.sentences) ? question.sentences.join('\n') : question.sentences || ''}
+              onChange={e => {
+                const sentences = e.target.value.split('\n').filter(s => s.trim() !== '');
+                handleQuestionChange(
+                  { target: { name: 'sentences', value: sentences } } as any, 
+                  currentSectionIndex, 
+                  currentQuestionIndex
+                );
+              }}
+              rows={4}
+              className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+              placeholder="Enter each incomplete sentence on a new line"
+            />
+            <p className="mt-1 text-sm text-gray-500">Use '...' to indicate where the sentence needs to be completed.</p>
+          </div>
+        )}
+
+        {/* Name Matching specific fields */}
+        {question.questionType === 'NAME_MATCHING' && (
+          <div>
+            <label htmlFor="matchingPairs" className="block text-sm font-medium text-gray-700 mb-1">
+              Matching Pairs <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="matchingPairs"
+              name="matchingPairs"
+              value={typeof question.matchingPairs === 'object' ? 
+                Object.entries(question.matchingPairs as Record<string, string>)
+                  .map(([name, match]) => `${name}: ${match}`)
+                  .join('\n') : 
+                question.matchingPairs || ''}
+              onChange={e => {
+                const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                const pairs: Record<string, string> = {};
+                lines.forEach(line => {
+                  const [name, match] = line.split(':').map(part => part.trim());
+                  if (name && match) {
+                    pairs[name] = match;
+                  }
+                });
+                handleQuestionChange(
+                  { target: { name: 'matchingPairs', value: pairs } } as any, 
+                  currentSectionIndex, 
+                  currentQuestionIndex
+                );
+              }}
+              rows={4}
+              className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+              placeholder="Enter each matching pair as 'Name: Match' on a new line"
+            />
+            <p className="mt-1 text-sm text-gray-500">Format: Name: Match (one per line)</p>
+          </div>
+        )}
+
+        {/* Speaking Follow Ups specific fields */}
+        {question.questionType === 'SPEAKING_FOLLOW_UPS' && (
+          <div>
+            <label htmlFor="followUpQuestions" className="block text-sm font-medium text-gray-700 mb-1">
+              Follow-up Questions <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="followUpQuestions"
+              name="followUpQuestions"
+              value={Array.isArray(question.followUpQuestions) ? question.followUpQuestions.join('\n') : question.followUpQuestions || ''}
+              onChange={e => {
+                const questions = e.target.value.split('\n').filter(q => q.trim() !== '');
+                handleQuestionChange(
+                  { target: { name: 'followUpQuestions', value: questions } } as any, 
+                  currentSectionIndex, 
+                  currentQuestionIndex
+                );
+              }}
+              rows={4}
+              className="block w-full px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:text-sm"
+              placeholder="Enter each follow-up question on a new line"
+            />
+          </div>
+        )}
+        
         {/* Fields for speaking tasks */}
-        {['SPEAKING_TASK_1', 'SPEAKING_TASK_2', 'SPEAKING_TASK_3'].includes(question.questionType) && (
+        {['SPEAKING_TASK_1', 'SPEAKING_TASK_2', 'SPEAKING_TASK_3', 'SPEAKING_FOLLOW_UPS'].includes(question.questionType) && (
           <>
             <div>
               <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700 mb-1">

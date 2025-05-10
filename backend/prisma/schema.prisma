@@ -97,10 +97,21 @@ model Question {
   options           Json?     // For MCQ, matching, etc.
   correctAnswer     String?   // For text input, essay questions will be null (manual review)
   
-  // IELTS specific fields
+  // Reading specific fields
   passage           String?   // For reading passages
+  paragraphs        String?   // For paragraph headings
+  sentences         String?   // For complete the sentence and fill in the blanks
+  matchingPairs     String?   // For name matching
+  
+  // Listening specific fields
+  mapLabels         String?   // For map questions
+  
+  // Speaking specific fields
   cueCard           String?   // For speaking task 2
   speakingPrompts   Json?     // For speaking tasks
+  followUpQuestions String?   // For speaking follow-ups
+  
+  // Assessment fields
   bandDescriptors   Json?     // Assessment criteria for writing/speaking
   sampleAnswer      String?   // Sample answer for writing/speaking tasks
   
@@ -248,9 +259,26 @@ enum ModuleType {
 
 // New enums for enhanced test functionality
 enum QuestionType {
+  // Reading Question Types
   MULTIPLE_CHOICE
-  TRUE_FALSE
+  PARA_HEADINGS
+  COMPLETE_SENTENCE
+  NAME_MATCHING
   FILL_BLANK
+  TRUE_FALSE_NOT_GIVEN
+  YES_NO_NOT_GIVEN
+  
+  // Listening Question Types
+  TRUE_FALSE
+  MAP
+  
+  // Speaking Question Types
+  SPEAKING_TASK_1      // Introduction
+  SPEAKING_TASK_2      // Cue Card
+  SPEAKING_TASK_3      // Discussion
+  SPEAKING_FOLLOW_UPS  // Follow Up Questions
+  
+  // Other Question Types
   SHORT_ANSWER
   ESSAY
   MATCHING
@@ -263,14 +291,9 @@ enum QuestionType {
   SENTENCE_COMPLETION
   MAP_LABELLING
   PROCESS_DIAGRAM
-  YES_NO_NOT_GIVEN
-  TRUE_FALSE_NOT_GIVEN
   HEADING_MATCHING
   INFORMATION_MATCHING
   FEATURES_MATCHING
-  SPEAKING_TASK_1 // Personal introduction and interview
-  SPEAKING_TASK_2 // Individual long turn (cue card)
-  SPEAKING_TASK_3 // Two-way discussion
 }
 
 enum AttemptStatus {
