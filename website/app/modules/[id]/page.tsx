@@ -222,7 +222,7 @@ export default function ModuleDetailPage() {
                 <p className="mt-1 text-gray-600">{module.description}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link 
-                    href={`/practice-tests/${moduleId}`}
+                    href={`/practice/${moduleId}`}
                     className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white ${colors.button}`}
                   >
                     Take a Practice Test
