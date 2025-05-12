@@ -161,7 +161,7 @@ export default function MiniPracticeTestsPage() {
                   <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
-                  <Link href="/practice-tests" className="ml-1 text-sm font-medium text-gray-500 hover:text-gray-700 md:ml-2">
+                  <Link href="/practice" className="ml-1 text-sm font-medium text-gray-500 hover:text-gray-700 md:ml-2">
                     Practice Tests
                   </Link>
                 </div>
@@ -188,7 +188,7 @@ export default function MiniPracticeTestsPage() {
               <div className="mt-4 md:mt-0">
                 <span className="inline-flex rounded-md shadow-sm">
                   <Link
-                    href="/practice-tests"
+                    href="/practice"
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >
                     <svg className="mr-2 -ml-1 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,7 +239,7 @@ export default function MiniPracticeTestsPage() {
                     
                     <div className="mt-5">
                       <Link
-                        href={`/practice-tests/mini/${test.id}`}
+                        href={`/practice/mini/${test.id}`}
                         className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                       >
                         Start Test
@@ -289,7 +289,7 @@ export default function MiniPracticeTestsPage() {
                     
                     <div className="mt-5">
                       <Link
-                        href={`/practice-tests/mini/${test.id}`}
+                        href={`/practice/mini/${test.id}`}
                         className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
                       >
                         Start Test
@@ -339,7 +339,7 @@ export default function MiniPracticeTestsPage() {
                     
                     <div className="mt-5">
                       <Link
-                        href={`/practice-tests/mini/${test.id}`}
+                        href={`/practice/mini/${test.id}`}
                         className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
                       >
                         Start Test
@@ -389,7 +389,7 @@ export default function MiniPracticeTestsPage() {
                     
                     <div className="mt-5">
                       <Link
-                        href={`/practice-tests/mini/${test.id}`}
+                        href={`/practice/mini/${test.id}`}
                         className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700"
                       >
                         Start Test
@@ -404,7 +404,7 @@ export default function MiniPracticeTestsPage() {
           <div className="mt-10 text-center">
             <p className="text-gray-600">Ready for a complete test experience?</p>
             <p className="mt-1">
-              <Link href="/practice-tests/full" className="text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/practice/full" className="text-blue-600 hover:text-blue-800 font-medium">
                 Try our full-length practice tests →
               </Link>
             </p>

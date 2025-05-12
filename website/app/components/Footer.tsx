@@ -55,7 +55,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/practice-tests" className="text-base text-gray-500 hover:text-gray-900">
+                <Link href="/practice" className="text-base text-gray-500 hover:text-gray-900">
                   Practice Tests
                 </Link>
               </li>

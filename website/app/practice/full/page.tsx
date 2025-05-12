@@ -91,7 +91,7 @@ export default function FullPracticeTestsPage() {
                   <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
-                  <Link href="/practice-tests" className="ml-1 text-sm font-medium text-gray-500 hover:text-gray-700 md:ml-2">
+                  <Link href="/practice" className="ml-1 text-sm font-medium text-gray-500 hover:text-gray-700 md:ml-2">
                     Practice Tests
                   </Link>
                 </div>
@@ -118,7 +118,7 @@ export default function FullPracticeTestsPage() {
               <div className="mt-4 md:mt-0">
                 <span className="inline-flex rounded-md shadow-sm">
                   <Link
-                    href="/practice-tests"
+                    href="/practice"
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >
                     <svg className="mr-2 -ml-1 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,7 +204,7 @@ export default function FullPracticeTestsPage() {
                   
                   <div className="mt-6">
                     <Link
-                      href={`/practice-tests/full/${test.id}`}
+                      href={`/practice/full/${test.id}`}
                       className="w-full md:w-auto flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                     >
                       Start Test
@@ -218,7 +218,7 @@ export default function FullPracticeTestsPage() {
           <div className="mt-10 text-center">
             <p className="text-gray-600">Can\'t find what you\'re looking for?</p>
             <p className="mt-1">
-              <Link href="/practice-tests/mini" className="text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/practice/mini" className="text-blue-600 hover:text-blue-800 font-medium">
                 Try our mini practice tests →
               </Link>
             </p>

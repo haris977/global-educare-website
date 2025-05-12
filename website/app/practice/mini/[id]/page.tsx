@@ -103,7 +103,7 @@ export default function MiniTestPage() {
           <nav className="mb-4">
             <ol className="flex space-x-2 text-sm text-gray-500">
               <li>
-                <Link href="/practice-tests" className="hover:text-gray-700">
+                <Link href="/practice" className="hover:text-gray-700">
                   Practice Tests
                 </Link>
               </li>
@@ -111,7 +111,7 @@ export default function MiniTestPage() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                <Link href="/practice-tests/mini" className="hover:text-gray-700">
+                <Link href="/practice/mini" className="hover:text-gray-700">
                   Mini Tests
                 </Link>
               </li>
@@ -328,7 +328,7 @@ export default function MiniTestPage() {
                 
                 <div className="flex flex-wrap justify-center gap-4">
                   <Link 
-                    href="/practice-tests/mini"
+                    href="/practice/mini"
                     className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
                   >
                     Back to Mini Tests

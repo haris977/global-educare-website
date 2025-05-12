@@ -147,7 +147,7 @@ export default function PracticeTestsPage() {
                     
                     <div className="mt-8">
                       <Link
-                        href="/practice-tests/full"
+                        href="/practice/full"
                         className="w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                       >
                         Browse Full Tests
@@ -204,7 +204,7 @@ export default function PracticeTestsPage() {
                     
                     <div className="mt-8">
                       <Link
-                        href="/practice-tests/mini"
+                        href="/practice/mini"
                         className="w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
                       >
                         Browse Mini Tests
@@ -279,11 +279,11 @@ export default function PracticeTestsPage() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                       {attempt.status === 'IN_PROGRESS' ? (
-                                        <Link href={`/practice-tests/${attempt.test.id}/attempts/${attempt.id}`} className="text-blue-600 hover:text-blue-900">
+                                        <Link href={`/practice/${attempt.test.id}/attempts/${attempt.id}`} className="text-blue-600 hover:text-blue-900">
                                           Resume
                                         </Link>
                                       ) : attempt.status === 'COMPLETED' ? (
-                                        <Link href={`/practice-tests/${attempt.test.id}/results/${attempt.id}`} className="text-blue-600 hover:text-blue-900">
+                                        <Link href={`/practice/${attempt.test.id}/results/${attempt.id}`} className="text-blue-600 hover:text-blue-900">
                                           View Results
                                         </Link>
                                       ) : (

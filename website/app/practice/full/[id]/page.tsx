@@ -252,7 +252,7 @@ export default function PracticeTestDetailPage() {
       setTestAttempt(null);
       
       // Navigate to results page
-      router.push(`/practice-tests/${test.id}/results/${testAttempt.id}`);
+      router.push(`/practice/${test.id}/results/${testAttempt.id}`);
     } catch (err) {
       console.error("Error submitting test:", err);
       setError("Failed to submit test. Your progress has been saved and you can try submitting again.");
@@ -280,7 +280,7 @@ export default function PracticeTestDetailPage() {
               <h1 className="mt-3 text-2xl font-bold text-gray-900">Error</h1>
               <p className="mt-2 text-gray-600">{error}</p>
               <Link 
-                href="/practice-tests" 
+                href="/practice" 
                 className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
               >
                 Browse Available Tests
@@ -305,7 +305,7 @@ export default function PracticeTestDetailPage() {
                 The practice test you're looking for could not be found.
               </p>
               <Link 
-                href="/practice-tests" 
+                href="/practice" 
                 className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
               >
                 Browse Available Tests
@@ -339,7 +339,7 @@ export default function PracticeTestDetailPage() {
                   <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
-                  <Link href="/practice-tests" className="ml-1 text-sm font-medium text-gray-500 hover:text-gray-700 md:ml-2">
+                  <Link href="/practice" className="ml-1 text-sm font-medium text-gray-500 hover:text-gray-700 md:ml-2">
                     Practice Tests
                   </Link>
                 </div>

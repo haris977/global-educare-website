@@ -130,7 +130,7 @@ export default function ModulesPage() {
               </div>
               <div className="mt-4 md:mt-0">
                 <Link 
-                  href="/practice-tests"
+                  href="/practice"
                   className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
                 >
                   <svg className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,7 +317,7 @@ export default function ModulesPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/practice-tests/mini/reading" className="block hover:bg-gray-50">
+                  <Link href="/practice/mini/reading" className="block hover:bg-gray-50">
                     <div className="px-4 py-4 sm:px-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
