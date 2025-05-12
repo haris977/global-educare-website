@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '@/app/components/Navbar';
-import Footer from '@/app/components/Footer';
-import { TestsAPI } from '@/app/services/api';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { TestsAPI } from '@/services/api';
 
 // Mock data for tests
 const mockTests = [
