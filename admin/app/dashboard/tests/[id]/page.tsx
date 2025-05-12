@@ -10,7 +10,7 @@ import React from "react";
 interface Question {
   id: string;
   questionText: string;
-  questionType: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
+  questionType: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY" | "PARA_HEADINGS" | "COMPLETE_SENTENCE" | "NAME_MATCHING" | "FILL_BLANK" | "TRUE_FALSE_NOT_GIVEN" | "YES_NO_NOT_GIVEN" | "MAP" | "SPEAKING_TASK_1" | "SPEAKING_TASK_2" | "SPEAKING_TASK_3" | "SPEAKING_FOLLOW_UPS";
   options?: any; // JSON object in the backend
   correctAnswer?: string;
   marks: number;
@@ -36,6 +36,7 @@ interface Test {
   totalTime: number;
   totalMarks: number;
   totalQuestions: number;
+  clbScore: number;
   isPublished: boolean;
   createdAt: string;
   sections: Section[];
@@ -84,6 +85,7 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
           description: response.data.description || "",
           totalTime: response.data.totalTime || 0,
           totalMarks: response.data.totalMarks || 0,
+          clbScore: response.data.clbScore || 0,
           isPublished: response.data.isPublished || false,
           sections: response.data.sections || []
         });
@@ -154,6 +156,7 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
         description: editForm.description,
         totalTime: Number(editForm.totalTime),
         totalMarks: Number(editForm.totalMarks),
+        clbScore: Number(editForm.clbScore),
         isPublished: editForm.isPublished
       };
       
@@ -519,8 +522,8 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
                 </dd>
               </div>
               <div className="bg-gray-50 px-6 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Passing Score</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{test.passingScore}%</dd>
+                <dt className="text-sm font-medium text-gray-500">Canadian Language Benchmark Level</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{test.clbScore}</dd>
               </div>
               <div className="bg-white px-6 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Created At</dt>
@@ -581,6 +584,19 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
                             {section.questions.length} questions
                           </span>
+                          {/* Group questions by type and show counts */}
+                          {(() => {
+                            const questionTypes = section.questions.reduce((types, q) => {
+                              types[q.questionType] = (types[q.questionType] || 0) + 1;
+                              return types;
+                            }, {});
+                            
+                            return Object.entries(questionTypes).map(([type, count]) => (
+                              <span key={type} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                {count} {type.replace(/_/g, ' ').toLowerCase()}
+                              </span>
+                            ));
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -718,22 +734,25 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                   
                   <div>
-                    <label htmlFor="passingScore" className="block text-sm font-medium text-gray-700">Passing Score (%)</label>
+                    <label htmlFor="clbScore" className="block text-sm font-medium text-gray-700">Canadian Language Benchmark Level</label>
                     <div className="mt-1 relative rounded-md shadow-sm">
                       <input
                         type="number"
-                        name="passingScore"
-                        id="passingScore"
-                        min={0}
-                        max={100}
-                        value={editForm.passingScore}
+                        name="clbScore"
+                        id="clbScore"
+                        min={1}
+                        max={12}
+                        value={editForm.clbScore}
                         onChange={handleInputChange}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all duration-200 ease-in-out hover:border-indigo-300 pr-10"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pointer-events-none pr-3">
-                        <span className="text-gray-500 sm:text-sm">%</span>
+                        <span className="text-gray-500 sm:text-sm">Level</span>
                       </div>
                     </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Canadian Language Benchmarks (CLB) are language proficiency levels from 1 (basic) to 12 (advanced) used to measure ability in English or French for adult immigrants. CLB levels evaluate listening, speaking, reading, and writing skills.
+                    </p>
                   </div>
                 </div>
                 

@@ -45,7 +45,7 @@ interface TestForm {
   title: string;
   description: string;
   totalTime: number;
-  passingScore: number;
+  clbScore: number;
   isPublished: boolean;
   questions: Question[];
   moduleType: string;
@@ -64,7 +64,7 @@ export default function CreateTestPage() {
     title: "",
     description: "",
     totalTime: 60,
-    passingScore: 70,
+    clbScore: 7,
     isPublished: false,
     questions: [],
     moduleType: "READING", // Default to READING (valid enum value)
@@ -322,7 +322,7 @@ export default function CreateTestPage() {
         moduleType: form.moduleType,
         totalTime: Number(form.totalTime),
         totalQuestions: 0, // Will be updated as questions are added
-        totalMarks: Number(form.passingScore),
+        totalMarks: Number(form.clbScore),
         isPublished: form.isPublished
       };
       
@@ -559,22 +559,25 @@ export default function CreateTestPage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="passingScore" className="block text-sm font-medium text-gray-700 mb-1">Passing Score (%)</label>
+                    <label htmlFor="clbScore" className="block text-sm font-medium text-gray-700 mb-1">Canadian Language Benchmark Level</label>
                     <div className="relative rounded-md shadow-sm">
                       <input
                         type="number"
-                        name="passingScore"
-                        id="passingScore"
-                        min={0}
-                        max={100}
-                        value={form.passingScore}
+                        name="clbScore"
+                        id="clbScore"
+                        min={1}
+                        max={12}
+                        value={form.clbScore}
                         onChange={handleInputChange}
                         className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <span className="text-gray-500 sm:text-sm">%</span>
+                        <span className="text-gray-500 sm:text-sm">Level</span>
                       </div>
                     </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Canadian Language Benchmarks (CLB) are language proficiency levels from 1 (basic) to 12 (advanced) used to measure ability in English or French for adult immigrants. CLB levels evaluate listening, speaking, reading, and writing skills.
+                    </p>
                   </div>
                 </div>
                 
@@ -1316,8 +1319,8 @@ export default function CreateTestPage() {
                     </div>
                     
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Passing Score</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{form.passingScore}%</dd>
+                      <dt className="text-sm font-medium text-gray-500">Canadian Language Benchmark Level</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{form.clbScore}</dd>
                     </div>
                     
                     <div>

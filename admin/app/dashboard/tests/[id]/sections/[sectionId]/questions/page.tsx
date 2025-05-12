@@ -16,6 +16,15 @@ interface Question {
   marks: number;
   order: number;
   sectionId: string;
+  passage?: string;
+  paragraphs?: string;
+  sentences?: string;
+  matchingPairs?: string;
+  mapLabels?: string;
+  questionImage?: string;
+  cueCard?: string;
+  speakingPrompts?: string;
+  followUpQuestions?: string;
 }
 
 interface Section {
@@ -53,7 +62,16 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     options: ["", "", "", ""],
     correctAnswer: "",
     marks: 1,
-    order: 0
+    order: 0,
+    passage: "",
+    paragraphs: [] as string[],
+    sentences: [] as string[],
+    matchingPairs: {} as Record<string, string>,
+    mapLabels: [] as string[],
+    questionImage: "",
+    cueCard: "",
+    speakingPrompts: [] as string[],
+    followUpQuestions: [] as string[]
   });
   
   // Fetch test, section and questions data
@@ -170,67 +188,181 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         return;
       }
     } else if (currentQuestion.questionType === "TRUE_FALSE") {
-      // For TRUE_FALSE questions, we need a specific format
-      setCurrentQuestion(prev => ({
-        ...prev,
-        options: ["true", "false"]
-      }));
+      // For TRUE_FALSE questions, ensure correctAnswer is either true or false
+      if (currentQuestion.correctAnswer !== "true" && currentQuestion.correctAnswer !== "false") {
+        setError("Please select true or false as the correct answer");
+        return;
+      }
+    } else if (currentQuestion.questionType === "SHORT_ANSWER") {
+      if (!currentQuestion.correctAnswer) {
+        setError("Please provide the correct answer");
+        return;
+      }
+    } else if (currentQuestion.questionType === "PARA_HEADINGS") {
+      if (!currentQuestion.passage && currentQuestion.paragraphs.length === 0) {
+        setError("Please provide either a passage or paragraphs");
+        return;
+      }
+      if (!currentQuestion.correctAnswer) {
+        setError("Please provide the correct heading");
+        return;
+      }
+    } else if (currentQuestion.questionType === "COMPLETE_SENTENCE") {
+      if (!currentQuestion.passage && currentQuestion.sentences.length === 0) {
+        setError("Please provide either a passage or sentences");
+        return;
+      }
+      if (!currentQuestion.correctAnswer) {
+        setError("Please provide the correct sentence completion");
+        return;
+      }
+    } else if (currentQuestion.questionType === "NAME_MATCHING") {
+      if (Object.keys(currentQuestion.matchingPairs).length === 0) {
+        setError("Please provide at least one matching pair");
+        return;
+      }
+      if (!currentQuestion.correctAnswer) {
+        setError("Please provide the correct match");
+        return;
+      }
+    } else if (currentQuestion.questionType === "FILL_BLANK") {
+      if (!currentQuestion.correctAnswer) {
+        setError("Please provide the correct answer");
+        return;
+      }
+    } else if (
+      currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+      currentQuestion.questionType === "YES_NO_NOT_GIVEN"
+    ) {
+      if (!currentQuestion.passage) {
+        setError("Please provide a reading passage");
+        return;
+      }
+      if (!currentQuestion.correctAnswer) {
+        setError("Please select the correct answer");
+        return;
+      }
+    } else if (currentQuestion.questionType === "MAP") {
+      if (!currentQuestion.questionImage) {
+        setError("Please provide a map image URL");
+        return;
+      }
+      if (currentQuestion.mapLabels.length === 0) {
+        setError("Please provide at least one map label");
+        return;
+      }
+      if (!currentQuestion.correctAnswer) {
+        setError("Please provide the correct label placement");
+        return;
+      }
+    } else if (
+      currentQuestion.questionType === "SPEAKING_TASK_1" || 
+      currentQuestion.questionType === "SPEAKING_TASK_3"
+    ) {
+      if (currentQuestion.speakingPrompts.length === 0) {
+        setError("Please provide at least one speaking prompt");
+        return;
+      }
+    } else if (currentQuestion.questionType === "SPEAKING_TASK_2") {
+      if (!currentQuestion.cueCard) {
+        setError("Please provide a cue card");
+        return;
+      }
+    } else if (currentQuestion.questionType === "SPEAKING_FOLLOW_UPS") {
+      if (currentQuestion.followUpQuestions.length === 0) {
+        setError("Please provide at least one follow-up question");
+        return;
+      }
     }
     
     setIsLoading(true);
     setError("");
     
     try {
-      // Filter out empty options first
-      const filteredOptions = 
-        currentQuestion.questionType === "TRUE_FALSE" ? 
-        ["true", "false"] : 
-        currentQuestion.options.filter(opt => opt.trim());
+      // Prepare additional data based on question type
+      let additionalData = {};
       
-      // Prepare the question data
+      // Handle different question types
+      switch(currentQuestion.questionType) {
+        case "MULTIPLE_CHOICE":
+          additionalData = {
+            options: JSON.stringify(currentQuestion.options.filter(opt => opt.trim()))
+          };
+          break;
+        case "TRUE_FALSE":
+          additionalData = {
+            options: JSON.stringify(["true", "false"])
+          };
+          break;
+        case "PARA_HEADINGS":
+          additionalData = {
+            passage: currentQuestion.passage,
+            paragraphs: JSON.stringify(currentQuestion.paragraphs)
+          };
+          break;
+        case "COMPLETE_SENTENCE":
+          additionalData = {
+            passage: currentQuestion.passage,
+            sentences: JSON.stringify(currentQuestion.sentences)
+          };
+          break;
+        case "NAME_MATCHING":
+          additionalData = {
+            matchingPairs: JSON.stringify(currentQuestion.matchingPairs)
+          };
+          break;
+        case "TRUE_FALSE_NOT_GIVEN":
+        case "YES_NO_NOT_GIVEN":
+          additionalData = {
+            passage: currentQuestion.passage
+          };
+          break;
+        case "MAP":
+          additionalData = {
+            questionImage: currentQuestion.questionImage,
+            mapLabels: JSON.stringify(currentQuestion.mapLabels)
+          };
+          break;
+        case "SPEAKING_TASK_1":
+        case "SPEAKING_TASK_3":
+          additionalData = {
+            speakingPrompts: JSON.stringify(currentQuestion.speakingPrompts)
+          };
+          break;
+        case "SPEAKING_TASK_2":
+          additionalData = {
+            cueCard: currentQuestion.cueCard,
+            speakingPrompts: JSON.stringify(currentQuestion.speakingPrompts)
+          };
+          break;
+        case "SPEAKING_FOLLOW_UPS":
+          additionalData = {
+            followUpQuestions: JSON.stringify(currentQuestion.followUpQuestions)
+          };
+          break;
+      }
+      
+      // Prepare the question data with additional fields
       const questionData = {
         questionText: currentQuestion.questionText,
         questionType: currentQuestion.questionType,
-        // Format options properly based on question type
-        options: currentQuestion.questionType === "MULTIPLE_CHOICE" || currentQuestion.questionType === "TRUE_FALSE" ? 
-          JSON.stringify(filteredOptions) : 
-          undefined,
-        // Format correctAnswer based on question type
-        correctAnswer: 
-          currentQuestion.questionType === "MULTIPLE_CHOICE" && filteredOptions[parseInt(currentQuestion.correctAnswer)] ?
-            filteredOptions[parseInt(currentQuestion.correctAnswer)] : // For multiple choice, send the actual option text 
-          currentQuestion.questionType === "TRUE_FALSE" ?
-            currentQuestion.correctAnswer.toLowerCase() : // Make TRUE_FALSE answers lowercase
-            currentQuestion.correctAnswer, // For other question types, send as is
+        correctAnswer: currentQuestion.correctAnswer,
         marks: currentQuestion.marks,
-        order: questions.length + 1
+        order: questions.length + 1,
+        ...additionalData
       };
       
-      console.log("Sending question data:", JSON.stringify(questionData, null, 2));
+      console.log("Creating question with data:", JSON.stringify(questionData, null, 2));
       
-      // Call API to create question
-      console.log("About to make API call to create question for section:", sectionId);
+      // Create the question
       const response = await api.Tests.createQuestion(sectionId, questionData);
-      console.log("API response for createQuestion:", JSON.stringify(response, null, 2));
       
-      if (response.success && response.data) {
-        console.log("Question created successfully:", response.data);
-        // Add new question to the list
-        setQuestions(prev => [...prev, response.data]);
+      if (response.success) {
+        setSuccessMessage("Question added successfully!");
         
-        // Refresh test data to get latest state
-        const testResponse = await api.Tests.getTestById(testId);
-        if (testResponse.success && testResponse.data) {
-          // Find the updated section
-          const updatedSection = testResponse.data.sections.find(
-            (section: any) => section.id === sectionId
-          );
-          
-          if (updatedSection && updatedSection.questions) {
-            // Update the questions list with the latest from the backend
-            setQuestions(updatedSection.questions);
-          }
-        }
+        // Refresh questions
+        const updatedQuestions = [...questions, response.data];
+        setQuestions(updatedQuestions);
         
         // Reset form
         setCurrentQuestion({
@@ -239,17 +371,28 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
           options: ["", "", "", ""],
           correctAnswer: "",
           marks: 1,
-          order: 0
+          order: 0,
+          passage: "",
+          paragraphs: [],
+          sentences: [],
+          matchingPairs: {},
+          mapLabels: [],
+          questionImage: "",
+          cueCard: "",
+          speakingPrompts: [],
+          followUpQuestions: []
         });
         
-        setSuccessMessage("Question added successfully");
-        setTimeout(() => setSuccessMessage(""), 3000);
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage("");
+        }, 3000);
       } else {
-        setError(response.message || "Failed to add question");
+        setError(response.message || "Failed to create question");
       }
     } catch (err: any) {
-      console.error("Error adding question:", err);
-      setError(err.message || "An error occurred while adding the question");
+      console.error("Error creating question:", err);
+      setError(err.message || "An error occurred while creating the question");
     } finally {
       setIsLoading(false);
     }
@@ -433,6 +576,17 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                       <option value="TRUE_FALSE">True/False</option>
                       <option value="SHORT_ANSWER">Short Answer</option>
                       <option value="ESSAY">Essay</option>
+                      <option value="PARA_HEADINGS">Para Headings</option>
+                      <option value="COMPLETE_SENTENCE">Complete the Sentence</option>
+                      <option value="NAME_MATCHING">Name Matching</option>
+                      <option value="FILL_BLANK">Fill up the Blanks</option>
+                      <option value="TRUE_FALSE_NOT_GIVEN">True/False/Not Given</option>
+                      <option value="YES_NO_NOT_GIVEN">Yes/No/Not Given</option>
+                      <option value="MAP">Map</option>
+                      <option value="SPEAKING_TASK_1">Speaking - Introduction</option>
+                      <option value="SPEAKING_TASK_2">Speaking - Cue Card</option>
+                      <option value="SPEAKING_TASK_3">Speaking - Discussion</option>
+                      <option value="SPEAKING_FOLLOW_UPS">Speaking - Follow Ups</option>
                     </select>
                   </div>
                 </div>
@@ -569,6 +723,423 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                   </div>
                 )}
                 
+                {/* Reading Passage for various question types */}
+                {(currentQuestion.questionType === "PARA_HEADINGS" || 
+                  currentQuestion.questionType === "COMPLETE_SENTENCE" || 
+                  currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+                  currentQuestion.questionType === "YES_NO_NOT_GIVEN") && (
+                  <div>
+                    <label htmlFor="passage" className="block text-sm font-medium text-gray-700">
+                      Reading Passage
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="passage"
+                        name="passage"
+                        rows={4}
+                        value={currentQuestion.passage}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the reading passage"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Paragraphs for paragraph headings */}
+                {currentQuestion.questionType === "PARA_HEADINGS" && (
+                  <div className="mt-3">
+                    <label htmlFor="paragraphs" className="block text-sm font-medium text-gray-700">
+                      Paragraphs (one per line)
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="paragraphs"
+                        name="paragraphs"
+                        rows={4}
+                        value={currentQuestion.paragraphs.join('\n')}
+                        onChange={(e) => {
+                          const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                          setCurrentQuestion(prev => ({ ...prev, paragraphs }));
+                        }}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter each paragraph on a new line"
+                      />
+                    </div>
+                    <div className="mt-3">
+                      <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
+                        Correct Heading
+                      </label>
+                      <input
+                        type="text"
+                        id="correctAnswer"
+                        name="correctAnswer"
+                        value={currentQuestion.correctAnswer}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the correct heading"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Sentences for complete sentence questions */}
+                {currentQuestion.questionType === "COMPLETE_SENTENCE" && (
+                  <div className="mt-3">
+                    <label htmlFor="sentences" className="block text-sm font-medium text-gray-700">
+                      Incomplete Sentences (one per line)
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="sentences"
+                        name="sentences"
+                        rows={4}
+                        value={currentQuestion.sentences.join('\n')}
+                        onChange={(e) => {
+                          const sentences = e.target.value.split('\n').filter(s => s.trim() !== '');
+                          setCurrentQuestion(prev => ({ ...prev, sentences }));
+                        }}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter incomplete sentences with '...' for blanks"
+                      />
+                    </div>
+                    <div className="mt-3">
+                      <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
+                        Correct Completion
+                      </label>
+                      <input
+                        type="text"
+                        id="correctAnswer"
+                        name="correctAnswer"
+                        value={currentQuestion.correctAnswer}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the correct completion"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Name matching pairs */}
+                {currentQuestion.questionType === "NAME_MATCHING" && (
+                  <div className="mt-3">
+                    <label htmlFor="matchingPairs" className="block text-sm font-medium text-gray-700">
+                      Matching Pairs
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="matchingPairs"
+                        name="matchingPairsText"
+                        rows={4}
+                        value={Object.entries(currentQuestion.matchingPairs).map(([key, value]) => `${key}: ${value}`).join('\n')}
+                        onChange={(e) => {
+                          const pairs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                          const matchingPairs: Record<string, string> = {};
+                          pairs.forEach(pair => {
+                            const [key, value] = pair.split(':').map(p => p.trim());
+                            if (key && value) matchingPairs[key] = value;
+                          });
+                          setCurrentQuestion(prev => ({ ...prev, matchingPairs }));
+                        }}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Format: Name: Match (one per line)"
+                      />
+                    </div>
+                    <div className="mt-3">
+                      <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
+                        Correct Match
+                      </label>
+                      <input
+                        type="text"
+                        id="correctAnswer"
+                        name="correctAnswer"
+                        value={currentQuestion.correctAnswer}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the correct match"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Fill in the blanks */}
+                {currentQuestion.questionType === "FILL_BLANK" && (
+                  <div className="mt-3">
+                    <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
+                      Correct Answer
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        type="text"
+                        id="correctAnswer"
+                        name="correctAnswer"
+                        value={currentQuestion.correctAnswer}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the correct answer (separate multiple answers with commas)"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">For multiple blanks, separate answers with commas</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* True/False/Not Given and Yes/No/Not Given */}
+                {(currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+                  currentQuestion.questionType === "YES_NO_NOT_GIVEN") && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Correct Answer
+                    </label>
+                    <div className="mt-1">
+                      <div className="flex space-x-4">
+                        {currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" ? (
+                          <>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                id="true-option"
+                                name="correctAnswer"
+                                value="true"
+                                checked={currentQuestion.correctAnswer === "true"}
+                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              />
+                              <label htmlFor="true-option" className="ml-2 block text-sm text-gray-700">True</label>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                id="false-option"
+                                name="correctAnswer"
+                                value="false"
+                                checked={currentQuestion.correctAnswer === "false"}
+                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              />
+                              <label htmlFor="false-option" className="ml-2 block text-sm text-gray-700">False</label>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                id="not-given-option"
+                                name="correctAnswer"
+                                value="not-given"
+                                checked={currentQuestion.correctAnswer === "not-given"}
+                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              />
+                              <label htmlFor="not-given-option" className="ml-2 block text-sm text-gray-700">Not Given</label>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                id="yes-option"
+                                name="correctAnswer"
+                                value="yes"
+                                checked={currentQuestion.correctAnswer === "yes"}
+                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              />
+                              <label htmlFor="yes-option" className="ml-2 block text-sm text-gray-700">Yes</label>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                id="no-option"
+                                name="correctAnswer"
+                                value="no"
+                                checked={currentQuestion.correctAnswer === "no"}
+                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              />
+                              <label htmlFor="no-option" className="ml-2 block text-sm text-gray-700">No</label>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                id="not-given-option"
+                                name="correctAnswer"
+                                value="not-given"
+                                checked={currentQuestion.correctAnswer === "not-given"}
+                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              />
+                              <label htmlFor="not-given-option" className="ml-2 block text-sm text-gray-700">Not Given</label>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Map question */}
+                {currentQuestion.questionType === "MAP" && (
+                  <div className="mt-3">
+                    <label htmlFor="questionImage" className="block text-sm font-medium text-gray-700">
+                      Map Image URL
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        type="text"
+                        id="questionImage"
+                        name="questionImage"
+                        value={currentQuestion.questionImage}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter URL to map image"
+                      />
+                    </div>
+                    
+                    <div className="mt-3">
+                      <label htmlFor="mapLabels" className="block text-sm font-medium text-gray-700">
+                        Map Labels (one per line)
+                      </label>
+                      <div className="mt-1">
+                        <textarea
+                          id="mapLabels"
+                          name="mapLabelsText"
+                          rows={4}
+                          value={currentQuestion.mapLabels.join('\n')}
+                          onChange={(e) => {
+                            const labels = e.target.value.split('\n').filter(label => label.trim() !== '');
+                            setCurrentQuestion(prev => ({ ...prev, mapLabels: labels }));
+                          }}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          placeholder="Enter each map label on a new line"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
+                        Correct Answer
+                      </label>
+                      <input
+                        type="text"
+                        id="correctAnswer"
+                        name="correctAnswer"
+                        value={currentQuestion.correctAnswer}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the correct label placement"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Speaking Task 1 (Introduction) */}
+                {currentQuestion.questionType === "SPEAKING_TASK_1" && (
+                  <div className="mt-3">
+                    <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700">
+                      Speaking Prompts (one per line)
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="speakingPrompts"
+                        name="speakingPromptsText"
+                        rows={4}
+                        value={currentQuestion.speakingPrompts.join('\n')}
+                        onChange={(e) => {
+                          const prompts = e.target.value.split('\n').filter(prompt => prompt.trim() !== '');
+                          setCurrentQuestion(prev => ({ ...prev, speakingPrompts: prompts }));
+                        }}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter each speaking prompt on a new line (e.g., 'Tell me about yourself')"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Speaking Task 2 (Cue Card) */}
+                {currentQuestion.questionType === "SPEAKING_TASK_2" && (
+                  <div className="mt-3">
+                    <label htmlFor="cueCard" className="block text-sm font-medium text-gray-700">
+                      Cue Card
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="cueCard"
+                        name="cueCard"
+                        rows={4}
+                        value={currentQuestion.cueCard}
+                        onChange={handleQuestionChange}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter the cue card text"
+                      />
+                    </div>
+                    
+                    <div className="mt-3">
+                      <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700">
+                        Additional Prompts (one per line, optional)
+                      </label>
+                      <div className="mt-1">
+                        <textarea
+                          id="speakingPrompts"
+                          name="speakingPromptsText"
+                          rows={3}
+                          value={currentQuestion.speakingPrompts.join('\n')}
+                          onChange={(e) => {
+                            const prompts = e.target.value.split('\n').filter(prompt => prompt.trim() !== '');
+                            setCurrentQuestion(prev => ({ ...prev, speakingPrompts: prompts }));
+                          }}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          placeholder="Enter additional prompts (optional)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Speaking Task 3 (Discussion) */}
+                {currentQuestion.questionType === "SPEAKING_TASK_3" && (
+                  <div className="mt-3">
+                    <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700">
+                      Discussion Prompts (one per line)
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="speakingPrompts"
+                        name="speakingPromptsText"
+                        rows={4}
+                        value={currentQuestion.speakingPrompts.join('\n')}
+                        onChange={(e) => {
+                          const prompts = e.target.value.split('\n').filter(prompt => prompt.trim() !== '');
+                          setCurrentQuestion(prev => ({ ...prev, speakingPrompts: prompts }));
+                        }}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter each discussion prompt on a new line"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Speaking Follow Ups */}
+                {currentQuestion.questionType === "SPEAKING_FOLLOW_UPS" && (
+                  <div className="mt-3">
+                    <label htmlFor="followUpQuestions" className="block text-sm font-medium text-gray-700">
+                      Follow-up Questions (one per line)
+                    </label>
+                    <div className="mt-1">
+                      <textarea
+                        id="followUpQuestions"
+                        name="followUpQuestionsText"
+                        rows={4}
+                        value={currentQuestion.followUpQuestions.join('\n')}
+                        onChange={(e) => {
+                          const questions = e.target.value.split('\n').filter(q => q.trim() !== '');
+                          setCurrentQuestion(prev => ({ ...prev, followUpQuestions: questions }));
+                        }}
+                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Enter each follow-up question on a new line"
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div className="pt-3">
                   <button
                     type="button"
@@ -697,6 +1268,211 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                               <div className="mt-3 text-sm text-gray-700">
                                 <span className="font-medium">Correct answer: </span>
                                 <span className="italic">{question.correctAnswer}</span>
+                              </div>
+                            )}
+
+                            {/* Show ESSAY question */}
+                            {question.questionType === "ESSAY" && (
+                              <div className="mt-3 text-sm text-gray-700">
+                                <span className="font-medium">Essay prompt</span>
+                                <div className="mt-1 italic text-gray-600">
+                                  Student will provide an essay response
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show PARA_HEADINGS */}
+                            {question.questionType === "PARA_HEADINGS" && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">Paragraph Headings:</p>
+                                {question.passage && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Passage:</span>
+                                    <div className="mt-1 italic text-gray-600 line-clamp-3">{question.passage}</div>
+                                  </div>
+                                )}
+                                {question.paragraphs && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Paragraphs:</span>
+                                    <div className="mt-1 italic text-gray-600">
+                                      {typeof question.paragraphs === 'string' ? (
+                                        <div className="line-clamp-2">{JSON.parse(question.paragraphs)[0]}...</div>
+                                      ) : (
+                                        <div>Multiple paragraphs</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="mt-2 text-sm text-gray-700">
+                                  <span className="font-medium">Correct heading: </span>
+                                  <span className="italic">{question.correctAnswer}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show COMPLETE_SENTENCE */}
+                            {question.questionType === "COMPLETE_SENTENCE" && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">Complete Sentence:</p>
+                                {question.passage && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Passage:</span>
+                                    <div className="mt-1 italic text-gray-600 line-clamp-3">{question.passage}</div>
+                                  </div>
+                                )}
+                                {question.sentences && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Sentences:</span>
+                                    <div className="mt-1 italic text-gray-600">
+                                      {typeof question.sentences === 'string' ? (
+                                        <div className="line-clamp-2">{JSON.parse(question.sentences)[0]}...</div>
+                                      ) : (
+                                        <div>Incomplete sentences</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="mt-2 text-sm text-gray-700">
+                                  <span className="font-medium">Correct completion: </span>
+                                  <span className="italic">{question.correctAnswer}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show NAME_MATCHING */}
+                            {question.questionType === "NAME_MATCHING" && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">Name Matching:</p>
+                                {question.matchingPairs && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Matching pairs:</span>
+                                    <div className="mt-1 italic text-gray-600">
+                                      {typeof question.matchingPairs === 'string' ? (
+                                        <div>
+                                          {Object.entries(JSON.parse(question.matchingPairs)).slice(0, 2).map(([key, value], idx) => (
+                                            <div key={idx}>{key}: {value}</div>
+                                          ))}
+                                          {Object.keys(JSON.parse(question.matchingPairs)).length > 2 && "..."}
+                                        </div>
+                                      ) : (
+                                        <div>Multiple matching pairs</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="mt-2 text-sm text-gray-700">
+                                  <span className="font-medium">Correct match: </span>
+                                  <span className="italic">{question.correctAnswer}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show FILL_BLANK */}
+                            {question.questionType === "FILL_BLANK" && (
+                              <div className="mt-3 text-sm text-gray-700">
+                                <span className="font-medium">Fill in the blanks</span>
+                                <div className="mt-2">
+                                  <span className="font-medium">Correct answer: </span>
+                                  <span className="italic">{question.correctAnswer}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show TRUE_FALSE_NOT_GIVEN and YES_NO_NOT_GIVEN */}
+                            {(question.questionType === "TRUE_FALSE_NOT_GIVEN" || question.questionType === "YES_NO_NOT_GIVEN") && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">
+                                  {question.questionType === "TRUE_FALSE_NOT_GIVEN" ? "True/False/Not Given:" : "Yes/No/Not Given:"}
+                                </p>
+                                {question.passage && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Passage:</span>
+                                    <div className="mt-1 italic text-gray-600 line-clamp-3">{question.passage}</div>
+                                  </div>
+                                )}
+                                <div className="mt-2 text-sm text-gray-700">
+                                  <span className="font-medium">Correct answer: </span>
+                                  <span className="italic">{question.correctAnswer}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show MAP */}
+                            {question.questionType === "MAP" && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">Map Question:</p>
+                                {question.questionImage && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Map image URL:</span>
+                                    <div className="mt-1 italic text-gray-600 truncate">{question.questionImage}</div>
+                                  </div>
+                                )}
+                                {question.mapLabels && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Map labels:</span>
+                                    <div className="mt-1 italic text-gray-600">
+                                      {typeof question.mapLabels === 'string' ? (
+                                        <div className="line-clamp-2">{JSON.parse(question.mapLabels).join(", ")}</div>
+                                      ) : (
+                                        <div>Multiple labels</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="mt-2 text-sm text-gray-700">
+                                  <span className="font-medium">Correct answer: </span>
+                                  <span className="italic">{question.correctAnswer}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show SPEAKING Tasks */}
+                            {(question.questionType === "SPEAKING_TASK_1" || 
+                              question.questionType === "SPEAKING_TASK_2" ||
+                              question.questionType === "SPEAKING_TASK_3") && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">
+                                  {question.questionType === "SPEAKING_TASK_1" ? "Speaking Introduction" : 
+                                   question.questionType === "SPEAKING_TASK_2" ? "Speaking Cue Card" : 
+                                   "Speaking Discussion"}
+                                </p>
+                                {question.cueCard && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Cue card:</span>
+                                    <div className="mt-1 italic text-gray-600 line-clamp-3">{question.cueCard}</div>
+                                  </div>
+                                )}
+                                {question.speakingPrompts && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Speaking prompts:</span>
+                                    <div className="mt-1 italic text-gray-600">
+                                      {typeof question.speakingPrompts === 'string' ? (
+                                        <div className="line-clamp-2">{JSON.parse(question.speakingPrompts).join(", ")}</div>
+                                      ) : (
+                                        <div>Multiple prompts</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Show SPEAKING_FOLLOW_UPS */}
+                            {question.questionType === "SPEAKING_FOLLOW_UPS" && (
+                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                <p className="text-xs font-medium text-gray-500 mb-2">Speaking Follow-up Questions:</p>
+                                {question.followUpQuestions && (
+                                  <div className="mt-2 text-sm text-gray-700">
+                                    <span className="font-medium">Follow-up questions:</span>
+                                    <div className="mt-1 italic text-gray-600">
+                                      {typeof question.followUpQuestions === 'string' ? (
+                                        <div className="line-clamp-2">{JSON.parse(question.followUpQuestions).join(", ")}</div>
+                                      ) : (
+                                        <div>Multiple follow-up questions</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

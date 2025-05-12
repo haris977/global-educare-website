@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
     API_URL: 'http://localhost:8000',
     NEXT_PUBLIC_API_URL: 'http://localhost:8000',
   },
-  // Remove redirects to prevent redirect loops
+  
+  
 };
 
 export default nextConfig;
