@@ -84,7 +84,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="bg-gray-50 px-5 py-3">
-            <Link href="/dashboard/tests" className="text-sm text-blue-700 font-medium hover:text-blue-900">
+            <Link href="/tests" className="text-sm text-blue-700 font-medium hover:text-blue-900">
               View all tests
             </Link>
           </div>
@@ -114,7 +114,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="bg-gray-50 px-5 py-3">
-            <Link href="/dashboard/users" className="text-sm text-purple-700 font-medium hover:text-purple-900">
+            <Link href="/users" className="text-sm text-purple-700 font-medium hover:text-purple-900">
               View all users
             </Link>
           </div>
@@ -125,7 +125,7 @@ export default function Dashboard() {
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">Recent Tests</h2>
-          <Link href="/dashboard/tests" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+          <Link href="/tests" className="text-sm font-medium text-blue-600 hover:text-blue-500">
             View all
           </Link>
         </div>
@@ -133,7 +133,7 @@ export default function Dashboard() {
           <ul className="divide-y divide-gray-200">
             {recentTests.map((test) => (
               <li key={test.id}>
-                <Link href={`/dashboard/tests/${test.id}`} className="block hover:bg-gray-50">
+                <Link href={`/tests/${test.id}`} className="block hover:bg-gray-50">
                   <div className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-blue-600 truncate">
@@ -184,7 +184,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="bg-gray-50 px-5 py-3">
-              <Link href="/dashboard/tests/new" className="text-sm font-medium text-blue-700 hover:text-blue-900">
+              <Link href="/tests/new" className="text-sm font-medium text-blue-700 hover:text-blue-900">
                 Get started
               </Link>
             </div>
@@ -207,7 +207,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="bg-gray-50 px-5 py-3">
-              <Link href="/dashboard/users" className="text-sm font-medium text-purple-700 hover:text-purple-900">
+              <Link href="/users" className="text-sm font-medium text-purple-700 hover:text-purple-900">
                 View users
               </Link>
             </div>

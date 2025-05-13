@@ -84,9 +84,9 @@ export default function DashboardLayout({
             Dashboard
           </Link>
           <Link 
-            href="/dashboard/tests" 
+            href="/tests" 
             className={`mt-1 flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-              pathname.startsWith('/dashboard/tests') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              pathname.startsWith('/tests') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
             }`}
           >
             <svg className="mr-3 h-6 w-6 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,9 +95,9 @@ export default function DashboardLayout({
             Tests
           </Link>
           <Link 
-            href="/dashboard/users" 
+            href="/users" 
             className={`mt-1 flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-              pathname.startsWith('/dashboard/users') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              pathname.startsWith('/users') ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
             }`}
           >
             <svg className="mr-3 h-6 w-6 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

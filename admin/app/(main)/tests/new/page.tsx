@@ -371,7 +371,7 @@ export default function CreateTestPage() {
         }
         
         // Navigate to the test details page
-        router.push(`/dashboard/tests/${response.data.id}`);
+        router.push(`/tests/${response.data.id}`);
       } else {
         setError(response.message || "Failed to create test");
         setLoading(false);
@@ -391,7 +391,7 @@ export default function CreateTestPage() {
           <p className="mt-2 text-base text-gray-500">Create a new assessment test for your students</p>
         </div>
         <Link
-          href="/dashboard/tests"
+          href="/tests"
           className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
         >
           Cancel

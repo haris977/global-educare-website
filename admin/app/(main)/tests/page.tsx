@@ -104,7 +104,7 @@ export default function TestsPage() {
           <p className="mt-2 text-sm text-gray-500">Manage your assessment tests</p>
         </div>
         <Link 
-          href="/dashboard/tests/new" 
+          href="/tests/new" 
           className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -217,7 +217,7 @@ export default function TestsPage() {
                       {test.isPublished ? 'Unpublish' : 'Publish'}
                     </button>
                     <Link
-                      href={`/dashboard/tests/${test.id}`}
+                      href={`/tests/${test.id}`}
                       className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition-all duration-200 ease-in-out hover:scale-105 hover:shadow"
                     >
                       <svg className="-ml-0.5 mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -251,7 +251,7 @@ export default function TestsPage() {
             </p>
             <div className="mt-6">
               <Link 
-                href="/dashboard/tests/new" 
+                href="/tests/new" 
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg"
               >
                 <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
