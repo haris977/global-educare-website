@@ -45,7 +45,6 @@ interface TestForm {
   title: string;
   description: string;
   totalTime: number;
-  clbScore: number;
   isPublished: boolean;
   questions: Question[];
   moduleType: string;
@@ -116,7 +115,6 @@ export default function CreateTestPage() {
     title: "",
     description: "",
     totalTime: 60,
-    clbScore: 7,
     isPublished: false,
     questions: [],
     moduleType: moduleTypeParam || "READING", // Use URL param or default to READING
@@ -338,7 +336,6 @@ export default function CreateTestPage() {
         moduleType: form.moduleType,
         totalTime: Number(form.totalTime),
         totalQuestions: 0, // Will be updated as questions are added
-        totalMarks: Number(form.clbScore),
         isPublished: form.isPublished
       };
       
@@ -412,6 +409,39 @@ export default function CreateTestPage() {
         >
           Cancel
         </Link>
+      </div>
+      
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
+        <div className="flex items-center">
+          {moduleTypeParam === "READING" && (
+            <svg className="h-6 w-6 text-indigo-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          )}
+          {moduleTypeParam === "LISTENING" && (
+            <svg className="h-6 w-6 text-emerald-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          )}
+          {moduleTypeParam === "WRITING" && (
+            <svg className="h-6 w-6 text-amber-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          )}
+          {moduleTypeParam === "SPEAKING" && (
+            <svg className="h-6 w-6 text-rose-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          )}
+          <span className="font-medium text-gray-700">Module Type: </span>
+          <span className={`ml-2 inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium 
+            ${moduleTypeParam === "READING" ? "bg-indigo-100 text-indigo-800" : 
+             moduleTypeParam === "LISTENING" ? "bg-emerald-100 text-emerald-800" :
+             moduleTypeParam === "WRITING" ? "bg-amber-100 text-amber-800" :
+             "bg-rose-100 text-rose-800"}`}>
+            {form.moduleType.charAt(0) + form.moduleType.slice(1).toLowerCase()}
+          </span>
+        </div>
       </div>
       
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
@@ -555,7 +585,7 @@ export default function CreateTestPage() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6">
                   <div>
                     <label htmlFor="totalTime" className="block text-sm font-medium text-gray-700 mb-1">Time Limit (minutes)</label>
                     <div className="relative rounded-md shadow-sm">
@@ -572,45 +602,6 @@ export default function CreateTestPage() {
                         <span className="text-gray-500 sm:text-sm">min</span>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="clbScore" className="block text-sm font-medium text-gray-700 mb-1">Canadian Language Benchmark Level</label>
-                    <div className="relative rounded-md shadow-sm">
-                      <input
-                        type="number"
-                        name="clbScore"
-                        id="clbScore"
-                        min={1}
-                        max={12}
-                        value={form.clbScore}
-                        onChange={handleInputChange}
-                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <span className="text-gray-500 sm:text-sm">Level</span>
-                      </div>
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Canadian Language Benchmarks (CLB) are language proficiency levels from 1 (basic) to 12 (advanced) used to measure ability in English or French for adult immigrants. CLB levels evaluate listening, speaking, reading, and writing skills.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="moduleType" className="block text-sm font-medium text-gray-700 mb-1">Module Type</label>
-                    <select
-                      name="moduleType"
-                      id="moduleType"
-                      value={form.moduleType}
-                      onChange={handleInputChange}
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
-                    >
-                      {moduleTypes.map(type => (
-                        <option key={type} value={type}>{type.charAt(0) + type.slice(1).toLowerCase()}</option>
-                      ))}
-                    </select>
                   </div>
                   
                   <div>
@@ -1284,7 +1275,7 @@ export default function CreateTestPage() {
                       className="inline-flex items-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                     >
                       <svg className="mr-2 -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 10H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                       </svg>
                       Back
                     </button>
@@ -1335,13 +1326,13 @@ export default function CreateTestPage() {
                     </div>
                     
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Canadian Language Benchmark Level</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{form.clbScore}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Module Type</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{form.moduleType.charAt(0) + form.moduleType.slice(1).toLowerCase()}</dd>
                     </div>
                     
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Module Type</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{form.moduleType.charAt(0) + form.moduleType.slice(1).toLowerCase()}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Difficulty Level</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{form.difficulty.charAt(0) + form.difficulty.slice(1).toLowerCase()}</dd>
                     </div>
                     
                     <div className="sm:col-span-2">
@@ -1401,7 +1392,7 @@ export default function CreateTestPage() {
                       className="inline-flex items-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                     >
                       <svg className="mr-2 -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 10H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                       </svg>
                       Back
                     </button>
@@ -1421,7 +1412,7 @@ export default function CreateTestPage() {
                       ) : (
                         <>
                           <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8.586 10l4.293 4.293a1 1 0 010 1.414L10 11.414l4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8.586 10l4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
                           Create Test
                         </>
