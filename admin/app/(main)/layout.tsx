@@ -17,37 +17,55 @@ export default function DashboardLayout({
   // Verify authentication on component mount
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
+    const storedUserData = localStorage.getItem("adminUser");
     
     if (!token) {
       // Redirect to login if not authenticated
       router.push("/login");
-    } else {
-      // Use validate-token endpoint instead of profile
-      fetch("http://localhost:8000/api/users/validate-token", {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error("Invalid token");
-      })
-      .then(data => {
-        if (data.success && data.data) {
-          // The validate-token endpoint should return user data
-          setUserName(data.data.name || data.data.email || "Admin");
-        }
-      })
-      .catch(err => {
-        console.error("Authentication error:", err);
-        // Redirect to login on auth error
-        localStorage.removeItem("adminToken");
-        router.push("/login");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      return;
     }
+
+    // Special handling for test development token
+    if (token === "test-token-for-development") {
+      try {
+        if (storedUserData) {
+          const userData = JSON.parse(storedUserData);
+          setUserName(userData.name || userData.email || "Admin");
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error parsing stored user data:", err);
+      }
+    }
+    
+    // For regular tokens, validate with the backend
+    fetch("http://localhost:8000/api/users/validate-token", {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      if (res.ok) return res.json();
+      throw new Error("Invalid token");
+    })
+    .then(data => {
+      if (data.success && data.data) {
+        // Store the user data from validation response
+        localStorage.setItem("adminUser", JSON.stringify(data.data));
+        setUserName(data.data.name || data.data.email || "Admin");
+      }
+    })
+    .catch(err => {
+      console.error("Authentication error:", err);
+      // Redirect to login on auth error
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("adminUser");
+      router.push("/login");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
   }, [router]);
 
   const handleLogout = () => {

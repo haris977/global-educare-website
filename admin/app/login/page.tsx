@@ -62,7 +62,19 @@ export default function LoginPage() {
       // For testing purposes, allow a direct login with admin/admin
       if (formData.email === "admin@example.com" && formData.password === "admin") {
         console.log("Using test credentials");
+        
+        // Create a proper development token with user data
+        const testUserData = {
+          id: "test-admin-id",
+          email: "admin@example.com",
+          name: "Admin User",
+          role: "ADMIN"
+        };
+        
+        // Store both token and user data
         localStorage.setItem("adminToken", "test-token-for-development");
+        localStorage.setItem("adminUser", JSON.stringify(testUserData));
+        
         router.replace("/dashboard");
         return;
       }
@@ -74,6 +86,7 @@ export default function LoginPage() {
       if (response.success) {
         console.log("Login successful");
         localStorage.setItem("adminToken", response.data.token);
+        localStorage.setItem("adminUser", JSON.stringify(response.data.user));
         router.replace("/dashboard");
       } else {
         console.error("Login failed with response:", response);

@@ -41,6 +41,70 @@ interface Test {
   title: string;
 }
 
+// Function to get valid question types based on module type
+const getQuestionTypesByModule = (moduleType: string): string[] => {
+  switch(moduleType) {
+    case "READING":
+      return [
+        "MULTIPLE_CHOICE",
+        "TRUE_FALSE",
+        "PARA_HEADINGS",
+        "COMPLETE_SENTENCE",
+        "NAME_MATCHING",
+        "FILL_BLANK",
+        "TRUE_FALSE_NOT_GIVEN",
+        "YES_NO_NOT_GIVEN"
+      ];
+    case "LISTENING":
+      return [
+        "MULTIPLE_CHOICE",
+        "TRUE_FALSE",
+        "SHORT_ANSWER", 
+        "FILL_BLANK",
+        "MAP"
+      ];
+    case "WRITING":
+      return [
+        "ESSAY"
+      ];
+    case "SPEAKING":
+      return [
+        "SPEAKING_TASK_1",
+        "SPEAKING_TASK_2",
+        "SPEAKING_TASK_3",
+        "SPEAKING_FOLLOW_UPS"
+      ];
+    default:
+      return [
+        "MULTIPLE_CHOICE",
+        "TRUE_FALSE"
+      ];
+  }
+};
+
+// Helper function to format question type for display
+const formatQuestionType = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    "MULTIPLE_CHOICE": "Multiple Choice",
+    "TRUE_FALSE": "True/False",
+    "SHORT_ANSWER": "Short Answer",
+    "ESSAY": "Essay",
+    "PARA_HEADINGS": "Paragraph Headings",
+    "COMPLETE_SENTENCE": "Complete the Sentence",
+    "NAME_MATCHING": "Name Matching",
+    "FILL_BLANK": "Fill in the Blanks",
+    "TRUE_FALSE_NOT_GIVEN": "True/False/Not Given",
+    "YES_NO_NOT_GIVEN": "Yes/No/Not Given",
+    "MAP": "Map",
+    "SPEAKING_TASK_1": "Speaking - Introduction",
+    "SPEAKING_TASK_2": "Speaking - Cue Card",
+    "SPEAKING_TASK_3": "Speaking - Discussion",
+    "SPEAKING_FOLLOW_UPS": "Speaking - Follow Ups"
+  };
+  
+  return typeMap[type] || type.replace(/_/g, ' ');
+};
+
 export default function QuestionsPage({ params }: { params: { id: string; sectionId: string } }) {
   const router = useRouter();
   // Unwrap params using React.use() to fix the warning
@@ -74,6 +138,9 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     followUpQuestions: [] as string[]
   });
   
+  // Add state for moduleType
+  const [moduleType, setModuleType] = useState<string>("READING");
+  
   // Fetch test, section and questions data
   useEffect(() => {
     const fetchData = async () => {
@@ -88,6 +155,9 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
             title: testResponse.data.title
           });
           
+          // Store the module type
+          setModuleType(testResponse.data.moduleType);
+          
           // Find the section in the test data
           const foundSection = testResponse.data.sections.find(
             (section: any) => section.id === sectionId
@@ -99,6 +169,13 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
             if (foundSection.questions && foundSection.questions.length > 0) {
               setQuestions(foundSection.questions);
             }
+            
+            // Update current question type based on module type
+            const validTypes = getQuestionTypesByModule(testResponse.data.moduleType);
+            setCurrentQuestion(prev => ({
+              ...prev,
+              questionType: validTypes[0]
+            }));
           } else {
             setError("Section not found");
           }
@@ -572,21 +649,9 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                       onChange={handleQuestionChange}
                       className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                     >
-                      <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-                      <option value="TRUE_FALSE">True/False</option>
-                      <option value="SHORT_ANSWER">Short Answer</option>
-                      <option value="ESSAY">Essay</option>
-                      <option value="PARA_HEADINGS">Para Headings</option>
-                      <option value="COMPLETE_SENTENCE">Complete the Sentence</option>
-                      <option value="NAME_MATCHING">Name Matching</option>
-                      <option value="FILL_BLANK">Fill up the Blanks</option>
-                      <option value="TRUE_FALSE_NOT_GIVEN">True/False/Not Given</option>
-                      <option value="YES_NO_NOT_GIVEN">Yes/No/Not Given</option>
-                      <option value="MAP">Map</option>
-                      <option value="SPEAKING_TASK_1">Speaking - Introduction</option>
-                      <option value="SPEAKING_TASK_2">Speaking - Cue Card</option>
-                      <option value="SPEAKING_TASK_3">Speaking - Discussion</option>
-                      <option value="SPEAKING_FOLLOW_UPS">Speaking - Follow Ups</option>
+                      {getQuestionTypesByModule(moduleType).map((type) => (
+                        <option key={type} value={type}>{formatQuestionType(type)}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -1225,7 +1290,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {question.questionType.replace(/_/g, ' ')}
+                                {formatQuestionType(question.questionType)}
                               </span>
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 {question.marks} {question.marks === 1 ? 'point' : 'points'}
@@ -1379,7 +1444,8 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                             )}
 
                             {/* Show TRUE_FALSE_NOT_GIVEN and YES_NO_NOT_GIVEN */}
-                            {(question.questionType === "TRUE_FALSE_NOT_GIVEN" || question.questionType === "YES_NO_NOT_GIVEN") && (
+                            {(question.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+                              question.questionType === "YES_NO_NOT_GIVEN") && (
                               <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
                                 <p className="text-xs font-medium text-gray-500 mb-2">
                                   {question.questionType === "TRUE_FALSE_NOT_GIVEN" ? "True/False/Not Given:" : "Yes/No/Not Given:"}

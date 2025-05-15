@@ -49,6 +49,7 @@ interface TestForm {
   questions: Question[];
   moduleType: string;
   difficulty: string;
+  totalMarks: number;
 }
 
 export default function CreateTestPage() {
@@ -72,15 +73,12 @@ export default function CreateTestPage() {
         return [
           "MULTIPLE_CHOICE",
           "TRUE_FALSE",
-          "SHORT_ANSWER",
-          "ESSAY",
           "PARA_HEADINGS",
           "COMPLETE_SENTENCE",
           "NAME_MATCHING",
           "FILL_BLANK",
           "TRUE_FALSE_NOT_GIVEN",
-          "YES_NO_NOT_GIVEN",
-          "MAP"
+          "YES_NO_NOT_GIVEN"
         ];
       case "LISTENING":
         return [
@@ -104,8 +102,7 @@ export default function CreateTestPage() {
       default:
         return [
           "MULTIPLE_CHOICE",
-          "TRUE_FALSE",
-          "SHORT_ANSWER"
+          "TRUE_FALSE"
         ];
     }
   };
@@ -118,7 +115,8 @@ export default function CreateTestPage() {
     isPublished: false,
     questions: [],
     moduleType: moduleTypeParam || "READING", // Use URL param or default to READING
-    difficulty: "MEDIUM"   // Default difficulty level
+    difficulty: "MEDIUM",  // Default difficulty level
+    totalMarks: 10 // Default total marks
   });
   
   // Update form if moduleType changes in URL
@@ -336,7 +334,8 @@ export default function CreateTestPage() {
         moduleType: form.moduleType,
         totalTime: Number(form.totalTime),
         totalQuestions: 0, // Will be updated as questions are added
-        isPublished: form.isPublished
+        isPublished: form.isPublished,
+        totalMarks: form.totalMarks
       };
       
       console.log("Sending to backend:", JSON.stringify(testData, null, 2));
@@ -585,7 +584,7 @@ export default function CreateTestPage() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label htmlFor="totalTime" className="block text-sm font-medium text-gray-700 mb-1">Time Limit (minutes)</label>
                     <div className="relative rounded-md shadow-sm">
@@ -605,19 +604,37 @@ export default function CreateTestPage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-1">Difficulty Level</label>
-                    <select
-                      name="difficulty"
-                      id="difficulty"
-                      value={form.difficulty}
-                      onChange={handleInputChange}
-                      className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
-                    >
-                      {difficultyLevels.map(level => (
-                        <option key={level} value={level}>{level.charAt(0) + level.slice(1).toLowerCase()}</option>
-                      ))}
-                    </select>
+                    <label htmlFor="totalMarks" className="block text-sm font-medium text-gray-700 mb-1">Total Marks</label>
+                    <div className="relative rounded-md shadow-sm">
+                      <input
+                        type="number"
+                        name="totalMarks"
+                        id="totalMarks"
+                        min={1}
+                        value={form.totalMarks}
+                        onChange={handleInputChange}
+                        className="block w-full pl-4 pr-12 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <span className="text-gray-500 sm:text-sm">marks</span>
+                      </div>
+                    </div>
                   </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-1">Difficulty Level</label>
+                  <select
+                    name="difficulty"
+                    id="difficulty"
+                    value={form.difficulty}
+                    onChange={handleInputChange}
+                    className="block w-full pl-4 py-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
+                  >
+                    {difficultyLevels.map(level => (
+                      <option key={level} value={level}>{level.charAt(0) + level.slice(1).toLowerCase()}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -1350,6 +1367,10 @@ export default function CreateTestPage() {
                           </span>
                         )}
                       </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Total Marks</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{form.totalMarks}</dd>
                     </div>
                   </dl>
                 </div>

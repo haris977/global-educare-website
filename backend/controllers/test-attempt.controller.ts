@@ -459,17 +459,7 @@ export const getUserTestHistory = async (req: AuthenticatedRequest, res: Respons
     // Get user's test attempts
     const attempts = await prisma.testAttempt.findMany({
       where: whereClause,
-      include: {
-        test: {
-          select: {
-            id: true,
-            title: true,
-            moduleType: true,
-            totalQuestions: true,
-            totalMarks: true
-          }
-        }
-      },
+            include: {        test: {          select: {            id: true,            title: true,            moduleType: true,            totalQuestions: true,            clbScore: true          }        }      },
       orderBy: {
         startedAt: 'desc'
       }

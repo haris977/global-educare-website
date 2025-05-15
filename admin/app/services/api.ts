@@ -301,7 +301,7 @@ const TestsAPI = {
   
   updateQuestion: async (questionId: string, questionData: any) => {
     try {
-      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/questions/${questionId}`, {
+      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/tests/questions/${questionId}`, {
         method: 'PUT',
         body: JSON.stringify(questionData),
       });
@@ -317,7 +317,7 @@ const TestsAPI = {
   
   deleteQuestion: async (questionId: string) => {
     try {
-      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/questions/${questionId}`, {
+      return await fetchWithAuth<{success: boolean; message: string; data: any}>(`/tests/questions/${questionId}`, {
         method: 'DELETE',
       });
     } catch (error: any) {

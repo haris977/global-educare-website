@@ -18,7 +18,7 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
       difficulty, 
       moduleType, 
       totalTime, 
-      totalMarks,
+      clbScore,
       isPublished
     } = req.body;
 
@@ -33,7 +33,7 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
     */
 
     // Create the test
-    const test = await prisma.test.create({
+    const newTest = await prisma.test.create({
       data: {
         title,
         description,
@@ -41,17 +41,17 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
         moduleType,
         totalTime,
         totalQuestions: 0, // Will be updated as questions are added
-        totalMarks,
+        clbScore: clbScore || 1, // Default CLB score to 1 if not provided
         isPublished: isPublished || false
       }
     });
 
-    console.log("Test created successfully:", test.id);
+    console.log("Test created successfully:", newTest.id);
     
     // Automatically create a default section for the test
     await prisma.section.create({
       data: {
-        testId: test.id,
+        testId: newTest.id,
         title: "Section 1",
         instructions: "Default section for the test",
         order: 1,
@@ -59,11 +59,11 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
       }
     });
     
-    console.log("Default section created for test:", test.id);
+    console.log("Default section created for test:", newTest.id);
 
     // Get the updated test with the new section
     const testWithSection = await prisma.test.findUnique({
-      where: { id: test.id },
+      where: { id: newTest.id },
       include: {
         sections: true
       }
@@ -127,7 +127,29 @@ export const getTestById = async (req: Request, res: Response) => {
       include: {
         sections: {
           include: {
-            questions: true
+            questions: {
+              select: {
+                id: true,
+                sectionId: true,
+                questionText: true,
+                questionType: true,
+                questionImage: true,
+                audioFile: true,
+                additionalInfo: true,
+                order: true,
+                marks: true,
+                options: true,
+                correctAnswer: true,
+                passage: true,
+                cueCard: true,
+                speakingPrompts: true,
+                bandDescriptors: true,
+                sampleAnswer: true,
+              },
+              orderBy: {
+                order: 'asc'
+              }
+            }
           },
           orderBy: {
             order: 'asc'
@@ -161,7 +183,7 @@ export const updateTest = async (req: AuthenticatedRequest, res: Response) => {
       difficulty, 
       moduleType, 
       totalTime, 
-      totalMarks,
+      clbScore,
       isPublished
     } = req.body;
 
@@ -173,11 +195,11 @@ export const updateTest = async (req: AuthenticatedRequest, res: Response) => {
     }
     */
 
-    const test = await prisma.test.findUnique({
+    const existingTest = await prisma.test.findUnique({
       where: { id }
     });
 
-    if (!test) {
+    if (!existingTest) {
       return sendErrorResponse(res, 'Test not found', 404);
     }
 
@@ -189,7 +211,7 @@ export const updateTest = async (req: AuthenticatedRequest, res: Response) => {
         difficulty,
         moduleType,
         totalTime,
-        totalMarks,
+        clbScore,
         isPublished
       }
     });
@@ -419,49 +441,47 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
     const parsedOptions = parseJsonField(options);
     const parsedSpeakingPrompts = parseJsonField(speakingPrompts);
     const parsedBandDescriptors = parseJsonField(bandDescriptors);
+    const parsedParagraphs = parseJsonField(paragraphs);
 
+    // Build the data object conditionally
+    const questionData: any = {
+      sectionId,
+      questionText,
+      questionType,
+      order: order || (await prisma.question.count({ where: { sectionId } })) + 1,
+      marks: marks || 1.0,
+    };
+
+    // Only add fields if they are provided and not undefined or null
+    if (questionImage) questionData.questionImage = questionImage;
+    if (audioFile) questionData.audioFile = audioFile;
+    if (additionalInfo) questionData.additionalInfo = additionalInfo;
+    if (correctAnswer) questionData.correctAnswer = correctAnswer;
+    if (passage) questionData.passage = passage;
+    if (cueCard) questionData.cueCard = cueCard;
+
+    // Add JSON fields with proper parsing
+    if (parsedOptions) questionData.options = parsedOptions;
+    if (parsedSpeakingPrompts) questionData.speakingPrompts = parsedSpeakingPrompts;
+    if (parsedBandDescriptors) questionData.bandDescriptors = parsedBandDescriptors;
+    if (parsedParagraphs) questionData.paragraphs = parsedParagraphs;
+    if (followUpQuestions) questionData.followUpQuestions = followUpQuestions;
+    if (sentences) questionData.sentences = sentences;
+    if (mapLabels) questionData.mapLabels = mapLabels;
+    if (matchingPairs) questionData.matchingPairs = matchingPairs;
+    if (sampleAnswer) questionData.sampleAnswer = sampleAnswer;
+    
     const question = await prisma.question.create({
-      data: {
-        sectionId,
-        questionText,
-        questionType,
-        questionImage,
-        audioFile,
-        additionalInfo,
-        order: order || (await prisma.question.count({ where: { sectionId } })) + 1,
-        marks: marks || 1.0,
-        // Stringify parsed JSON data for storage
-        options: parsedOptions ? Array.isArray(parsedOptions) ? JSON.stringify(parsedOptions) : parsedOptions : undefined,
-        correctAnswer,
-        
-        // Reading specific fields
-        passage,
-        paragraphs,
-        sentences,
-        matchingPairs,
-        
-        // Listening specific fields
-        mapLabels,
-        
-        // Speaking specific fields
-        cueCard,
-        speakingPrompts: parsedSpeakingPrompts ? JSON.stringify(parsedSpeakingPrompts) : undefined,
-        followUpQuestions,
-        
-        // Assessment fields
-        bandDescriptors: parsedBandDescriptors ? JSON.stringify(parsedBandDescriptors) : undefined,
-        sampleAnswer
-      }
+      data: questionData
     });
 
     console.log("Question created successfully:", question.id);
 
-    // Update test total questions and total marks
+    // Update test total questions count
     await prisma.test.update({
       where: { id: section.test.id },
       data: {
-        totalQuestions: { increment: 1 },
-        totalMarks: { increment: marks || 1.0 }
+        totalQuestions: { increment: 1 }
       }
     });
 
@@ -485,14 +505,16 @@ const isQuestionTypeValidForModule = (questionType: string, moduleType: string):
     'NAME_MATCHING', 
     'FILL_BLANK', 
     'TRUE_FALSE_NOT_GIVEN', 
-    'YES_NO_NOT_GIVEN'
+    'YES_NO_NOT_GIVEN',
+    'TRUE_FALSE'
   ];
   
   const listeningQuestionTypes = [
     'MULTIPLE_CHOICE',
     'FILL_BLANK',
     'TRUE_FALSE',
-    'MAP'
+    'MAP',
+    'SHORT_ANSWER'
   ];
   
   const speakingQuestionTypes = [
@@ -500,6 +522,10 @@ const isQuestionTypeValidForModule = (questionType: string, moduleType: string):
     'SPEAKING_TASK_2',
     'SPEAKING_TASK_3',
     'SPEAKING_FOLLOW_UPS'
+  ];
+
+  const writingQuestionTypes = [
+    'ESSAY'
   ];
   
   switch (moduleType) {
@@ -509,6 +535,8 @@ const isQuestionTypeValidForModule = (questionType: string, moduleType: string):
       return listeningQuestionTypes.includes(questionType);
     case 'SPEAKING':
       return speakingQuestionTypes.includes(questionType);
+    case 'WRITING':
+      return writingQuestionTypes.includes(questionType);
     case 'IELTS_GENERAL':
     case 'IELTS_ACADEMIC':
     case 'COMBINED':
@@ -700,14 +728,10 @@ export const updateQuestion = async (req: AuthenticatedRequest, res: Response) =
       }
     });
 
-    // Update test total marks if marks have changed
+    // We no longer track total marks in the test model
+    // Just log the change for debugging
     if (marksDifference !== 0) {
-      await prisma.test.update({
-        where: { id: updatedQuestion.section.test.id },
-        data: {
-          totalMarks: { increment: marksDifference }
-        }
-      });
+      console.log(`Question marks updated by ${marksDifference} for question ${id}`);
     }
 
     return sendSuccessResponse(res, updatedQuestion, 'Question updated successfully');
@@ -745,12 +769,11 @@ export const deleteQuestion = async (req: AuthenticatedRequest, res: Response) =
       where: { id }
     });
 
-    // Update test total questions and total marks
+    // Update test total questions count
     await prisma.test.update({
       where: { id: question.section.test.id },
       data: {
-        totalQuestions: { decrement: 1 },
-        totalMarks: { decrement: question.marks }
+        totalQuestions: { decrement: 1 }
       }
     });
 
@@ -771,6 +794,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
       difficulty, 
       moduleType, 
       totalTime, 
+      clbScore,
       isPublished,
       testCategory,
       isFeatured,
@@ -789,23 +813,19 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
 
     // Start transaction to ensure all operations succeed or fail together
     return await prisma.$transaction(async (tx) => {
-      // Calculate total marks by summing all question marks
+      // Calculate total questions
       let totalQuestions = 0;
-      let totalMarks = 0;
       
       if (sections && Array.isArray(sections)) {
         for (const section of sections) {
           if (section.questions && Array.isArray(section.questions)) {
             totalQuestions += section.questions.length;
-            for (const question of section.questions) {
-              totalMarks += question.marks || 1.0;
-            }
           }
         }
       }
 
       // Create the test
-      const test = await tx.test.create({
+      const newTest = await tx.test.create({
         data: {
           title,
           description,
@@ -813,14 +833,14 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
           moduleType,
           totalTime,
           totalQuestions,
-          totalMarks,
+          clbScore: clbScore || 1, // Default CLB score to 1 if not provided
           isPublished: isPublished || false,
           testCategory,
           isFeatured: isFeatured || false
         }
       });
 
-      console.log("IELTS test created successfully:", test.id);
+      console.log("IELTS test created successfully:", newTest.id);
       
       // Create sections and questions
       if (sections && Array.isArray(sections)) {
@@ -828,7 +848,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
           const section = sections[i];
           const createdSection = await tx.section.create({
             data: {
-              testId: test.id,
+              testId: newTest.id,
               title: section.title,
               instructions: section.instructions,
               order: section.order || i + 1,
@@ -836,7 +856,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
             }
           });
           
-          console.log(`Section ${createdSection.title} created for test: ${test.id}`);
+          console.log(`Section ${createdSection.title} created for test: ${newTest.id}`);
           
           // Create questions for this section
           if (section.questions && Array.isArray(section.questions)) {
@@ -899,7 +919,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
 
       // Get the updated test with all sections and questions
       const completeTest = await tx.test.findUnique({
-        where: { id: test.id },
+        where: { id: newTest.id },
         include: {
           sections: {
             include: {

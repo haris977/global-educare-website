@@ -53,7 +53,7 @@ model Test {
   moduleType      ModuleType
   totalTime       Int       // In minutes
   totalQuestions  Int
-  totalMarks      Float
+  clbScore        Int       @default(1)  // Canadian Language Benchmark score level (1-12)
   isPublished     Boolean   @default(false)
   isFeatured      Boolean   @default(false)
   testCategory    String?   // For categorizing tests (e.g., "Practice", "Mock", "Official")
@@ -99,7 +99,7 @@ model Question {
   
   // Reading specific fields
   passage           String?   // For reading passages
-  paragraphs        String?   // For paragraph headings
+  paragraphs        Json?     // For paragraph headings - stored as JSON rather than string
   sentences         String?   // For complete the sentence and fill in the blanks
   matchingPairs     String?   // For name matching
   

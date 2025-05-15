@@ -34,7 +34,6 @@ interface Test {
   moduleType: string;
   difficulty: string;
   totalTime: number;
-  totalMarks: number;
   totalQuestions: number;
   clbScore: number;
   isPublished: boolean;
@@ -68,7 +67,7 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
   // Fetch test data on component mount
   useEffect(() => {
     loadTest();
-  }, [params.id]);
+  }, [id]);
   
   // Fetch test data
   const loadTest = async () => {
@@ -84,11 +83,10 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
           title: response.data.title,
           description: response.data.description || "",
           totalTime: response.data.totalTime || 0,
-          totalMarks: response.data.totalMarks || 0,
-          clbScore: response.data.clbScore || 0,
+          clbScore: response.data.clbScore || 1,
           isPublished: response.data.isPublished || false,
           sections: response.data.sections || []
-        });
+        } as Test);
       } else {
         setError(response.message || "Failed to load test data");
       }
@@ -155,7 +153,6 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
         title: editForm.title,
         description: editForm.description,
         totalTime: Number(editForm.totalTime),
-        totalMarks: Number(editForm.totalMarks),
         clbScore: Number(editForm.clbScore),
         isPublished: editForm.isPublished
       };

@@ -367,8 +367,26 @@ export const validateToken = async (req: AuthenticatedRequest, res: Response) =>
       return sendErrorResponse(res, 'Invalid token', 401);
     }
 
-    // If the middleware allowed the request to reach here, the token is valid
-    return sendSuccessResponse(res, { valid: true }, 'Token is valid');
+    // Get user data to return with the response
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        profilePicture: true,
+        subscriptionStatus: true,
+        subscriptionPlan: true
+      }
+    });
+
+    if (!user) {
+      return sendErrorResponse(res, 'User not found', 404);
+    }
+
+    // Return user data along with token validation
+    return sendSuccessResponse(res, user, 'Token is valid');
   } catch (error) {
     return sendErrorResponse(res, 'Error validating token', 500, error);
   }
