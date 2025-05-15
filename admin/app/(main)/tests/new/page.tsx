@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "../../../services/api";
 
@@ -54,44 +54,13 @@ interface TestForm {
 
 export default function CreateTestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const moduleTypeParam = searchParams.get('moduleType');
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  
-  // Initial form state
-  const [form, setForm] = useState<TestForm>({
-    title: "",
-    description: "",
-    totalTime: 60,
-    clbScore: 7,
-    isPublished: false,
-    questions: [],
-    moduleType: "READING", // Default to READING (valid enum value)
-    difficulty: "MEDIUM"   // Default difficulty level
-  });
-  
-  // Get initial question type based on default module
-  const initialQuestionType = "MULTIPLE_CHOICE"; // Valid for all modules
-  
-  // Current question being edited
-  const [currentQuestion, setCurrentQuestion] = useState<Question>({
-    id: "",
-    text: "",
-    type: initialQuestionType,
-    options: ["", "", "", ""],
-    correctAnswer: "",
-    points: 1,
-    passage: "",
-    paragraphs: [],
-    sentences: [],
-    matchingPairs: {},
-    mapLabels: [],
-    questionImage: "",
-    cueCard: "",
-    speakingPrompts: [],
-    followUpQuestions: []
-  });
   
   // Available module types based on backend schema
   const moduleTypes = ["LISTENING", "READING", "WRITING", "SPEAKING"];
@@ -141,6 +110,53 @@ export default function CreateTestPage() {
         ];
     }
   };
+  
+  // Initial form state
+  const [form, setForm] = useState<TestForm>({
+    title: "",
+    description: "",
+    totalTime: 60,
+    clbScore: 7,
+    isPublished: false,
+    questions: [],
+    moduleType: moduleTypeParam || "READING", // Use URL param or default to READING
+    difficulty: "MEDIUM"   // Default difficulty level
+  });
+  
+  // Update form if moduleType changes in URL
+  useEffect(() => {
+    if (moduleTypeParam) {
+      setForm(prev => ({
+        ...prev,
+        moduleType: moduleTypeParam
+      }));
+    }
+  }, [moduleTypeParam]);
+  
+  // Get initial question type based on current module
+  const getInitialQuestionType = (): QuestionType => {
+    const validTypes = getQuestionTypesByModule(moduleTypeParam || "READING");
+    return validTypes[0];
+  };
+  
+  // Current question being edited
+  const [currentQuestion, setCurrentQuestion] = useState<Question>({
+    id: "",
+    text: "",
+    type: getInitialQuestionType(),
+    options: ["", "", "", ""],
+    correctAnswer: "",
+    points: 1,
+    passage: "",
+    paragraphs: [],
+    sentences: [],
+    matchingPairs: {},
+    mapLabels: [],
+    questionImage: "",
+    cueCard: "",
+    speakingPrompts: [],
+    followUpQuestions: []
+  });
   
   // Handle basic form field changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
