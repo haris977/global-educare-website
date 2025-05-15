@@ -142,6 +142,11 @@ export const TestsAPI = {
     });
   },
   
+  // Get test result details
+  getTestResult: async (attemptId: string) => {
+    return fetchData<{success: boolean; message: string; data: any}>(`/tests/attempts/${attemptId}/result`);
+  },
+  
   // Get user's test history
   getUserTestHistory: async (filters?: {
     moduleType?: string;

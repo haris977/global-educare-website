@@ -568,38 +568,98 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <div className="overflow-hidden">
                 {test.sections.map((section) => (
-                  <li key={section.id} className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 bg-indigo-600 rounded-full w-8 h-8 flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">{section.questions.length}</span>
-                      </div>
-                      <div className="ml-4 flex-1">
-                        <h4 className="text-sm font-medium text-gray-900">{section.title}</h4>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                            {section.questions.length} questions
-                          </span>
-                          {/* Group questions by type and show counts */}
-                          {(() => {
-                            const questionTypes = section.questions.reduce((types, q) => {
-                              types[q.questionType] = (types[q.questionType] || 0) + 1;
-                              return types;
-                            }, {});
-                            
-                            return Object.entries(questionTypes).map(([type, count]) => (
-                              <span key={type} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                {count} {type.replace(/_/g, ' ').toLowerCase()}
-                              </span>
-                            ));
-                          })()}
-                        </div>
-                      </div>
+                  <div key={section.id} className="border-b border-gray-200 last:border-b-0">
+                    <div className="bg-gray-50 px-4 py-3">
+                      <h3 className="text-sm font-semibold text-gray-900">{section.title}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{section.instructions || 'No instructions provided'}</p>
                     </div>
-                  </li>
+                    
+                    {section.questions.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-gray-500 italic">No questions in this section</div>
+                    ) : (
+                      <ul className="divide-y divide-gray-100">
+                        {section.questions.map((question, index) => {
+                          // Format question type for display
+                          const formattedType = question.questionType
+                            .split('_')
+                            .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+                            .join(' ');
+                            
+                          // Get background color based on question type
+                          let typeColor = "bg-blue-50 text-blue-800";
+                          if (question.questionType.includes("READING") || question.questionType === "MULTIPLE_CHOICE") {
+                            typeColor = "bg-indigo-50 text-indigo-800";
+                          } else if (question.questionType.includes("LISTENING")) {
+                            typeColor = "bg-emerald-50 text-emerald-800";
+                          } else if (question.questionType.includes("WRITING")) {
+                            typeColor = "bg-amber-50 text-amber-800";
+                          } else if (question.questionType.includes("SPEAKING")) {
+                            typeColor = "bg-rose-50 text-rose-800";
+                          }
+                          
+                          return (
+                            <li key={question.id} className="px-4 py-3 hover:bg-gray-50">
+                              <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0 h-6 w-6 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-xs font-medium">
+                                  {index + 1}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-gray-900 line-clamp-2">{question.questionText}</p>
+                                  <div className="mt-1.5 flex flex-wrap gap-2">
+                                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${typeColor}`}>
+                                      {formattedType}
+                                    </span>
+                                    <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-gray-50 text-gray-800">
+                                      {question.marks} {question.marks === 1 ? 'mark' : 'marks'}
+                                    </span>
+                                    
+                                    {/* Show additional details based on question type */}
+                                    {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
+                                      <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-purple-50 text-purple-800">
+                                        {JSON.parse(question.options).length || 0} options
+                                      </span>
+                                    )}
+                                    
+                                    {question.passage && (
+                                      <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-50 text-green-800">
+                                        Has passage
+                                      </span>
+                                    )}
+                                    
+                                    {question.questionImage && (
+                                      <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-pink-50 text-pink-800">
+                                        Has image
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex-shrink-0">
+                                  <Link
+                                    href={`/tests/${id}/sections/${section.id}/questions`}
+                                    className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                                  >
+                                    Edit
+                                  </Link>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    <div className="px-4 py-2 bg-gray-50 flex justify-end">
+                      <Link
+                        href={`/tests/${id}/sections/${section.id}/questions`}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                      >
+                        Manage questions
+                      </Link>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         </div>
