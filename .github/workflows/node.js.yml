@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: Node.js CI
 
 on:
@@ -9,49 +8,57 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     strategy:
       matrix:
         node-version: [22.x]
-        project-dir: [website, admin, backend]
 
     defaults:
       run:
-        working-directory: ${{ matrix.project-dir }}
+        # Apply this working-directory to all `run:` steps
+        working-directory: ${{ matrix.project.path }}
 
     steps:
-      - name: Check out code
+      # 1) Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
+      # 2) Set up Node.js with npm cache
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: |
-            website/package-lock.json
-            admin/package-lock.json
-            backend/package-lock.json  # ensure setup-node sees each lockfile :contentReference[oaicite:0]{index=0}
 
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-npm-${{ matrix.project-dir }}-${{ hashFiles(matrix.project-dir + '/package-lock.json') }}  
-          restore-keys: |
-            ${{ runner.os }}-npm-${{ matrix.project-dir }}-  
-
-      - name: Cache Next.js build cache (if any)
-        if: ${{ matrix.project-dir != 'backend' }}
-        uses: actions/cache@v3
-        with:
-          path: ${{ matrix.project-dir }}/.next/cache
-          key: ${{ runner.os }}-next-cache-${{ matrix.project-dir }}-${{ hashFiles(matrix.project-dir + '/next.config.js', matrix.project-dir + '/package.json') }}  
-        # Next.js stores build artifacts in .next/cache; caching speeds up incremental builds :contentReference[oaicite:1]{index=1}
-
-      - name: Install & build
+      # 3) Build each sub-project
+      - name: Install & Build website
+        # override the project.path for this step
+        env:
+          PROJECT_PATH: website
         run: |
           npm ci
-          npm run build --if-present
+          npm run build
+          defaults:
+            run:
+            working-directory: website
+
+      - name: Install & Build admin
+        env:
+          PROJECT_PATH: admin
+        run: |
+          npm ci
+          npm run build
+          defaults:
+          run:
+            working-directory: admin
+
+      - name: Install & Build backend
+        env:
+          PROJECT_PATH: backend
+        run: |
+          npm ci
+          npm run build
+          defaults:
+            run:
+              working-directory: backend
