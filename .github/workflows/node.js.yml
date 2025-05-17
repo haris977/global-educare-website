@@ -39,9 +39,6 @@ jobs:
         run: |
           npm ci
           npm run build
-          defaults:
-            run:
-            working-directory: website
 
       - name: Install & Build admin
         env:
@@ -49,9 +46,6 @@ jobs:
         run: |
           npm ci
           npm run build
-          defaults:
-          run:
-            working-directory: admin
 
       - name: Install & Build backend
         env:
@@ -59,6 +53,3 @@ jobs:
         run: |
           npm ci
           npm run build
-          defaults:
-            run:
-              working-directory: backend
