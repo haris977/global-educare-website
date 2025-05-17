@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: Node.js CI
 
 on:
@@ -31,7 +32,24 @@ jobs:
           cache-dependency-path: |
             website/package-lock.json
             admin/package-lock.json
-            backend/package-lock.json
+            backend/package-lock.json  # ensure setup-node sees each lockfile :contentReference[oaicite:0]{index=0}
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-npm-${{ matrix.project-dir }}-${{ hashFiles(matrix.project-dir + '/package-lock.json') }}  
+          restore-keys: |
+            ${{ runner.os }}-npm-${{ matrix.project-dir }}-  
+
+      - name: Cache Next.js build cache (if any)
+        if: ${{ matrix.project-dir != 'backend' }}
+        uses: actions/cache@v3
+        with:
+          path: ${{ matrix.project-dir }}/.next/cache
+          key: ${{ runner.os }}-next-cache-${{ matrix.project-dir }}-${{ hashFiles(matrix.project-dir + '/next.config.js', matrix.project-dir + '/package.json') }}  
+        # Next.js stores build artifacts in .next/cache; caching speeds up incremental builds :contentReference[oaicite:1]{index=1}
 
       - name: Install & build
         run: |
