@@ -44,6 +44,7 @@ export default function TestResultsPage() {
   const router = useRouter();
   const [result, setResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingStep, setLoadingStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   
   // Fetch test result data
@@ -51,10 +52,12 @@ export default function TestResultsPage() {
     const fetchTestResult = async () => {
       try {
         setLoading(true);
+        setLoadingStep(1);
         
         // Check for fallback/local test results first
         if (params.id.startsWith('local-attempt-') || params.id.includes('fallback-test')) {
           console.log("Looking for local test result:", params.id);
+          setLoadingStep(2);
           
           // Try to get result from localStorage
           if (typeof window !== 'undefined') {
@@ -63,6 +66,7 @@ export default function TestResultsPage() {
             if (localResult) {
               console.log("Found local test result");
               const parsedResult = JSON.parse(localResult);
+              setLoadingStep(3);
               
               // Create mock section results if they don't exist
               if (!parsedResult.sectionResults) {
@@ -78,7 +82,9 @@ export default function TestResultsPage() {
         }
         
         // Regular API flow
+        setLoadingStep(2);
         const response = await TestsAPI.getTestResult(params.id as string);
+        setLoadingStep(3);
         
         if (response.success && response.data) {
           setResult(response.data);
@@ -371,11 +377,31 @@ export default function TestResultsPage() {
   
   // Loading state
   if (loading) {
+    const loadingSteps = [
+      "Initializing...",
+      "Fetching your test results...",
+      "Preparing your score report..."
+    ];
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-700">Loading your test results...</p>
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+            <h2 className="mt-6 text-xl font-semibold text-gray-900">Loading Results</h2>
+            <p className="mt-2 text-gray-600">{loadingSteps[loadingStep - 1]}</p>
+            
+            <div className="mt-6 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-600 transition-all duration-500 ease-in-out"
+                style={{ width: `${(loadingStep / loadingSteps.length) * 100}%` }}
+              ></div>
+            </div>
+            
+            <div className="mt-4 text-sm text-gray-500">
+              Step {loadingStep} of {loadingSteps.length}
+            </div>
+          </div>
         </div>
       </div>
     );
