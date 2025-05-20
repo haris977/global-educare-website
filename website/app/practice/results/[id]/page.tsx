@@ -336,13 +336,36 @@ export default function TestResultsPage() {
     }
   };
   
+  // Convert percentage score to IELTS band score (1-9 scale)
+  const calculateIeltsBand = (percentageScore: number): number => {
+    if (percentageScore >= 95) return 9.0;
+    if (percentageScore >= 90) return 8.5;
+    if (percentageScore >= 85) return 8.0;
+    if (percentageScore >= 80) return 7.5;
+    if (percentageScore >= 75) return 7.0;
+    if (percentageScore >= 70) return 6.5;
+    if (percentageScore >= 65) return 6.0;
+    if (percentageScore >= 60) return 5.5;
+    if (percentageScore >= 55) return 5.0;
+    if (percentageScore >= 50) return 4.5;
+    if (percentageScore >= 40) return 4.0;
+    if (percentageScore >= 30) return 3.5;
+    if (percentageScore >= 20) return 3.0;
+    if (percentageScore >= 10) return 2.5;
+    if (percentageScore >= 5) return 2.0;
+    if (percentageScore > 0) return 1.5;
+    return 1.0;
+  };
+  
   // Get score band description
   const getScoreBand = (percentageScore: number) => {
-    if (percentageScore >= 90) return { band: 'Excellent', color: 'bg-green-100 text-green-800' };
-    if (percentageScore >= 80) return { band: 'Very Good', color: 'bg-green-100 text-green-800' };
-    if (percentageScore >= 70) return { band: 'Good', color: 'bg-yellow-100 text-yellow-800' };
-    if (percentageScore >= 60) return { band: 'Satisfactory', color: 'bg-yellow-100 text-yellow-800' };
-    if (percentageScore >= 50) return { band: 'Adequate', color: 'bg-orange-100 text-orange-800' };
+    const band = calculateIeltsBand(percentageScore);
+    
+    if (band >= 8.0) return { band: 'Excellent', color: 'bg-green-100 text-green-800' };
+    if (band >= 7.0) return { band: 'Very Good', color: 'bg-green-100 text-green-800' };
+    if (band >= 6.0) return { band: 'Good', color: 'bg-yellow-100 text-yellow-800' };
+    if (band >= 5.0) return { band: 'Satisfactory', color: 'bg-yellow-100 text-yellow-800' };
+    if (band >= 4.0) return { band: 'Adequate', color: 'bg-orange-100 text-orange-800' };
     return { band: 'Needs Improvement', color: 'bg-red-100 text-red-800' };
   };
   
@@ -384,6 +407,7 @@ export default function TestResultsPage() {
   }
   
   const scoreBand = getScoreBand(result.percentageScore);
+  const ieltsBandScore = calculateIeltsBand(result.percentageScore);
   
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -413,7 +437,7 @@ export default function TestResultsPage() {
           
           {/* Score summary */}
           <div className="px-4 py-5 sm:p-6 border-b border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-gray-50 rounded p-4">
                 <div className="text-sm text-gray-500">Percentage Score</div>
                 <div className="text-2xl font-bold text-gray-900">{result.percentageScore}%</div>
@@ -421,6 +445,14 @@ export default function TestResultsPage() {
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${scoreBand.color}`}>
                     {scoreBand.band}
                   </span>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded p-4">
+                <div className="text-sm text-gray-500">IELTS Band Score</div>
+                <div className="text-2xl font-bold text-gray-900">{ieltsBandScore.toFixed(1)}</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  Scale: 1.0 - 9.0
                 </div>
               </div>
               
@@ -442,6 +474,22 @@ export default function TestResultsPage() {
               </div>
             </div>
             
+            {/* IELTS Band Score interpretation */}
+            <div className="mt-6 bg-blue-50 p-4 rounded-md">
+              <h3 className="text-base font-medium text-blue-900">IELTS Band Score Interpretation</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                {ieltsBandScore >= 9.0 && "Expert user: You have full operational command of English with complete understanding."}
+                {ieltsBandScore >= 8.0 && ieltsBandScore < 9.0 && "Very good user: You have fully operational command with only occasional inaccuracies."}
+                {ieltsBandScore >= 7.0 && ieltsBandScore < 8.0 && "Good user: You have operational command with occasional inaccuracies and misunderstandings."}
+                {ieltsBandScore >= 6.0 && ieltsBandScore < 7.0 && "Competent user: You have an effective command with some inaccuracies."}
+                {ieltsBandScore >= 5.0 && ieltsBandScore < 6.0 && "Modest user: You have partial command with notable inaccuracies."}
+                {ieltsBandScore >= 4.0 && ieltsBandScore < 5.0 && "Limited user: Your understanding is limited to familiar situations."}
+                {ieltsBandScore >= 3.0 && ieltsBandScore < 4.0 && "Extremely limited user: You convey only general meaning in very familiar situations."}
+                {ieltsBandScore >= 2.0 && ieltsBandScore < 3.0 && "Intermittent user: You have great difficulty understanding spoken and written English."}
+                {ieltsBandScore < 2.0 && "Non-user: You have no ability to use the language except for a few isolated words."}
+              </p>
+            </div>
+            
             {/* Feedback */}
             {result.feedback && (
               <div className="mt-6">
@@ -458,67 +506,85 @@ export default function TestResultsPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Section Results</h3>
             
             <div className="space-y-6">
-              {result.sectionResults.map((section, index) => (
-                <div key={section.sectionId} className="border border-gray-200 rounded-md overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
-                    <div>
-                      <h4 className="text-base font-medium text-gray-900">{section.title}</h4>
-                      <p className="text-sm text-gray-500">Section {index + 1}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-medium text-gray-900">
-                        {section.score} / {section.maxScore}
+              {result.sectionResults.map((section, index) => {
+                // Calculate section percentage and band score
+                const sectionPercentage = Math.round((section.score / section.maxScore) * 100);
+                const sectionBandScore = calculateIeltsBand(sectionPercentage);
+                
+                return (
+                  <div key={section.sectionId} className="border border-gray-200 rounded-md overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-3 flex flex-wrap justify-between items-center">
+                      <div>
+                        <h4 className="text-base font-medium text-gray-900">{section.title}</h4>
+                        <p className="text-sm text-gray-500">Section {index + 1}</p>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {Math.round((section.score / section.maxScore) * 100)}% correct
+                      
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <div className="text-lg font-medium text-gray-900">
+                            {section.score} / {section.maxScore}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {sectionPercentage}% correct
+                          </div>
+                        </div>
+                        
+                        <div className="text-right border-l pl-6 border-gray-200">
+                          <div className="text-base font-medium text-gray-900">
+                            Band Score
+                          </div>
+                          <div className="text-xl font-bold text-blue-600">
+                            {sectionBandScore.toFixed(1)}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-white">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Question
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Your Answer
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Correct Answer
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Score
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {section.questionResults.map((question) => (
-                          <tr key={question.questionId} className={question.isCorrect ? 'bg-green-50' : 'bg-red-50'}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="line-clamp-1">{question.questionText}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="line-clamp-1">{question.userAnswer || 'No answer'}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="line-clamp-1">{question.correctAnswer}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                question.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {question.score} / {question.maxScore}
-                              </span>
-                            </td>
+                    
+                    <div className="bg-white">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Question
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Your Answer
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Correct Answer
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Score
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {section.questionResults.map((question) => (
+                            <tr key={question.questionId} className={question.isCorrect ? 'bg-green-50' : 'bg-red-50'}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="line-clamp-1">{question.questionText}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="line-clamp-1">{question.userAnswer || 'No answer'}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="line-clamp-1">{question.correctAnswer}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  question.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {question.score} / {question.maxScore}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           

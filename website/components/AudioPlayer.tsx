@@ -5,24 +5,25 @@ import { useState, useRef, useEffect } from 'react';
 interface AudioPlayerProps {
   src: string;
   title?: string;
+  autoPlay?: boolean;
 }
 
-export default function AudioPlayer({ src, title }: AudioPlayerProps) {
+export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(0.8); // Default to 80% volume
 
-  // Guaranteed reliable audio sources with spoken content (CORS-friendly)
+  // Better reliable audio sources with spoken content (CORS-friendly)
   const reliableAudioSources = [
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    'https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg.wav',
-    'https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg10.wav',
-    'https://www2.cs.uic.edu/~i101/SoundFiles/taunt.wav',
-    'https://www2.cs.uic.edu/~i101/SoundFiles/PinkPanther30.wav'
+    'https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3',
+    'https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3',
+    'https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3',
+    'https://www.cambridgeenglish.org/Images/153116-listening-sample-part-4.mp3',
+    'https://www.examenglish.com/IELTS/IELTS_listening_part1_2.mp3'
   ];
 
   useEffect(() => {
@@ -35,12 +36,35 @@ export default function AudioPlayer({ src, title }: AudioPlayerProps) {
     // Create a new audio element on each source change to avoid caching issues
     const audio = new Audio();
     
+    // Process the source URL to handle various formats
+    let processedSrc = src;
+    
+    // If src is a relative path without a protocol, assume it's from our API
+    if (src && !src.startsWith('http') && !src.startsWith('blob:')) {
+      // Check if it starts with / already
+      if (!src.startsWith('/')) {
+        processedSrc = `/${src}`;
+      }
+      
+      // Prepend API URL if needed
+      if (!processedSrc.includes('/api/')) {
+        processedSrc = `/api/uploads${processedSrc}`;
+      }
+    }
+    
     // Try the provided source first, but be ready to fall back
-    audio.src = src;
+    audio.src = processedSrc;
     
     audio.addEventListener('canplaythrough', () => {
       setLoading(false);
       setDuration(audio.duration);
+      
+      // Auto-play if set (and if browser allows)
+      if (autoPlay) {
+        audio.play().catch(err => {
+          console.warn('Auto-play prevented by browser:', err);
+        });
+      }
     });
     
     audio.addEventListener('error', handleError);
@@ -55,7 +79,7 @@ export default function AudioPlayer({ src, title }: AudioPlayerProps) {
       audio.removeEventListener('error', handleError);
       audio.pause();
     };
-  }, [src]);
+  }, [src, autoPlay]);
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
@@ -172,6 +196,18 @@ export default function AudioPlayer({ src, title }: AudioPlayerProps) {
     }
   };
 
+  // Reset audio to beginning
+  const handleRestart = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      
+      if (!isPlaying) {
+        handlePlayPause();
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-5 mb-4 border border-gray-200">
       {title && <h3 className="font-medium text-gray-900 mb-3">{title}</h3>}
@@ -200,6 +236,19 @@ export default function AudioPlayer({ src, title }: AudioPlayerProps) {
                   <path d="M8 5v14l11-7z" />
                 </svg>
               )}
+            </button>
+            
+            <button
+              onClick={handleRestart}
+              className="rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              aria-label="Restart"
+              title="Restart"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 2v6h6"></path>
+                <path d="M3 6c0 9.933 8.067 18 18 18 .882 0 1.761-.065 2.617-.192"></path>
+                <path d="M14 22c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8"></path>
+              </svg>
             </button>
             
             <div className="flex-1">
@@ -247,13 +296,9 @@ export default function AudioPlayer({ src, title }: AudioPlayerProps) {
               <svg className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p>Audio source changed to a reliable sample. Press play to listen.</p>
+              <p>Using IELTS sample audio. Press play to listen.</p>
             </div>
           )}
-          
-          <div className="mt-2 text-center">
-            <p className="text-sm text-gray-500">Click the <span className="font-semibold text-blue-600">play</span> button and listen carefully to answer the question</p>
-          </div>
         </div>
       )}
     </div>
