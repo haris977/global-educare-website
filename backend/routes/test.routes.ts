@@ -53,7 +53,7 @@ router.put('/questions/:id', updateQuestion as any); // TEMPORARILY REMOVED AUTH
 router.delete('/questions/:id', deleteQuestion as any); // TEMPORARILY REMOVED AUTH FOR TESTING
 
 // Test attempt routes
-router.post('/:testId/attempts', authMiddleware as any, startTestAttempt as any);
+router.post('/:testId/attempts', startTestAttempt as any);
 router.get('/attempts/:attemptId', authMiddleware as any, getTestAttempt as any);
 router.post('/attempts/:attemptId/save', authMiddleware as any, saveTestProgress as any);
 router.post('/attempts/:attemptId/submit', authMiddleware as any, submitTestAttempt as any);

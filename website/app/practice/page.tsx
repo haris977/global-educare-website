@@ -36,8 +36,10 @@ export default function PracticeTestsPage() {
   const [userHistory, setUserHistory] = useState<TestAttempt[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [apiStatus, setApiStatus] = useState<'connected'|'fallback'|'error'>('connected');
 
-  // Define fallback tests to use if API fails
+  // Define fallback tests to use if API fails - we'll keep this for compatibility
+  // but the primary tests should come from the backend API
   const fallbackTests: Test[] = [
     {
       id: "fallback-test-1",
@@ -89,46 +91,78 @@ export default function PracticeTestsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setApiStatus('connected'); // Reset API status
         console.log("Fetching tests from API...");
         
-        // Fetch all published tests
         try {
           // Try API call first
           const testsResponse = await TestsAPI.getAllTests({ isPublished: true });
           
           if (testsResponse.success && testsResponse.data && testsResponse.data.length > 0) {
             console.log(`Found ${testsResponse.data.length} tests from API`);
-            setTests(testsResponse.data);
+            
+            // Ensure all tests have the required fields
+            const validTests = testsResponse.data.filter(test => {
+              // Check if test has all required fields
+              const hasRequiredFields = 
+                test.id && 
+                test.title && 
+                test.moduleType && 
+                typeof test.totalTime !== 'undefined' && 
+                typeof test.totalQuestions !== 'undefined';
+                
+              if (!hasRequiredFields) {
+                console.warn(`Skipping invalid test:`, test);
+              }
+              return hasRequiredFields;
+            });
+            
+            setTests(validTests);
+            
+            // Check if we got fallback tests or real API tests
+            if (testsResponse.message?.includes("offline") || 
+                testsResponse.data[0]?.id?.startsWith("fallback-test-")) {
+              setApiStatus('fallback');
+            } else {
+              setApiStatus('connected');
+            }
           } else {
-            console.warn("API returned success but no tests, using fallback tests");
-            setTests(fallbackTests);
+            console.warn("API returned success but no tests");
+            setTests([]);
+            setApiStatus('connected'); // API is working but returned no tests
           }
         } catch (apiError) {
           console.error("Error fetching tests:", apiError);
-          // Use fallback tests if API fails
-          console.log("Using fallback tests due to API error");
-          setTests(fallbackTests);
-          // Don't show error to user since we have fallbacks
+          setApiStatus('error');
+          setError("Could not connect to the test server. Please check your internet connection or try again later.");
+          setTests([]);
         }
         
         // Try to fetch user test history if user is logged in
         try {
+          console.log("Fetching user test history...");
           const historyResponse = await TestsAPI.getUserTestHistory();
-          setUserHistory(historyResponse.data || []);
+          
+          if (historyResponse.success && Array.isArray(historyResponse.data)) {
+            console.log(`Found ${historyResponse.data.length} history items`);
+            setUserHistory(historyResponse.data);
+          } else {
+            console.log("No test history found or empty response");
+            setUserHistory([]);
+          }
         } catch (historyError) {
-          // User might not be logged in, or another error occurred
           console.log("Could not fetch test history:", historyError);
           setUserHistory([]);
+          // Don't change apiStatus for history errors since it's secondary
         }
         
         setLoading(false);
-        setError(null); // Clear any errors since we have tests to display
       } catch (err) {
         console.error("Error in fetchData:", err);
-        // Even with errors, show fallback tests
-        setTests(fallbackTests);
+        setApiStatus('error');
+        setError("An unexpected error occurred. Please try again later.");
+        setTests([]);
         setLoading(false);
-        setError(null); // Don't show error since we're showing fallback tests
       }
     };
 
@@ -196,6 +230,35 @@ export default function PracticeTestsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* API Status Banner - only show if there's an issue */}
+        {apiStatus !== 'connected' && (
+          <div className={`mb-6 border-l-4 p-4 ${
+            apiStatus === 'fallback' 
+              ? 'bg-yellow-50 border-yellow-400' 
+              : 'bg-red-50 border-red-400'
+          }`}>
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className={`h-5 w-5 ${
+                  apiStatus === 'fallback' ? 'text-yellow-400' : 'text-red-400'
+                }`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className={`text-sm ${
+                  apiStatus === 'fallback' ? 'text-yellow-700' : 'text-red-700'
+                }`}>
+                  {apiStatus === 'fallback' 
+                    ? 'Unable to connect to the test server. Showing sample tests for demonstration purposes only.' 
+                    : 'Error connecting to the test server. Please check your internet connection or try again later.'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* In Progress Tests Section */}
         {inProgressAttempts.length > 0 && (
           <div className="mb-12">
@@ -315,6 +378,9 @@ export default function PracticeTestsPage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700 mt-1">
+                  Please check if the backend API server is running at {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}
+                </p>
               </div>
             </div>
           </div>
@@ -327,11 +393,16 @@ export default function PracticeTestsPage() {
             <p className="mt-1 text-sm text-gray-500">
               {activeTab === 'all' ? "There are no available tests at the moment." : `No ${activeTab} tests are currently available.`}
             </p>
+            <p className="mt-2 text-sm text-gray-500">
+              {apiStatus === 'error' ? "This could be due to a connection issue with the test server." : 
+               "Tests are managed in the admin panel. Please check if tests have been created and published."}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredTests.map((test) => (
-              <div key={test.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+              <div key={test.id} className={`bg-white rounded-lg shadow-sm overflow-hidden border hover:shadow-md transition-shadow
+                ${test.id.startsWith('fallback-test-') ? 'border-yellow-200' : 'border-gray-200'}`}>
                 <div className="p-6">
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{test.title}</h3>
@@ -352,6 +423,11 @@ export default function PracticeTestsPage() {
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                       {test.totalQuestions} questions
                     </span>
+                    {test.id.startsWith('fallback-test-') && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Sample
+                      </span>
+                    )}
                   </div>
                   
                   <div className="mt-4 grid grid-cols-2 gap-4">
