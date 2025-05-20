@@ -314,6 +314,137 @@ export default function TestResultsPage() {
     fetchTestResult();
   }, [params.id]);
   
+  // Add print-specific styles
+  useEffect(() => {
+    // Create a style element for print-specific styles
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.media = 'print';
+    
+    // Define print-specific CSS
+    style.innerHTML = `
+      @media print {
+        /* Hide page elements not needed for printing */
+        body {
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        
+        /* Hide navigation buttons and elements not related to results */
+        button, a:not([data-print="allow"]) {
+          display: none !important;
+        }
+        
+        /* Hide all footer elements */
+        .results-footer, 
+        footer, 
+        [class*="footer"], 
+        [id*="footer"],
+        nav,
+        [role="navigation"],
+        .site-footer,
+        .global-footer,
+        .page-footer,
+        [class*="copyright"],
+        [class*="copy-"],
+        [class*="menu"] {
+          display: none !important;
+        }
+        
+        /* Hide specific elements that appear in screenshots */
+        #ACCOUNT, 
+        #COMPANY, 
+        #IELTS_MODULES, 
+        #GLOBAL_EDUCARE,
+        .account-section,
+        .company-section,
+        .modules-section,
+        .brand-section,
+        div:has(> h3:contains("GLOBAL EDUCARE")),
+        div:has(> h3:contains("IELTS MODULES")),
+        div:has(> h3:contains("ACCOUNT")),
+        div:has(> h3:contains("COMPANY")),
+        [class*="navbar"],
+        [class*="nav-"] {
+          display: none !important;
+        }
+        
+        /* Hide copyright text */
+        [class*="copyright"],
+        [class*="copy-right"],
+        [class*="reserved"],
+        div:contains("© 2025"),
+        div:contains("All rights reserved") {
+          display: none !important;
+        }
+        
+        /* Custom print wrapper to isolate only the result content */
+        body::after {
+          content: "";
+          position: fixed;
+          bottom: 0;
+          height: 0;
+          background: white;
+          width: 100%;
+          z-index: 9999;
+        }
+        
+        /* Ensure only the test result card is visible */
+        body > *:not(.printing-results-container) {
+          display: none !important;
+        }
+        
+        /* Reset backgrounds to white and text to black for better printing */
+        .bg-gradient-to-r, .bg-blue-600, .bg-indigo-700, .bg-gray-50, .bg-gray-200 {
+          background: white !important;
+          color: black !important;
+        }
+        
+        /* Ensure text is visible in print */
+        .text-white, .text-blue-100, .text-gray-500, .text-gray-600, .text-gray-700 {
+          color: black !important;
+        }
+        
+        /* Give some structure to the printed content */
+        .shadow, .shadow-md, .shadow-lg {
+          box-shadow: none !important;
+          border: 1px solid #eee !important;
+        }
+        
+        /* Make sure tables print well */
+        table {
+          page-break-inside: avoid;
+        }
+        
+        /* Add page breaks before major sections */
+        .section-break {
+          page-break-before: always;
+        }
+        
+        /* Hide print button */
+        .print-button {
+          display: none !important;
+        }
+
+        /* Show full width content */
+        .max-w-4xl, .min-h-screen, .px-4, .sm\\:px-6, .lg\\:px-8 {
+          max-width: 100% !important;
+          width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+      }
+    `;
+    
+    // Add the style element to the document head
+    document.head.appendChild(style);
+    
+    // Clean up function to remove the style when component unmounts
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  
   // Format date string
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -436,7 +567,7 @@ export default function TestResultsPage() {
   const ieltsBandScore = calculateIeltsBand(result.percentageScore);
   
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 printing-results-container">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white overflow-hidden shadow rounded-lg">
           {/* Header */}
@@ -605,7 +736,7 @@ export default function TestResultsPage() {
           </div>
           
           {/* Footer actions */}
-          <div className="px-4 py-5 sm:p-6 bg-gray-50 border-t border-gray-200">
+          <div className="results-footer px-4 py-5 sm:p-6 bg-gray-50 border-t border-gray-200">
             <div className="flex flex-wrap gap-4 justify-between">
               <div>
                 <Link 
@@ -618,8 +749,16 @@ export default function TestResultsPage() {
               
               <div className="space-x-3">
                 <button 
-                  onClick={() => window.print()} 
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => {
+                    // Add a temporary class to handle print styling
+                    document.body.classList.add('printing-results');
+                    window.print();
+                    // Remove class after printing
+                    setTimeout(() => {
+                      document.body.classList.remove('printing-results');
+                    }, 500);
+                  }} 
+                  className="print-button inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <svg className="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
@@ -630,6 +769,7 @@ export default function TestResultsPage() {
                 <Link 
                   href={`/practice/review/${result.testId}`}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  data-print="allow"
                 >
                   Review Test
                 </Link>
