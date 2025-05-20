@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { TestsAPI } from '@/services/api';
+import AudioPlayer from '@/components/AudioPlayer';
 
 // Types
 interface Question {
@@ -182,7 +183,7 @@ export default function PracticeTestDetailPage() {
             questionType: "MULTIPLE_CHOICE",
             options: JSON.stringify(['Travel plans', 'University courses', 'Housing options', 'Job opportunities']),
             order: 1,
-            audioFile: "https://example.com/sample-audio.mp3"
+            audioFile: "https://actions.google.com/sounds/v1/human_voices/women_conversation.ogg"
           },
           {
             id: `${id}-q2`,
@@ -527,6 +528,8 @@ export default function PracticeTestDetailPage() {
         return renderEssay(question);
       case 'FILL_BLANK':
         return renderFillBlank(question);
+      case 'AUDIO':
+        return renderAudioQuestion(question);
       default:
         return (
           <div className="p-4 border rounded-md bg-gray-50">
@@ -622,10 +625,10 @@ export default function PracticeTestDetailPage() {
         {question.audioFile && (
           <div className="mb-4">
             <h4 className="font-medium text-blue-900 mb-2">Audio</h4>
-            <audio controls className="w-full">
-              <source src={question.audioFile} type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
+            <AudioPlayer 
+              src={question.audioFile} 
+              title="Listen to the audio and answer the question below"
+            />
           </div>
         )}
         
@@ -675,6 +678,46 @@ export default function PracticeTestDetailPage() {
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             placeholder="Fill in the blank"
           />
+        </div>
+      </div>
+    );
+  };
+
+  const renderAudioQuestion = (question: Question) => {
+    return (
+      <div className="space-y-4">
+        {question.audioFile && (
+          <div className="mb-4">
+            <h4 className="font-medium text-blue-900 mb-2">Audio</h4>
+            <AudioPlayer 
+              src={question.audioFile} 
+              title="Listen to the audio and answer the question below"
+            />
+          </div>
+        )}
+        
+        <div className="font-medium mb-4">{question.questionText}</div>
+        
+        <div className="space-y-3">
+          {JSON.parse(question.options || '[]').map((option) => (
+            <div key={option} className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id={`question-${question.id}-${option}`}
+                  name={`question-${question.id}`}
+                  type="radio"
+                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                  checked={responses[question.id] === option}
+                  onChange={() => handleAnswerChange(question.id, option)}
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor={`question-${question.id}-${option}`} className="font-medium text-gray-700">
+                  {option}
+                </label>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

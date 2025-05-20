@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import AudioPlayer from '@/components/AudioPlayer';
 
 // Module colors mapping
 const moduleColors = {
@@ -45,47 +46,61 @@ const generatePracticeExercise = (moduleId, contentId) => {
   const topic = parts.slice(1, -2).join('-');
   const difficulty = parts[parts.length - 2];
   
+  // Sample audio URLs
+  const sampleAudioUrls = [
+    'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg',
+    'https://actions.google.com/sounds/v1/transportation/car_driving_in_traffic.ogg',
+    'https://actions.google.com/sounds/v1/human_voices/women_conversation.ogg',
+  ];
+  
+  const isListeningModule = moduleId === 'listening';
+  
   return {
     id: contentId,
     moduleId: moduleId,
     title: `${topic.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}: Additional Practice`,
     topic: topic.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
     difficulty: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
-    instructions: `This is an additional practice exercise for ${topic.split('-').join(' ')} in the IELTS ${moduleId} section. Answer all questions to the best of your ability.`,
+    instructions: `This is an additional practice exercise for ${topic.split('-').join(' ')} in the IELTS ${moduleId} section. ${isListeningModule ? 'Listen to the audio and answer the questions based on what you hear.' : 'Answer all questions to the best of your ability.'}`,
     questions: [
       {
         id: 1,
         type: 'multiple-choice',
         question: `Sample practice question 1 related to ${topic.split('-').join(' ')}?`,
         options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: 'Option A'
+        correctAnswer: 'Option A',
+        ...(isListeningModule && { audioFile: sampleAudioUrls[0] }),
       },
       {
         id: 2,
         type: 'multiple-choice',
         question: `Sample practice question 2 focusing on ${topic.split('-').join(' ')}?`,
         options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: 'Option D'
+        correctAnswer: 'Option D',
+        ...(isListeningModule && { audioFile: sampleAudioUrls[1] }),
       },
       {
         id: 3,
         type: 'text-input',
-        question: `Write a short response related to ${topic.split('-').join(' ')} based on the following prompt:`,
-        prompt: `Sample writing prompt for ${moduleId} ${topic.split('-').join(' ')} practice.`,
-        correctAnswer: 'Sample model answer. In a real app, this would be evaluated by a tutor or AI.'
+        question: `${isListeningModule ? 'Listen and complete the following sentence' : 'Write a short response'} related to ${topic.split('-').join(' ')}:`,
+        prompt: `Sample ${moduleId} prompt for ${topic.split('-').join(' ')} practice.`,
+        correctAnswer: 'Sample model answer. In a real app, this would be evaluated by a tutor or AI.',
+        ...(isListeningModule && { audioFile: sampleAudioUrls[2] }),
       },
       {
         id: 4,
         type: 'true-false',
         question: `True or False: Sample statement related to ${topic.split('-').join(' ')}.`,
-        correctAnswer: 'True'
+        correctAnswer: 'True',
+        ...(isListeningModule && { audioFile: sampleAudioUrls[0] }),
       },
       {
         id: 5,
         type: 'multiple-choice',
         question: `Final practice question about ${topic.split('-').join(' ')}?`,
         options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: 'Option B'
+        correctAnswer: 'Option B',
+        ...(isListeningModule && { audioFile: sampleAudioUrls[1] }),
       }
     ]
   };
@@ -154,7 +169,7 @@ export default function ContentPracticePage() {
         <main className="py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
           </div>
         </main>
@@ -316,7 +331,7 @@ export default function ContentPracticePage() {
                   </Link>
                   <Link 
                     href={`/modules/${moduleId}/content/${contentId}/review`}
-                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-${moduleColorSet.color}-600 hover:bg-${moduleColorSet.color}-700`}
+                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${moduleColorSet.button}`}
                   >
                     Review Concepts
                   </Link>
@@ -328,6 +343,15 @@ export default function ContentPracticePage() {
                 <h2 className="text-xl font-medium text-gray-900">Question {currentQuestion + 1}</h2>
                 
                 <div className="mt-4">
+                  {currentQuestionData.audioFile && (
+                    <div className="mb-6">
+                      <AudioPlayer 
+                        src={currentQuestionData.audioFile} 
+                        title="Listen to the audio and answer the question below"
+                      />
+                    </div>
+                  )}
+
                   <p className="text-gray-900 font-medium mb-2">{currentQuestionData.question}</p>
                   {currentQuestionData.prompt && (
                     <p className="text-gray-700 italic mb-4">{currentQuestionData.prompt}</p>
@@ -342,7 +366,7 @@ export default function ContentPracticePage() {
                               id={`question-${currentQuestionData.id}-${option}`}
                               name={`question-${currentQuestionData.id}`}
                               type="radio"
-                              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              className={`focus:ring-${moduleColorSet.color}-500 h-4 w-4 text-${moduleColorSet.color}-600 border-gray-300`}
                               checked={userAnswers[currentQuestionData.id] === option}
                               onChange={() => handleAnswerSelection(currentQuestionData.id, option)}
                             />
@@ -361,7 +385,7 @@ export default function ContentPracticePage() {
                     <div className="mt-4">
                       <textarea
                         rows={4}
-                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md"
+                        className={`shadow-sm focus:ring-${moduleColorSet.color}-500 focus:border-${moduleColorSet.color}-500 block w-full sm:text-sm border border-gray-300 rounded-md`}
                         placeholder="Type your answer here..."
                         value={userAnswers[currentQuestionData.id] || ''}
                         onChange={(e) => handleAnswerSelection(currentQuestionData.id, e.target.value)}
@@ -378,7 +402,7 @@ export default function ContentPracticePage() {
                               id={`question-${currentQuestionData.id}-${option}`}
                               name={`question-${currentQuestionData.id}`}
                               type="radio"
-                              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                              className={`focus:ring-${moduleColorSet.color}-500 h-4 w-4 text-${moduleColorSet.color}-600 border-gray-300`}
                               checked={userAnswers[currentQuestionData.id] === option}
                               onChange={() => handleAnswerSelection(currentQuestionData.id, option)}
                             />
