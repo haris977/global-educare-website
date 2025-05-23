@@ -11,14 +11,16 @@ import AudioPlayer from '@/components/AudioPlayer';
 // Types
 interface Question {
   id: string;
-  questionText: string;
-  questionType: string;
+  questionText?: string;  // From backend
+  text?: string;          // From admin panel  
+  questionType?: string;  // From backend
+  type?: string;          // From admin panel
   options?: any;
   questionImage?: string;
   audioFile?: string;
   passage?: string;
   paragraphs?: string[];
-  sentences?: string;
+  sentences?: string[] | string;
   matchingPairs?: Record<string, string>;
   mapLabels?: string[];
   cueCard?: string;
@@ -92,6 +94,23 @@ export default function PracticeTestDetailPage() {
         
         if (response.success && response.data) {
           console.log("Test data loaded:", response.data);
+          
+          // Check if sections and questions are properly loaded
+          if (response.data.sections) {
+            response.data.sections.forEach((section, sIndex) => {
+              console.log(`Section ${sIndex + 1} (${section.id}): ${section.questions?.length || 0} questions`);
+              
+              if (section.questions && section.questions.length > 0) {
+                // Log the first question as a sample
+                console.log(`Sample question from section ${sIndex + 1}:`, section.questions[0]);
+              } else {
+                console.warn(`Section ${sIndex + 1} has no questions!`);
+              }
+            });
+          } else {
+            console.warn("Test has no sections!");
+          }
+          
           setTest(response.data);
           setTimeRemaining(response.data.sections[0]?.timeLimit * 60 || 0); // Set initial time in seconds
         } else {
@@ -295,6 +314,13 @@ export default function PracticeTestDetailPage() {
     return () => clearInterval(timer);
   }, [testStarted, timeRemaining]);
 
+  // Add the missing startTimer function
+  const startTimer = () => {
+    // Timer is already handled by the useEffect above
+    // This function is provided for code clarity and to prevent reference errors
+    console.log("Timer started automatically via React effects");
+  };
+
   // Auto-save responses every 30 seconds
   useEffect(() => {
     if (!testStarted || !testAttempt) return;
@@ -316,43 +342,77 @@ export default function PracticeTestDetailPage() {
     try {
       if (!test) return;
       
-      // If this is a fallback test, create a local test attempt
-      if (test.id.startsWith('fallback-test-')) {
-        console.log("Starting fallback test locally");
-        const mockAttempt: TestAttempt = {
-          id: `local-attempt-${Date.now()}`,
-          testId: test.id,
-          userId: "guest",
-          startedAt: new Date().toISOString(),
-          status: "IN_PROGRESS",
-          currentSection: 0,
-          responses: {}
-        };
-        
-        setTestAttempt(mockAttempt);
-        setTestStarted(true);
-        setTimeRemaining(test.sections[0]?.timeLimit * 60 || 0);
-        
-        // Store in localStorage to persist across refreshes
-        if (typeof window !== "undefined") {
-          localStorage.setItem(`testAttempt-${test.id}`, JSON.stringify(mockAttempt));
-        }
-        
-        return;
-      }
+      console.log("Attempting to start test attempt for:", test.id);
       
+      // Start a test attempt
       const response = await TestsAPI.startTestAttempt(test.id);
       
       if (response.success && response.data) {
-        setTestAttempt(response.data);
+        console.log("Retrieved test data for attempt:", response.data.test);
+        
+        // Important: Check that the test attempt has sections
+        if (!response.data.test?.sections || response.data.test.sections.length === 0) {
+          console.error("Test attempt has no sections!");
+          setError("The test data is incomplete. Please try a different test.");
+          return;
+        }
+        
+        // Check if each section has questions
+        let hasQuestions = false;
+        let validSections = [...response.data.test.sections];
+        
+        // Filter out sections with no questions and log information
+        validSections = validSections.filter((section, index) => {
+          if (section.questions && section.questions.length > 0) {
+            hasQuestions = true;
+            console.log(`Section ${index+1} has ${section.questions.length} questions`);
+            return true;
+          } else {
+            console.warn(`Section ${index+1} has no questions! Removing from test.`);
+            return false;
+          }
+        });
+        
+        // Replace the sections with only valid ones
+        response.data.test.sections = validSections;
+        
+        if (!hasQuestions) {
+          console.error("No questions found in any section!");
+          setError("The test has no questions. Please try a different test.");
+          return;
+        }
+        
+        setTestAttempt({
+          id: response.data.id,
+          testId: test.id,
+          userId: response.data.userId,
+          startedAt: response.data.startedAt,
+          status: response.data.status,
+          currentSection: response.data.currentSection || 0,
+          responses: response.data.responses || {}
+        });
+        
+        // Use the test data from the attempt which should have all sections and questions
+        setTest(response.data.test);
+        
+        // Initialize time remaining if available from the attempt
+        const timeLimit = response.data.test.sections[0]?.timeLimit || 60;
+        setTimeRemaining(response.data.timeRemaining || timeLimit * 60);
+        
         setTestStarted(true);
-        setTimeRemaining(test.sections[0]?.timeLimit * 60 || 0);
+        
+        // Call the startTimer function
+        startTimer();
+        
+        // Schedule first automatic progress save
+        setTimeout(() => saveProgress(), 30000); // Save every 30 seconds
+        
       } else {
-        setError("Failed to start test. Please try again.");
+        setError("Failed to start the test. Please try again.");
       }
     } catch (err) {
-      setError("An error occurred. Please ensure you're logged in and have an active subscription.");
-      console.error(err);
+      console.error("Error starting test:", err);
+      setError("An error occurred while starting the test. Please try again.");
     }
   };
 
@@ -518,11 +578,103 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderQuestionContent = (question: Question) => {
-    switch (question.questionType) {
+    console.log("Rendering question:", question);
+    
+    if (!question) {
+      return <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-md">
+        <p className="text-yellow-700">Question data is missing. Please try refreshing the page.</p>
+      </div>;
+    }
+    
+    // Check if the question has basic required properties
+    const hasRequiredProps = question.questionText || question.text;
+    if (!hasRequiredProps) {
+      console.warn("Question is missing required properties:", question);
+    }
+    
+    const questionType = question.questionType || question.type;
+    
+    // Get the current section to check for passage at section level
+    const currentSectionData = test?.sections?.[currentSection];
+    const sectionPassage = currentSectionData?.passage;
+    
+    // Show passage from question first, if not present then check section level
+    if (question.passage || sectionPassage) {
+      return (
+        <div className="space-y-6">
+          <div className="p-4 bg-white rounded-md border border-gray-200 shadow-sm overflow-y-auto max-h-96">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Reading Passage</h3>
+            <div className="prose prose-sm prose-blue max-w-none">
+              <p className="whitespace-pre-line">{question.passage || sectionPassage}</p>
+            </div>
+          </div>
+          
+          {questionType && renderQuestionByType(question, questionType)}
+        </div>
+      );
+    }
+    
+    // Check for other content types (audio, image, etc.)
+    if (question.audioFile) {
+      return (
+        <div className="space-y-6">
+          <div className="p-4 bg-white rounded-md border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Listening Task</h3>
+            <AudioPlayer src={question.audioFile} />
+          </div>
+          
+          {questionType && renderQuestionByType(question, questionType)}
+        </div>
+      );
+    }
+    
+    if (question.questionImage) {
+      return (
+        <div className="space-y-6">
+          <div className="p-4 bg-white rounded-md border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Visual Material</h3>
+            <img 
+              src={question.questionImage} 
+              alt="Question visual" 
+              className="max-w-full h-auto rounded-md"
+            />
+          </div>
+          
+          {questionType && renderQuestionByType(question, questionType)}
+        </div>
+      );
+    }
+    
+    if (question.paragraphs && Array.isArray(question.paragraphs)) {
+      return (
+        <div className="space-y-6">
+          <div className="p-4 bg-white rounded-md border border-gray-200 shadow-sm overflow-y-auto max-h-96">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Reading Paragraphs</h3>
+            <div className="space-y-4">
+              {question.paragraphs.map((paragraph, idx) => (
+                <div key={idx} className="prose prose-sm prose-blue max-w-none">
+                  <p className="whitespace-pre-line">{paragraph}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {questionType && renderQuestionByType(question, questionType)}
+        </div>
+      );
+    }
+    
+    // Fallback to just rendering the question
+    return renderQuestionByType(question, questionType);
+  };
+
+  const renderQuestionByType = (question: Question, questionType: string) => {
+    console.log(`Rendering question type: ${questionType}`);
+    
+    switch(questionType) {
       case 'MULTIPLE_CHOICE':
         return renderMultipleChoice(question);
       case 'TRUE_FALSE':
-      case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
         return renderTrueFalse(question);
       case 'SHORT_ANSWER':
@@ -530,35 +682,33 @@ export default function PracticeTestDetailPage() {
       case 'ESSAY':
         return renderEssay(question);
       case 'FILL_BLANK':
-      case 'GAP_FILLING':
-      case 'SENTENCE_COMPLETION':
         return renderFillBlank(question);
-      case 'MAP':
-      case 'MAP_LABELLING':
+      case 'MAP_LABELING':
         return renderMapQuestion(question);
       case 'TABLE_COMPLETION':
         return renderTableCompletion(question);
-      case 'PARA_HEADINGS':
+      case 'PARAGRAPH_HEADINGS':
         return renderParagraphHeadings(question);
-      case 'COMPLETE_SENTENCE':
+      case 'SENTENCE_COMPLETION':
         return renderCompleteSentence(question);
       case 'NAME_MATCHING':
         return renderNameMatching(question);
-      case 'SPEAKING_TASK_1':
-      case 'SPEAKING_TASK_2':
-      case 'SPEAKING_TASK_3':
-      case 'SPEAKING_FOLLOW_UPS':
+      case 'SPEAKING_TASK':
         return renderSpeakingTask(question);
       default:
+        console.warn(`Unknown question type: ${questionType}`);
         return (
-          <div className="p-4 border rounded-md bg-gray-50">
-            <p className="text-gray-700">This question type ({question.questionType}) will be available soon.</p>
+          <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-md">
+            <p className="text-yellow-700">This question type ({questionType}) is not supported yet.</p>
           </div>
         );
     }
   };
 
   const renderMultipleChoice = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     let options;
     try {
       options = question.options ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : [];
@@ -596,7 +746,7 @@ export default function PracticeTestDetailPage() {
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div className="space-y-2">
           {options.map((option: string, index: number) => (
@@ -621,12 +771,16 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderTrueFalse = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    const questionType = question.questionType || question.type;
+    
     // Different options based on the question type
     let options = ['true', 'false'];
     
-    if (question.questionType === 'TRUE_FALSE_NOT_GIVEN') {
+    if (questionType === 'TRUE_FALSE_NOT_GIVEN') {
       options = ['true', 'false', 'not given'];
-    } else if (question.questionType === 'YES_NO_NOT_GIVEN') {
+    } else if (questionType === 'YES_NO_NOT_GIVEN') {
       options = ['yes', 'no', 'not given'];
     }
     
@@ -649,7 +803,7 @@ export default function PracticeTestDetailPage() {
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div className="space-y-2">
           {options.map((option) => (
@@ -674,6 +828,9 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderShortAnswer = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     return (
       <div className="space-y-4">
         {question.audioFile && (
@@ -693,15 +850,15 @@ export default function PracticeTestDetailPage() {
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div>
           <input
             type="text"
             value={responses[question.id] || ''}
             onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            placeholder="Your answer"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Type your answer here..."
           />
         </div>
       </div>
@@ -709,50 +866,11 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderEssay = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     return (
       <div className="space-y-4">
-        {question.questionImage && (
-          <div className="mb-4">
-            <img 
-              src={question.questionImage} 
-              alt="Task visual" 
-              className="max-w-full h-auto rounded-md border"
-            />
-          </div>
-        )}
-        
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
-        
-        <div>
-          <textarea
-            value={responses[question.id] || ''}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            rows={10}
-            placeholder="Your response"
-          />
-          <div className="flex justify-between mt-2 text-sm text-gray-500">
-            <span>Write at least 250 words</span>
-            <span>{(responses[question.id] || '').split(/\s+/).filter(Boolean).length} words</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderFillBlank = (question: Question) => {
-    return (
-      <div className="space-y-4">
-        {question.audioFile && (
-          <div className="mb-4">
-            <AudioPlayer 
-              src={question.audioFile} 
-              title="Listen to complete this task"
-              autoPlay={test?.moduleType === "LISTENING" && currentQuestion === 0}
-            />
-          </div>
-        )}
-        
         {question.passage && (
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
             <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
@@ -760,9 +878,61 @@ export default function PracticeTestDetailPage() {
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        {question.questionImage && (
+          <div className="mb-4">
+            <img 
+              src={question.questionImage} 
+              alt="Question visual" 
+              className="max-w-full h-auto rounded-md border"
+            />
+          </div>
+        )}
+        
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div>
+          <textarea
+            value={responses[question.id] || ''}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            rows={10}
+            placeholder="Type your essay here..."
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderFillBlank = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
+    return (
+      <div className="space-y-4">
+        {question.passage && (
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
+            <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
+            <p className="text-gray-800 whitespace-pre-line">{question.passage}</p>
+          </div>
+        )}
+        
+        {question.audioFile && (
+          <div className="mb-4">
+            <AudioPlayer 
+              src={question.audioFile} 
+              title="Listen to complete this question"
+              autoPlay={test?.moduleType === "LISTENING" && currentQuestion === 0}
+            />
+          </div>
+        )}
+        
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
+        
+        <div>
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-md mb-4">
+            <p className="text-gray-800 mb-2">{questionText ? questionText.replace(/___+/g, '___________') : ''}</p>
+          </div>
+          
           <input
             type="text"
             value={responses[question.id] || ''}
@@ -776,35 +946,37 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderMapQuestion = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
+    let mapLabels;
+    try {
+      mapLabels = question.mapLabels ? (typeof question.mapLabels === 'string' ? JSON.parse(question.mapLabels) : question.mapLabels) : [];
+    } catch (error) {
+      console.error("Error parsing map labels:", error);
+      mapLabels = [];
+    }
+    
     return (
       <div className="space-y-4">
-        {question.audioFile && (
-          <div className="mb-4">
-            <AudioPlayer 
-              src={question.audioFile} 
-              title="Listen to the audio to label the map"
-              autoPlay={test?.moduleType === "LISTENING" && currentQuestion === 0}
-            />
-          </div>
-        )}
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         {question.questionImage && (
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <img 
               src={question.questionImage} 
-              alt="Map" 
+              alt="Map for labelling" 
               className="max-w-full h-auto rounded-md border"
             />
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
-        
-        <div className="space-y-4">
-          {question.mapLabels && Array.isArray(JSON.parse(question.mapLabels)) && 
-            JSON.parse(question.mapLabels).map((label: string, index: number) => (
-              <div key={index} className="flex items-center">
-                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-medium text-sm mr-3">
+        <div className="space-y-3">
+          <h4 className="font-medium text-gray-900">Label the Map</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {mapLabels.map((label: string, index: number) => (
+              <div key={index} className="flex items-center space-x-3">
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-medium text-sm">
                   {index + 1}
                 </span>
                 <input
@@ -812,52 +984,62 @@ export default function PracticeTestDetailPage() {
                   value={responses[`${question.id}-${index}`] || ''}
                   onChange={(e) => handleAnswerChange(`${question.id}-${index}`, e.target.value)}
                   className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  placeholder={`Label for point ${index + 1}`}
+                  placeholder={`Label for ${label}`}
                 />
               </div>
-            ))
-          }
+            ))}
+          </div>
         </div>
       </div>
     );
   };
 
   const renderTableCompletion = (question: Question) => {
-    // Implement table completion UI
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     return (
       <div className="space-y-4">
+        {question.passage && (
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
+            <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
+            <p className="text-gray-800 whitespace-pre-line">{question.passage}</p>
+          </div>
+        )}
+        
         {question.audioFile && (
           <div className="mb-4">
             <AudioPlayer 
               src={question.audioFile} 
-              title="Listen to complete the table"
+              title="Listen to complete this question"
               autoPlay={test?.moduleType === "LISTENING" && currentQuestion === 0}
             />
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
-        {/* Simplified table UI */}
-        <div className="overflow-x-auto border rounded-md">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Answer</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r">Column 1</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column 2</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {[1, 2, 3].map(index => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Item {index}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+              {[1, 2, 3, 4, 5].map(rowIndex => (
+                <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 border-r">
+                    Row {rowIndex}
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                     <input
                       type="text"
-                      value={responses[`${question.id}-${index}`] || ''}
-                      onChange={(e) => handleAnswerChange(`${question.id}-${index}`, e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                      placeholder="Your answer"
+                      value={responses[`${question.id}-${rowIndex}`] || ''}
+                      onChange={(e) => handleAnswerChange(`${question.id}-${rowIndex}`, e.target.value)}
+                      className="w-full p-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Fill in this cell"
                     />
                   </td>
                 </tr>
@@ -870,6 +1052,9 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderParagraphHeadings = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     let paragraphs;
     try {
       paragraphs = question.paragraphs ? (typeof question.paragraphs === 'string' ? JSON.parse(question.paragraphs) : question.paragraphs) : [];
@@ -888,7 +1073,7 @@ export default function PracticeTestDetailPage() {
     
     return (
       <div className="space-y-4">
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
@@ -934,9 +1119,31 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderCompleteSentence = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     let sentences;
     try {
-      sentences = question.sentences ? (typeof question.sentences === 'string' ? question.sentences.split('\n') : question.sentences) : [];
+      if (question.sentences) {
+        if (typeof question.sentences === 'string') {
+          sentences = question.sentences.split('\n');
+          // If there's no newline, try to parse it as JSON array
+          if (sentences.length === 1) {
+            try {
+              const parsed = JSON.parse(question.sentences);
+              if (Array.isArray(parsed)) {
+                sentences = parsed;
+              }
+            } catch (e) {
+              // Keep as is if parsing fails
+            }
+          }
+        } else if (Array.isArray(question.sentences)) {
+          sentences = question.sentences;
+        }
+      } else {
+        sentences = [];
+      }
     } catch (error) {
       console.error("Error processing sentences:", error);
       sentences = [];
@@ -951,7 +1158,7 @@ export default function PracticeTestDetailPage() {
           </div>
         )}
         
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div className="space-y-4">
           {sentences && sentences.map((sentence: string, index: number) => (
@@ -972,6 +1179,9 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderNameMatching = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    
     let matchingPairs;
     try {
       matchingPairs = question.matchingPairs ? (typeof question.matchingPairs === 'string' ? JSON.parse(question.matchingPairs) : question.matchingPairs) : {};
@@ -985,7 +1195,7 @@ export default function PracticeTestDetailPage() {
     
     return (
       <div className="space-y-4">
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
@@ -1031,6 +1241,10 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderSpeakingTask = (question: Question) => {
+    // Get normalized field values
+    const questionText = question.questionText || question.text;
+    const questionType = question.questionType || question.type;
+    
     let followUpQuestions;
     try {
       followUpQuestions = question.followUpQuestions ? 
@@ -1043,7 +1257,7 @@ export default function PracticeTestDetailPage() {
     
     return (
       <div className="space-y-4">
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
         
         {question.cueCard && (
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md mb-4">
@@ -1067,16 +1281,13 @@ export default function PracticeTestDetailPage() {
           <h4 className="font-medium text-gray-900 mb-3">Record Your Answer</h4>
           <div className="flex justify-center items-center h-24 bg-gray-50 rounded-md border border-dashed border-gray-300">
             <button className="px-4 py-2 bg-red-600 text-white rounded-full flex items-center hover:bg-red-700">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="12" cy="12" r="3"></circle>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
               </svg>
               Record Answer
             </button>
           </div>
-          <p className="text-center text-sm text-gray-500 mt-2">
-            Speaking responses will be submitted for expert evaluation
-          </p>
+          <p className="text-sm text-gray-500 mt-2 text-center">Click to start recording your response</p>
         </div>
       </div>
     );

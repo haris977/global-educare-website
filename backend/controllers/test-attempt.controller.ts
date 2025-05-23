@@ -12,13 +12,18 @@ const prisma = new PrismaClient();
 // Start a test attempt
 export const startTestAttempt = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // User must be authenticated
-    if (!req.user) {
-      return sendErrorResponse(res, 'Authentication required', 401);
-    }
-
+    // Get test ID from request params
     const { testId } = req.params;
-    const userId = req.user.id;
+    
+    // Support anonymous users
+    let userId = 'anonymous-user';
+    let isAnonymous = true;
+    
+    // If user is authenticated, use their ID
+    if (req.user) {
+      userId = req.user.id;
+      isAnonymous = false;
+    }
 
     // Check if test exists and is published
     const test = await prisma.test.findUnique({
@@ -42,8 +47,8 @@ export const startTestAttempt = async (req: AuthenticatedRequest, res: Response)
       return sendErrorResponse(res, 'Test not found or not published', 404);
     }
 
-    // Check if user has an active subscription (skip for admins)
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+    // Skip subscription check for anonymous users
+    if (!isAnonymous && req.user && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
       const user = await prisma.user.findUnique({
         where: { id: userId }
       });
@@ -142,11 +147,6 @@ export const startTestAttempt = async (req: AuthenticatedRequest, res: Response)
 // Save test attempt progress (auto-save)
 export const saveTestProgress = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // User must be authenticated
-    if (!req.user) {
-      return sendErrorResponse(res, 'Authentication required', 401);
-    }
-
     const { attemptId } = req.params;
     const { 
       responses, 
@@ -154,7 +154,13 @@ export const saveTestProgress = async (req: AuthenticatedRequest, res: Response)
       timeRemaining 
     } = req.body;
     
-    const userId = req.user.id;
+    // Support anonymous users
+    let userId = 'anonymous-user';
+    
+    // If user is authenticated, use their ID
+    if (req.user) {
+      userId = req.user.id;
+    }
 
     // Check if test attempt exists and belongs to user
     const attempt = await prisma.testAttempt.findFirst({
@@ -231,23 +237,40 @@ export const saveTestProgress = async (req: AuthenticatedRequest, res: Response)
 // Get test attempt status and responses
 export const getTestAttempt = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // User must be authenticated
-    if (!req.user) {
-      return sendErrorResponse(res, 'Authentication required', 401);
+    const { attemptId } = req.params;
+    
+    // Support anonymous users
+    let userId = 'anonymous-user';
+    
+    // If user is authenticated, use their ID
+    if (req.user) {
+      userId = req.user.id;
     }
 
-    const { attemptId } = req.params;
-    const userId = req.user.id;
+    // For authenticated users, check if they have admin access
+    const isAdmin = req.user && ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role);
+
+    // Build where clause
+    let whereClause: any = { id: attemptId };
+    
+    // Add user filter
+    if (isAdmin) {
+      // Admin can view any attempt
+      whereClause = {
+        ...whereClause,
+        OR: [
+          { userId },
+          { userId: { not: userId } } // Admin can view other users' attempts
+        ]
+      };
+    } else {
+      // Non-admin can only view their own attempts
+      whereClause.userId = userId;
+    }
 
     // Check if user is authorized to view this attempt
     const attempt = await prisma.testAttempt.findFirst({
-      where: { 
-        id: attemptId,
-        OR: [
-          { userId },
-          { user: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } } }
-        ]
-      },
+      where: whereClause,
       include: {
         responses: {
           include: {
@@ -269,19 +292,12 @@ export const getTestAttempt = async (req: AuthenticatedRequest, res: Response) =
               }
             }
           }
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
         }
       }
     });
 
     if (!attempt) {
-      return sendErrorResponse(res, 'Test attempt not found', 404);
+      return sendErrorResponse(res, 'Test attempt not found or access denied', 404);
     }
 
     return sendSuccessResponse(res, attempt, 'Test attempt retrieved successfully');
@@ -293,13 +309,15 @@ export const getTestAttempt = async (req: AuthenticatedRequest, res: Response) =
 // Submit test attempt for scoring
 export const submitTestAttempt = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // User must be authenticated
-    if (!req.user) {
-      return sendErrorResponse(res, 'Authentication required', 401);
-    }
-
     const { attemptId } = req.params;
-    const userId = req.user.id;
+    
+    // Support anonymous users
+    let userId = 'anonymous-user';
+    
+    // If user is authenticated, use their ID
+    if (req.user) {
+      userId = req.user.id;
+    }
 
     // Check if test attempt exists and belongs to user
     const attempt = await prisma.testAttempt.findFirst({
@@ -396,14 +414,16 @@ export const submitTestAttempt = async (req: AuthenticatedRequest, res: Response
         }
       });
       
-      // Add to user scores table for tracking
-      await tx.userScore.create({
-        data: {
-          userId,
-          moduleType: attempt.test.moduleType,
-          score: totalScore
-        }
-      });
+      // Only add to user scores table for authenticated users
+      if (req.user) {
+        await tx.userScore.create({
+          data: {
+            userId,
+            moduleType: attempt.test.moduleType,
+            score: totalScore
+          }
+        });
+      }
     });
 
     // Get the updated attempt

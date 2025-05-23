@@ -42,10 +42,10 @@ router.delete('/:id', deleteTest as any); // TEMPORARILY REMOVED AUTH FOR TESTIN
 // IELTS Complete Test creation endpoint
 router.post('/ielts/complete', createCompleteIELTSTest as any); // TEMPORARILY REMOVED AUTH FOR TESTING
 
-// Section management routes
-router.post('/:testId/sections', authMiddleware as any, checkRole(adminRoles) as any, createSection as any);
-router.put('/sections/:id', authMiddleware as any, checkRole(adminRoles) as any, updateSection as any);
-router.delete('/sections/:id', authMiddleware as any, checkRole(adminRoles) as any, deleteSection as any);
+// Section management routes - TEMPORARILY REMOVED AUTH FOR TESTING
+router.post('/:testId/sections', createSection as any); // TEMPORARILY REMOVED AUTH FOR TESTING
+router.put('/sections/:id', updateSection as any); // TEMPORARILY REMOVED AUTH FOR TESTING
+router.delete('/sections/:id', deleteSection as any); // TEMPORARILY REMOVED AUTH FOR TESTING
 
 // Question management routes
 router.post('/sections/:sectionId/questions', createQuestion as any); // TEMPORARILY REMOVED AUTH FOR TESTING
@@ -53,10 +53,10 @@ router.put('/questions/:id', updateQuestion as any); // TEMPORARILY REMOVED AUTH
 router.delete('/questions/:id', deleteQuestion as any); // TEMPORARILY REMOVED AUTH FOR TESTING
 
 // Test attempt routes
-router.post('/:testId/attempts', startTestAttempt as any);
-router.get('/attempts/:attemptId', authMiddleware as any, getTestAttempt as any);
-router.post('/attempts/:attemptId/save', authMiddleware as any, saveTestProgress as any);
-router.post('/attempts/:attemptId/submit', authMiddleware as any, submitTestAttempt as any);
+router.post('/:testId/attempts', startTestAttempt as any); // No auth for starting test attempts
+router.get('/attempts/:attemptId', getTestAttempt as any); // No auth for accessing test attempts
+router.post('/attempts/:attemptId/save', saveTestProgress as any); // No auth for saving progress
+router.post('/attempts/:attemptId/submit', submitTestAttempt as any); // No auth for submitting tests
 router.get('/history', authMiddleware as any, getUserTestHistory as any);
 
 // Response scoring routes (admin only)
