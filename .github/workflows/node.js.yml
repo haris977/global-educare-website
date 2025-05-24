@@ -1,10 +1,9 @@
-name: Node.js CI
+name: CI – Build All Sub-Projects
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -12,26 +11,24 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x]
-        project: [admin, backend, website]
-
-    defaults:
-      run:
-        working-directory: ${{ matrix.project }}
+        project:
+          - admin
+          - backend
+          - website
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-          cache-dependency-path: ${{ matrix.project }}/package-lock.json  # point to each lockfile :contentReference[oaicite:0]{index=0}
+          node-version: [22.x]
 
       - name: Install dependencies
+        working-directory: ${{ matrix.project }}
         run: npm ci
 
       - name: Build
-        run: npm run build --if-present
+        working-directory: ${{ matrix.project }}
+        run: npm run build
