@@ -2,18 +2,15 @@ name: CI – Build All Sub-Projects
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    # use an inline list for self-hosted runners
-    runs-on: [self-hosted]
+    runs-on: self-hosted
 
     strategy:
       matrix:
-        # inline list for your three folders
-        project: [admin, backend, website]
+        project: [ admin, backend, website ]
 
     steps:
       - name: Checkout code
@@ -22,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: [22.x]
+          node-version: '>=22.0.0'
 
       - name: Install dependencies
         working-directory: ${{ matrix.project }}
