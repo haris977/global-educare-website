@@ -7,11 +7,14 @@
   "main": "index.ts",
   "scripts": {
     "dev": "nodemon",
-    "start": "ts-node index.ts",
+    "build": "tsc",
+    "start": "node build/index.js",
+    "start:dev": "ts-node index.ts",
     "db:studio": "npx prisma studio --schema=./prisma/schema.prisma",
     "db:migrate": "npx prisma migrate dev --schema=./prisma/schema.prisma",
     "db:ielts-migrate": "ts-node scripts/apply-ielts-migration.ts",
-    "test:ielts-upload": "ts-node scripts/test-ielts-upload.ts"
+    "test:ielts-upload": "ts-node scripts/test-ielts-upload.ts",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
