@@ -7,14 +7,13 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    # use an inline list for self-hosted runners
+    runs-on: [self-hosted]
 
     strategy:
       matrix:
-        project:
-          - admin
-          - backend
-          - website
+        # inline list for your three folders
+        project: [admin, backend, website]
 
     steps:
       - name: Checkout code
