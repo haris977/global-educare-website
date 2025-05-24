@@ -51,263 +51,46 @@ export default function TestResultsPage() {
   useEffect(() => {
     const fetchTestResult = async () => {
       try {
+        const resultId = params.id as string;
         setLoading(true);
-        setLoadingStep(1);
         
-        // Check for fallback/local test results first
-        if (params.id.startsWith('local-attempt-') || params.id.includes('fallback-test')) {
-          console.log("Looking for local test result:", params.id);
-          setLoadingStep(2);
-          
-          // Try to get result from localStorage
-          if (typeof window !== 'undefined') {
-            const localResult = localStorage.getItem(`testResult-${params.id}`);
-            
-            if (localResult) {
-              console.log("Found local test result");
-              const parsedResult = JSON.parse(localResult);
-              setLoadingStep(3);
-              
-              // Create mock section results if they don't exist
-              if (!parsedResult.sectionResults) {
-                const mockSectionResults = createMockSectionResults(parsedResult);
-                parsedResult.sectionResults = mockSectionResults;
-              }
-              
-              setResult(parsedResult);
-              setLoading(false);
-              return;
-            }
-          }
+        // Skip for fallback test results if environment variable is set to avoid fallbacks
+        if (resultId.startsWith('fallback-') && process.env.NEXT_PUBLIC_DISABLE_FALLBACKS === 'true') {
+          setError("Test result not found");
+          setLoading(false);
+          return;
         }
         
-        // Regular API flow
-        setLoadingStep(2);
-        const response = await TestsAPI.getTestResult(params.id as string);
-        setLoadingStep(3);
+        console.log(`Fetching test result: ${resultId}`);
         
+        const response = await TestsAPI.getTestResult(resultId);
+        
+        // Check for real test data vs fallbacks
         if (response.success && response.data) {
-          setResult(response.data);
+          console.log("Retrieved test result:", response.data);
+
+          // Don't show fallback results if we have real ones
+          const isRealResult = !response.data.testId?.startsWith('fallback-') && 
+                              !response.message?.includes('fallback');
+                              
+          if (isRealResult) {
+            setResult(response.data);
+          } else {
+            // Only show fallback data if environment allows it
+            if (process.env.NEXT_PUBLIC_DISABLE_FALLBACKS !== 'true') {
+              setResult(response.data);
+            } else {
+              setError("Only results from real tests are available. No dummy data is shown.");
+            }
+          }
         } else {
-          setError("Failed to load test results. Please try again later.");
+          setError("Failed to load test result");
         }
       } catch (err) {
         setError("An error occurred while loading the results.");
         console.error(err);
       } finally {
         setLoading(false);
-      }
-    };
-    
-    // Create mock section results for fallback tests
-    const createMockSectionResults = (result: any) => {
-      const testId = result.testId || '';
-      const testNumber = Number(testId.split('-').pop());
-      
-      switch(testNumber) {
-        case 1: // Reading
-          return [{
-            sectionId: `${testId}-section-1`,
-            title: "Reading Comprehension",
-            score: Math.floor(Math.random() * 4) + 3, // 3-7 out of 10
-            maxScore: 10,
-            questionResults: [
-              {
-                questionId: `${testId}-q1`,
-                questionText: "According to the passage, what is the main cause of climate change?",
-                userAnswer: "Human activity",
-                correctAnswer: "Human activity",
-                isCorrect: true,
-                score: 1,
-                maxScore: 1
-              },
-              {
-                questionId: `${testId}-q2`,
-                questionText: "The passage suggests that deforestation contributes to climate change.",
-                userAnswer: "true",
-                correctAnswer: "true",
-                isCorrect: true,
-                score: 1,
-                maxScore: 1
-              },
-              {
-                questionId: `${testId}-q3`,
-                questionText: "Complete the sentence: Greenhouse gases in the atmosphere _________.",
-                userAnswer: "increase temperature",
-                correctAnswer: "trap heat",
-                isCorrect: false,
-                score: 0,
-                maxScore: 1
-              },
-              {
-                questionId: `${testId}-q4`,
-                questionText: "What are two major contributors to climate change mentioned in the passage?",
-                userAnswer: "fossil fuels and deforestation",
-                correctAnswer: "fossil fuels and deforestation",
-                isCorrect: true,
-                score: 2,
-                maxScore: 2
-              },
-              {
-                questionId: `${testId}-q5`,
-                questionText: "Explain how human activities contribute to climate change based on the passage.",
-                userAnswer: "Human activities like burning fossil fuels release greenhouse gases.",
-                correctAnswer: "The answer should mention fossil fuels, greenhouse gases, and deforestation as key factors.",
-                isCorrect: true,
-                score: 3,
-                maxScore: 5
-              }
-            ]
-          }];
-        
-        case 2: // Listening
-          return [{
-            sectionId: `${testId}-section-1`,
-            title: "Listening Comprehension",
-            score: Math.floor(Math.random() * 2) + 2, // 2-4 out of 5
-            maxScore: 5,
-            questionResults: [
-              {
-                questionId: `${testId}-q1`,
-                questionText: "What is the main topic of the conversation?",
-                userAnswer: "Travel plans",
-                correctAnswer: "Travel plans",
-                isCorrect: true,
-                score: 1,
-                maxScore: 1
-              },
-              {
-                questionId: `${testId}-q2`,
-                questionText: "The speakers agree to meet at 5 PM.",
-                userAnswer: "false",
-                correctAnswer: "false",
-                isCorrect: true,
-                score: 1,
-                maxScore: 1
-              },
-              {
-                questionId: `${testId}-q3`,
-                questionText: "What time did the speakers agree to meet?",
-                userAnswer: "2 PM",
-                correctAnswer: "3 PM",
-                isCorrect: false,
-                score: 0,
-                maxScore: 3
-              }
-            ]
-          }];
-          
-        case 3: // Writing
-          return [
-            {
-              sectionId: `${testId}-section-1`,
-              title: "Task 1",
-              score: Math.floor(Math.random() * 3) + 6, // 6-9 out of 10
-              maxScore: 10,
-              questionResults: [
-                {
-                  questionId: `${testId}-q1`,
-                  questionText: "The chart below shows the percentage of households with internet access in four countries between 2000 and 2020. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
-                  userAnswer: "The chart illustrates the percentage of households with internet access in four different countries over a 20-year period from 2000 to 2020...",
-                  correctAnswer: "Properly structured analysis of the chart data with main trends identified.",
-                  isCorrect: true,
-                  score: 7,
-                  maxScore: 10
-                }
-              ]
-            },
-            {
-              sectionId: `${testId}-section-2`,
-              title: "Task 2",
-              score: Math.floor(Math.random() * 4) + 11, // 11-15 out of 20
-              maxScore: 20,
-              questionResults: [
-                {
-                  questionId: `${testId}-q2`,
-                  questionText: "Some people believe that social media has a positive impact on society, while others disagree. Discuss both views and give your opinion.",
-                  userAnswer: "Social media has become an integral part of modern life, affecting various aspects of society both positively and negatively...",
-                  correctAnswer: "Well-structured essay discussing both perspectives and providing a reasoned opinion.",
-                  isCorrect: true,
-                  score: 13,
-                  maxScore: 20
-                }
-              ]
-            }
-          ];
-          
-        case 4: // Speaking
-          return [{
-            sectionId: `${testId}-section-1`,
-            title: "Speaking Test",
-            score: Math.floor(Math.random() * 3) + 5, // 5-8 out of 9
-            maxScore: 9,
-            questionResults: [
-              {
-                questionId: `${testId}-q1`,
-                questionText: "Part 1: Tell me about yourself and your hometown.",
-                userAnswer: "Audio recording (transcription not available)",
-                correctAnswer: "Fluent speech with good pronunciation and vocabulary.",
-                isCorrect: true,
-                score: 2,
-                maxScore: 3
-              },
-              {
-                questionId: `${testId}-q2`,
-                questionText: "Part 2: Describe a person who has had a significant influence on your life.",
-                userAnswer: "Audio recording (transcription not available)",
-                correctAnswer: "Well-structured description with supporting details.",
-                isCorrect: true,
-                score: 2,
-                maxScore: 3
-              },
-              {
-                questionId: `${testId}-q3`,
-                questionText: "Part 3: Do you think family influences are more important than influences from friends? Why or why not?",
-                userAnswer: "Audio recording (transcription not available)",
-                correctAnswer: "Discussion showing critical thinking and good use of complex language.",
-                isCorrect: true,
-                score: 1,
-                maxScore: 3
-              }
-            ]
-          }];
-          
-        default: // Default to reading test
-          return [{
-            sectionId: `${testId}-section-1`,
-            title: "Test Section",
-            score: Math.floor(result.percentageScore * 10 / 100) || 7,
-            maxScore: 10,
-            questionResults: [
-              {
-                questionId: `${testId}-q1`,
-                questionText: "Sample question 1",
-                userAnswer: "User's answer",
-                correctAnswer: "Correct answer",
-                isCorrect: true,
-                score: 2,
-                maxScore: 2
-              },
-              {
-                questionId: `${testId}-q2`,
-                questionText: "Sample question 2",
-                userAnswer: "User's answer",
-                correctAnswer: "Correct answer",
-                isCorrect: false,
-                score: 0,
-                maxScore: 3
-              },
-              {
-                questionId: `${testId}-q3`,
-                questionText: "Sample question 3",
-                userAnswer: "User's answer",
-                correctAnswer: "Correct answer",
-                isCorrect: true,
-                score: 5,
-                maxScore: 5
-              }
-            ]
-          }];
       }
     };
     

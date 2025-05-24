@@ -72,6 +72,32 @@ export default function CreateTestPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
+  // CSS styles inside the component
+  const inputStyle = "text-gray-900 font-medium";
+  const selectStyle = "text-gray-900 font-medium appearance-none bg-white pr-10 bg-select-arrow bg-no-repeat bg-right";
+  
+  // Add style JSX for global styles
+  const StyleJSX = () => (
+    <style jsx global>{`
+      input::placeholder,
+      textarea::placeholder {
+        color: #6B7280 !important;
+        opacity: 1 !important;
+      }
+      
+      select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+    `}</style>
+  );
+  
   // Available module types based on backend schema
   const moduleTypes = ["LISTENING", "READING", "WRITING", "SPEAKING"];
   const difficultyLevels = ["EASY", "MEDIUM", "HARD", "VERY_HARD"];
@@ -478,11 +504,12 @@ export default function CreateTestPage() {
   // UI component for test creation
   return (
     <div className="container mx-auto p-4 max-w-4xl">
+      <StyleJSX />
       <div className="mb-6">
-        <Link href="/dashboard" className="text-blue-500 hover:underline">
+        <Link href="/dashboard" className="text-blue-600 hover:underline font-medium">
           &larr; Back to Dashboard
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Create New Test</h1>
+        <h1 className="text-3xl font-bold mt-2 text-gray-900">Create New Test</h1>
       </div>
       
       {error && (
@@ -499,29 +526,30 @@ export default function CreateTestPage() {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Step 1: Basic Test Information */}
-        <div className={`border rounded-lg p-4 ${currentStep === 1 ? 'block' : 'hidden'}`}>
-          <h2 className="text-xl font-semibold mb-4">Test Information</h2>
+        <div className={`border rounded-lg p-6 shadow-sm bg-white ${currentStep === 1 ? 'block' : 'hidden'}`}>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Test Information</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Test Title</label>
+              <label className="block text-sm font-medium text-gray-800 mb-1">Test Title</label>
               <input
                 type="text"
                 name="title"
                 value={form.title}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${inputStyle}`}
                 required
+                placeholder="Enter test title"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Module Type</label>
+              <label className="block text-sm font-medium text-gray-800 mb-1">Module Type</label>
               <select
                 name="moduleType"
                 value={form.moduleType}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${selectStyle}`}
                 required
               >
                 {moduleTypes.map(type => (
@@ -533,12 +561,12 @@ export default function CreateTestPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Difficulty Level</label>
+              <label className="block text-sm font-medium text-gray-800 mb-1">Difficulty Level</label>
               <select
                 name="difficulty"
                 value={form.difficulty}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${selectStyle}`}
               >
                 {difficultyLevels.map(level => (
                   <option key={level} value={level}>{level}</option>
@@ -547,7 +575,7 @@ export default function CreateTestPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">CLB Score (1-12)</label>
+              <label className="block text-sm font-medium text-gray-800 mb-1">CLB Score (1-12)</label>
               <input
                 type="number"
                 name="clbScore"
@@ -555,33 +583,36 @@ export default function CreateTestPage() {
                 onChange={handleInputChange}
                 min="1"
                 max="12"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${inputStyle}`}
+                placeholder="Enter CLB score (1-12)"
               />
             </div>
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Description</label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleInputChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+              className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${inputStyle}`}
               rows={3}
+              placeholder="Describe the test content and purpose"
             />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Total Test Time (minutes)</label>
+              <label className="block text-sm font-medium text-gray-800 mb-1">Total Test Time (minutes)</label>
               <input
                 type="number"
                 name="totalTime"
                 value={form.totalTime}
                 onChange={handleInputChange}
                 min="1"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                 required
+                placeholder="Enter time in minutes"
               />
             </div>
             
@@ -591,9 +622,9 @@ export default function CreateTestPage() {
                 name="isPublished"
                 checked={form.isPublished}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label className="ml-2 block text-sm text-gray-700">
+              <label className="ml-2 block text-base text-gray-800 font-medium">
                 Publish Test Immediately
               </label>
             </div>
@@ -603,7 +634,7 @@ export default function CreateTestPage() {
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium shadow-sm"
             >
               Next: Add Sections & Questions
             </button>
@@ -611,20 +642,20 @@ export default function CreateTestPage() {
         </div>
         
         {/* Step 2: Sections and Questions */}
-        <div className={`border rounded-lg p-4 ${currentStep === 2 ? 'block' : 'hidden'}`}>
-          <h2 className="text-xl font-semibold mb-4">Sections and Questions</h2>
+        <div className={`border rounded-lg p-6 shadow-sm bg-white ${currentStep === 2 ? 'block' : 'hidden'}`}>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Sections and Questions</h2>
           
           {/* Section Tabs */}
           <div className="mb-6">
-            <div className="flex flex-wrap border-b">
+            <div className="flex flex-wrap border-b border-gray-300">
               {form.sections.map((section, index) => (
                 <button
                   key={section.id}
                   type="button"
-                  className={`px-4 py-2 font-medium ${
+                  className={`px-4 py-3 font-medium ${
                     currentSectionIndex === index
                       ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                      : 'text-gray-600 hover:text-gray-800 hover:border-b hover:border-gray-300'
                   }`}
                   onClick={() => setCurrentSectionIndex(index)}
                 >
@@ -634,7 +665,7 @@ export default function CreateTestPage() {
               <button
                 type="button"
                 onClick={addSection}
-                className="px-4 py-2 text-green-600 hover:text-green-800"
+                className="px-4 py-3 text-green-600 hover:text-green-800 font-medium"
               >
                 + Add Section
               </button>
@@ -646,51 +677,54 @@ export default function CreateTestPage() {
             <div className="mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Section Title</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Section Title</label>
                   <input
                     type="text"
                     name="title"
                     value={form.sections[currentSectionIndex].title}
                     onChange={(e) => handleSectionChange(e, currentSectionIndex)}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                     required
+                    placeholder="Enter section title"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Time Limit (minutes)</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Time Limit (minutes)</label>
                   <input
                     type="number"
                     name="timeLimit"
                     value={form.sections[currentSectionIndex].timeLimit}
                     onChange={(e) => handleSectionChange(e, currentSectionIndex)}
                     min="1"
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                     required
+                    placeholder="Enter time in minutes"
                   />
                 </div>
               </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Section Instructions</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Section Instructions</label>
                 <textarea
                   name="instructions"
                   value={form.sections[currentSectionIndex].instructions}
                   onChange={(e) => handleSectionChange(e, currentSectionIndex)}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                   rows={2}
+                  placeholder="Enter instructions for this section"
                 />
               </div>
               
               {/* Reading passage for reading module */}
               {form.moduleType === "READING" && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Reading Passage</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Reading Passage</label>
                   <textarea
                     name="passage"
                     value={form.sections[currentSectionIndex].passage || ""}
                     onChange={(e) => handleSectionChange(e, currentSectionIndex)}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                     rows={6}
                     placeholder="Enter the reading passage for this section..."
                   />
@@ -701,7 +735,7 @@ export default function CreateTestPage() {
                 <button
                   type="button"
                   onClick={() => removeSection(currentSectionIndex)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 font-medium"
                   disabled={form.sections.length <= 1}
                 >
                   Remove Section
@@ -710,28 +744,28 @@ export default function CreateTestPage() {
               
               {/* Section questions */}
               <div className="mt-6">
-                <h3 className="text-lg font-medium mb-2">
+                <h3 className="text-lg font-medium mb-2 text-gray-900">
                   Questions ({form.sections[currentSectionIndex].questions.length})
                 </h3>
                 
                 {form.sections[currentSectionIndex].questions.length > 0 && (
                   <div className="space-y-4 mb-6">
                     {form.sections[currentSectionIndex].questions.map((question, index) => (
-                      <div key={question.id} className="border rounded p-3 bg-gray-50">
+                      <div key={question.id} className="border rounded p-4 bg-gray-50 shadow-sm">
                         <div className="flex justify-between">
-                          <h4 className="font-medium">Q{index + 1}: {question.text}</h4>
+                          <h4 className="font-medium text-gray-900">Q{index + 1}: {question.text}</h4>
                           <button 
                             type="button" 
                             onClick={() => removeQuestion(question.id)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 font-medium"
                           >
                             Remove
                           </button>
                         </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          <p>Type: {question.type}</p>
-                          <p>Points: {question.points}</p>
-                          {question.correctAnswer && <p>Correct Answer: {question.correctAnswer}</p>}
+                        <div className="text-sm text-gray-700 mt-2">
+                          <p><span className="font-medium">Type:</span> {question.type}</p>
+                          <p><span className="font-medium">Points:</span> {question.points}</p>
+                          {question.correctAnswer && <p><span className="font-medium">Correct Answer:</span> {question.correctAnswer}</p>}
                         </div>
                       </div>
                     ))}
@@ -739,28 +773,29 @@ export default function CreateTestPage() {
                 )}
                 
                 {/* Add new question form */}
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <h3 className="text-lg font-medium mb-4">Add New Question</h3>
+                <div className="border rounded-lg p-5 bg-gray-50 shadow-sm">
+                  <h3 className="text-lg font-medium mb-4 text-gray-900">Add New Question</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Question Text</label>
+                      <label className="block text-sm font-medium text-gray-800 mb-1">Question Text</label>
                       <input
                         type="text"
                         name="text"
                         value={currentQuestion.text}
                         onChange={handleQuestionChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter your question text here"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Question Type</label>
+                      <label className="block text-sm font-medium text-gray-800 mb-1">Question Type</label>
                       <select
                         name="type"
                         value={currentQuestion.type}
                         onChange={handleQuestionChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 select-improved"
                       >
                         {getQuestionTypesByModule(form.moduleType).map(type => (
                           <option key={type} value={type}>{type}</option>
@@ -770,26 +805,27 @@ export default function CreateTestPage() {
                   </div>
                   
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700">Points</label>
+                    <label className="block text-sm font-medium text-gray-800 mb-1">Points</label>
                     <input
                       type="number"
                       name="points"
                       value={currentQuestion.points}
                       onChange={handleQuestionChange}
                       min="1"
-                      className="mt-1 block w-full md:w-1/4 border-gray-300 rounded-md shadow-sm p-2 border"
+                      className="block w-full md:w-1/4 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                      placeholder="Points"
                     />
                   </div>
                   
                   {/* Question type specific fields */}
                   {currentQuestion.type === "MULTIPLE_CHOICE" && (
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-800 mb-2">
                         Options
                       </label>
                       
                       {currentQuestion.options?.map((option, index) => (
-                        <div key={index} className="flex items-center mb-2">
+                        <div key={index} className="flex items-center mb-3">
                           <input
                             type="radio"
                             name="correctAnswer"
@@ -799,20 +835,20 @@ export default function CreateTestPage() {
                               ...prev,
                               correctAnswer: index.toString()
                             }))}
-                            className="mr-2"
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <input
                             type="text"
                             value={option}
                             onChange={(e) => handleOptionChange(index, e.target.value)}
-                            className="flex-1 border-gray-300 rounded-md shadow-sm p-2 border"
+                            className="flex-1 ml-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                             placeholder={`Option ${index + 1}`}
                           />
                           {index > 1 && (
                             <button
                               type="button"
                               onClick={() => removeOption(index)}
-                              className="ml-2 text-red-500"
+                              className="ml-2 text-red-500 hover:text-red-700 font-medium"
                             >
                               Remove
                             </button>
@@ -823,19 +859,22 @@ export default function CreateTestPage() {
                       <button
                         type="button"
                         onClick={addOption}
-                        className="mt-2 text-blue-500 hover:text-blue-700"
+                        className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
                       >
-                        + Add Option
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Option
                       </button>
                     </div>
                   )}
                   
                   {currentQuestion.type === "TRUE_FALSE" && (
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-800 mb-2">
                         Correct Answer
                       </label>
-                      <div className="flex space-x-4">
+                      <div className="flex space-x-6">
                         <label className="inline-flex items-center">
                           <input
                             type="radio"
@@ -846,9 +885,9 @@ export default function CreateTestPage() {
                               ...prev,
                               correctAnswer: "true"
                             }))}
-                            className="mr-2"
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
-                          <span>True</span>
+                          <span className="ml-2 text-gray-800">True</span>
                         </label>
                         <label className="inline-flex items-center">
                           <input
@@ -860,9 +899,9 @@ export default function CreateTestPage() {
                               ...prev,
                               correctAnswer: "false"
                             }))}
-                            className="mr-2"
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
-                          <span>False</span>
+                          <span className="ml-2 text-gray-800">False</span>
                         </label>
                       </div>
                     </div>
@@ -871,7 +910,7 @@ export default function CreateTestPage() {
                   {(currentQuestion.type === "SHORT_ANSWER" || 
                     currentQuestion.type === "FILL_BLANK") && (
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
                         Correct Answer
                       </label>
                       <input
@@ -879,7 +918,8 @@ export default function CreateTestPage() {
                         name="correctAnswer"
                         value={currentQuestion.correctAnswer as string || ""}
                         onChange={handleQuestionChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter the correct answer"
                       />
                     </div>
                   )}
@@ -888,8 +928,11 @@ export default function CreateTestPage() {
                     <button
                       type="button"
                       onClick={addQuestion}
-                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                      className="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700 font-medium shadow-sm flex items-center"
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
                       Add Question
                     </button>
                   </div>
@@ -902,17 +945,28 @@ export default function CreateTestPage() {
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className="text-blue-500 hover:text-blue-700"
+              className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
             >
-              &larr; Back to Test Information
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Test Information
             </button>
             
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium shadow-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating Test..." : "Create Test"}
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Test...
+                </span>
+              ) : "Create Test"}
             </button>
           </div>
         </div>

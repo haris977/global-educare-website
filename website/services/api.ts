@@ -1,8 +1,10 @@
 // API base URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-// Should we use fallbacks? (if not set, default to true for backward compatibility)
-const USE_FALLBACKS = process.env.NEXT_PUBLIC_USE_FALLBACKS !== 'false';
+// Control fallback data usage - environment variable takes priority
+const USE_FALLBACKS = process.env.NEXT_PUBLIC_DISABLE_FALLBACKS === 'true' 
+  ? false 
+  : process.env.NEXT_PUBLIC_ENABLE_FALLBACKS === 'true' || process.env.NODE_ENV === 'development';
 
 // Set to true to bypass authentication for test attempts (for development only)
 const ALLOW_ANONYMOUS_TEST_ATTEMPTS = true;
@@ -278,9 +280,69 @@ const calculateIeltsBand = (percentageScore: number): number => {
 // Tests API
 export const TestsAPI = {
   // Get all published tests
-  getAllTests: async () => {
+  getAllTests: async ({isPublished = true} = {}) => {
     try {
-      return await fetchData<{success: boolean; message: string; data: any[]}>('/tests?isPublished=true');
+      // Make sure we're only getting published tests
+      const queryParams = new URLSearchParams();
+      if (isPublished) {
+        queryParams.append('isPublished', 'true');
+      }
+      
+      const response = await fetchData<{success: boolean; message: string; data: any[]}>(`/tests?${queryParams.toString()}`);
+      
+      // Only use real tests if they exist and not fallback tests
+      if (response.success && response.data && response.data.length > 0) {
+        console.log(`Found ${response.data.length} tests from API`);
+        
+        // Filter out any tests that don't have required fields
+        const validTests = response.data.filter(test => {
+          // Check if test has all required fields
+          const hasRequiredFields = 
+            test.id && 
+            test.title && 
+            test.moduleType && 
+            typeof test.totalTime !== 'undefined';
+            
+          if (!hasRequiredFields) {
+            console.warn(`Skipping invalid test:`, test);
+          }
+          return hasRequiredFields;
+        });
+        
+        // Calculate total questions for each test if not already present
+        const testsWithQuestionCount = validTests.map(test => {
+          if (typeof test.totalQuestions === 'undefined') {
+            const totalQuestions = (test.sections || []).reduce((sum, section) => {
+              return sum + (section.questions ? section.questions.length : 0);
+            }, 0);
+            return {...test, totalQuestions};
+          }
+          return test;
+        });
+        
+        return {
+          success: true,
+          message: "Tests retrieved successfully",
+          data: testsWithQuestionCount
+        };
+      }
+      
+      // If API returned success but no tests, or the API call failed and USE_FALLBACKS is enabled
+      if (USE_FALLBACKS) {
+        console.log("No tests found from API, using fallback tests");
+        return {
+          success: true,
+          message: "Using fallback tests data",
+          data: fallbackTests
+        };
+      }
+      
+      // No tests and no fallbacks enabled
+      return {
+        success: true,
+        message: "No tests found",
+        data: []
+      };
     } catch (error) {
       console.error("Error fetching tests:", error);
       
@@ -1047,438 +1109,8 @@ export const TestsAPI = {
       console.log(`Attempting to get user test history from: ${API_URL}/tests/history${queryString}`);
       return await fetchData<{success: boolean; message: string; data: any[]}>(`/tests/history${queryString}`);
     } catch (error) {
-      console.warn("Failed to get test history:", error);
-      
-      // Only use fallbacks if enabled
-      if (USE_FALLBACKS) {
-        console.log("Using empty test history for offline mode");
-        
-        // Return empty test history for offline mode
-        return {
-          success: true,
-          message: "No test history available in offline mode",
-          data: []
-        };
-      }
-      
-      // If fallbacks are disabled, propagate the error
+      console.error("Error fetching user test history:", error);
       throw error;
     }
   },
 };
-
-// Helper function to create mock section results for display on results page
-function createMockSectionResults(result: any) {
-  const testId = result.testId || '';
-  let moduleType = result.test?.moduleType || '';
-  
-  // If no module type found in test object, try to extract from testId
-  if (!moduleType && testId.startsWith('fallback-test-')) {
-    const testNumber = Number(testId.split('-').pop());
-    switch(testNumber) {
-      case 1: moduleType = "READING"; break;
-      case 2: moduleType = "LISTENING"; break;
-      case 3: moduleType = "WRITING"; break;
-      case 4: moduleType = "SPEAKING"; break;
-    }
-  }
-  
-  switch(moduleType.toUpperCase()) {
-    case 'READING':
-      return [{
-        sectionId: `${testId}-section-1`,
-        title: "Reading Comprehension",
-        score: Math.floor(Math.random() * 4) + 3, // 3-7 out of 10
-        maxScore: 10,
-        questionResults: [
-          { questionId: `${testId}-q1`, questionText: "According to the passage, what is the main cause of climate change?", userAnswer: "Human activity", correctAnswer: "Human activity", isCorrect: true, score: 1, maxScore: 1 },
-          { questionId: `${testId}-q2`, questionText: "The passage suggests that deforestation contributes to climate change.", userAnswer: "true", correctAnswer: "true", isCorrect: true, score: 1, maxScore: 1 },
-          { questionId: `${testId}-q3`, questionText: "Complete the sentence: Greenhouse gases in the atmosphere _________.", userAnswer: "increase temperature", correctAnswer: "trap heat", isCorrect: false, score: 0, maxScore: 1 },
-          { questionId: `${testId}-q4`, questionText: "What are two major contributors to climate change mentioned in the passage?", userAnswer: "fossil fuels and deforestation", correctAnswer: "fossil fuels and deforestation", isCorrect: true, score: 2, maxScore: 2 },
-          { questionId: `${testId}-q5`, questionText: "Explain how human activities contribute to climate change based on the passage.", userAnswer: "Human activities like burning fossil fuels release greenhouse gases.", correctAnswer: "The answer should mention fossil fuels, greenhouse gases, and deforestation as key factors.", isCorrect: true, score: 3, maxScore: 5 }
-        ]
-      }];
-    
-    case 'LISTENING':
-      return [{
-        sectionId: `${testId}-section-1`,
-        title: "Listening Comprehension",
-        score: Math.floor(Math.random() * 2) + 2, // 2-4 out of 5
-        maxScore: 5,
-        questionResults: [
-          { questionId: `${testId}-q1`, questionText: "What is the main topic of the conversation?", userAnswer: "Travel plans", correctAnswer: "Travel plans", isCorrect: true, score: 1, maxScore: 1 },
-          { questionId: `${testId}-q2`, questionText: "The speakers agree to meet at 5 PM.", userAnswer: "false", correctAnswer: "false", isCorrect: true, score: 1, maxScore: 1 },
-          { questionId: `${testId}-q3`, questionText: "What time did the speakers agree to meet?", userAnswer: "2 PM", correctAnswer: "3 PM", isCorrect: false, score: 0, maxScore: 3 }
-        ]
-      }];
-      
-    case 'WRITING':
-      return [
-        {
-          sectionId: `${testId}-section-1`,
-          title: "Task 1",
-          score: Math.floor(Math.random() * 3) + 6, // 6-9 out of 10
-          maxScore: 10,
-          questionResults: [
-            { questionId: `${testId}-q1`, questionText: "The chart below shows the percentage of households with internet access in four countries between 2000 and 2020. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.", userAnswer: "The chart illustrates the percentage of households with internet access in four different countries over a 20-year period from 2000 to 2020...", correctAnswer: "Properly structured analysis of the chart data with main trends identified.", isCorrect: true, score: 7, maxScore: 10 }
-          ]
-        },
-        {
-          sectionId: `${testId}-section-2`,
-          title: "Task 2",
-          score: Math.floor(Math.random() * 4) + 11, // 11-15 out of 20
-          maxScore: 20,
-          questionResults: [
-            { questionId: `${testId}-q2`, questionText: "Some people believe that social media has a positive impact on society, while others disagree. Discuss both views and give your opinion.", userAnswer: "Social media has become an integral part of modern life, affecting various aspects of society both positively and negatively...", correctAnswer: "Well-structured essay discussing both perspectives and providing a reasoned opinion.", isCorrect: true, score: 13, maxScore: 20 }
-          ]
-        }
-      ];
-      
-    case 'SPEAKING':
-      return [{
-        sectionId: `${testId}-section-1`,
-        title: "Speaking Test",
-        score: Math.floor(Math.random() * 3) + 5, // 5-8 out of 9
-        maxScore: 9,
-        questionResults: [
-          { questionId: `${testId}-q1`, questionText: "Part 1: Tell me about yourself and your hometown.", userAnswer: "Audio recording (transcription not available)", correctAnswer: "Fluent speech with good pronunciation and vocabulary.", isCorrect: true, score: 2, maxScore: 3 },
-          { questionId: `${testId}-q2`, questionText: "Part 2: Describe a person who has had a significant influence on your life.", userAnswer: "Audio recording (transcription not available)", correctAnswer: "Well-structured description with supporting details.", isCorrect: true, score: 2, maxScore: 3 },
-          { questionId: `${testId}-q3`, questionText: "Part 3: Do you think family influences are more important than influences from friends? Why or why not?", userAnswer: "Audio recording (transcription not available)", correctAnswer: "Discussion showing critical thinking and good use of complex language.", isCorrect: true, score: 1, maxScore: 3 }
-        ]
-      }];
-      
-    default: // Default to reading test
-      return [{
-        sectionId: `${testId}-section-1`,
-        title: "Test Section",
-        score: Math.floor(result.percentageScore * 10 / 100) || 7,
-        maxScore: 10,
-        questionResults: [
-          { questionId: `${testId}-q1`, questionText: "Sample question 1", userAnswer: "User's answer", correctAnswer: "Correct answer", isCorrect: true, score: 2, maxScore: 2 },
-          { questionId: `${testId}-q2`, questionText: "Sample question 2", userAnswer: "User's answer", correctAnswer: "Correct answer", isCorrect: false, score: 0, maxScore: 3 },
-          { questionId: `${testId}-q3`, questionText: "Sample question 3", userAnswer: "User's answer", correctAnswer: "Correct answer", isCorrect: true, score: 5, maxScore: 5 }
-        ]
-      }];
-  }
-}
-
-// Helper function to create a generic test for anonymous mode
-function createGenericTest(testId: string, moduleType?: string) {
-  // Try to detect module type from test ID
-  let detectedModuleType = moduleType;
-  if (!detectedModuleType) {
-    if (testId.toLowerCase().includes('reading')) {
-      detectedModuleType = 'READING';
-    } else if (testId.toLowerCase().includes('listening')) {
-      detectedModuleType = 'LISTENING';
-    } else if (testId.toLowerCase().includes('speaking')) {
-      detectedModuleType = 'SPEAKING';
-    } else if (testId.toLowerCase().includes('writing')) {
-      detectedModuleType = 'WRITING';
-    } else {
-      // Default to reading if can't detect
-      detectedModuleType = 'READING';
-    }
-  }
-  
-  console.log(`Creating generic test with moduleType: ${detectedModuleType} for id: ${testId}`);
-  
-  // Base test structure
-  const genericTest = {
-    id: testId,
-    title: `Practice ${detectedModuleType.charAt(0) + detectedModuleType.slice(1).toLowerCase()} Test`,
-    description: `A practice test for the IELTS ${detectedModuleType.charAt(0) + detectedModuleType.slice(1).toLowerCase()} module with various question types`,
-    moduleType: detectedModuleType,
-    difficulty: "MEDIUM",
-    totalTime: detectedModuleType === 'READING' ? 60 : detectedModuleType === 'LISTENING' ? 30 : 60,
-    totalQuestions: 5,
-    clbScore: 7,
-    isPublished: true,
-    createdAt: new Date().toISOString(),
-    sections: []
-  };
-  
-  // Create different sections based on module type
-  if (detectedModuleType === 'READING') {
-    genericTest.sections = [
-      {
-        id: `${testId}-section-1`,
-        title: "Reading Passage",
-        instructions: "Read the passage and answer the questions that follow.",
-        timeLimit: 60,
-        order: 1,
-        questions: [
-          {
-            id: `${testId}-q1`,
-            questionText: "According to the passage, what is the main cause of climate change?",
-            questionType: "MULTIPLE_CHOICE",
-            text: "According to the passage, what is the main cause of climate change?",
-            type: "MULTIPLE_CHOICE",
-            options: JSON.stringify(['Human activity', 'Natural cycles', 'Solar radiation', 'Volcanic eruptions']),
-            order: 1,
-            passage: "Climate change is one of the most pressing issues facing our planet today. The scientific consensus is that human activities, particularly the burning of fossil fuels and deforestation, are the primary drivers of climate change. These activities release greenhouse gases into the atmosphere, which trap heat and lead to global warming. While natural cycles play a role in climate variability, scientific evidence points to human activities as the predominant cause of the warming observed since the mid-20th century."
-          },
-          {
-            id: `${testId}-q2`,
-            questionText: "The passage suggests that deforestation contributes to climate change.",
-            questionType: "TRUE_FALSE_NOT_GIVEN",
-            text: "The passage suggests that deforestation contributes to climate change.",
-            type: "TRUE_FALSE_NOT_GIVEN", 
-            correctAnswer: "TRUE",
-            order: 2
-          },
-          {
-            id: `${testId}-q3`,
-            questionText: "Complete the sentence: Greenhouse gases in the atmosphere _________.",
-            questionType: "FILL_BLANK",
-            text: "Complete the sentence: Greenhouse gases in the atmosphere _________.",
-            type: "FILL_BLANK",
-            correctAnswer: "trap heat",
-            order: 3
-          },
-          {
-            id: `${testId}-q4`,
-            questionText: "What are two major contributors to climate change mentioned in the passage?",
-            questionType: "SHORT_ANSWER",
-            text: "What are two major contributors to climate change mentioned in the passage?",
-            type: "SHORT_ANSWER",
-            correctAnswer: "fossil fuels and deforestation",
-            order: 4
-          },
-          {
-            id: `${testId}-q5`,
-            questionText: "Select the heading that best matches the passage.",
-            questionType: "PARA_HEADINGS",
-            text: "Select the heading that best matches the passage.",
-            type: "PARA_HEADINGS",
-            paragraphs: JSON.stringify(['Climate Change: A Modern Crisis', 'Natural vs Human Climate Impacts', 'Reducing Your Carbon Footprint']),
-            correctAnswer: "Climate Change: A Modern Crisis",
-            order: 5
-          }
-        ]
-      }
-    ];
-  } else if (detectedModuleType === 'LISTENING') {
-    genericTest.sections = [
-      {
-        id: `${testId}-section-1`,
-        title: "Listening Section",
-        instructions: "Listen to the audio and answer the questions that follow. You will hear the recording ONCE only.",
-        timeLimit: 30,
-        order: 1,
-        questions: [
-          {
-            id: `${testId}-q1`,
-            questionText: "What is the main topic of the conversation?",
-            questionType: "MULTIPLE_CHOICE",
-            text: "What is the main topic of the conversation?",
-            type: "MULTIPLE_CHOICE",
-            options: JSON.stringify(['Climate change initiatives', 'University admissions', 'Job opportunities', 'Travel plans']),
-            correctAnswer: "University admissions",
-            audioFile: "https://example.com/sample-listening.mp3",
-            order: 1
-          },
-          {
-            id: `${testId}-q2`,
-            questionText: "The speaker mentions that applications should be submitted before ________.",
-            questionType: "FILL_BLANK",
-            text: "The speaker mentions that applications should be submitted before ________.",
-            type: "FILL_BLANK",
-            correctAnswer: "January 15",
-            order: 2
-          },
-          {
-            id: `${testId}-q3`,
-            questionText: "According to the audio, students need to provide three reference letters.",
-            questionType: "TRUE_FALSE",
-            text: "According to the audio, students need to provide three reference letters.",
-            type: "TRUE_FALSE",
-            correctAnswer: "FALSE",
-            order: 3
-          },
-          {
-            id: `${testId}-q4`,
-            questionText: "Label the locations on the campus map",
-            questionType: "MAP",
-            text: "Label the locations on the campus map",
-            type: "MAP",
-            questionImage: "https://example.com/campus-map.jpg",
-            mapLabels: JSON.stringify(['Library', 'Cafeteria', 'Administration Building', 'Science Lab']),
-            order: 4
-          },
-          {
-            id: `${testId}-q5`,
-            questionText: "What are the required documents mentioned by the speaker?",
-            questionType: "SHORT_ANSWER",
-            text: "What are the required documents mentioned by the speaker?",
-            type: "SHORT_ANSWER",
-            correctAnswer: "transcript, passport, financial statement",
-            order: 5
-          }
-        ]
-      }
-    ];
-  } else if (detectedModuleType === 'SPEAKING') {
-    genericTest.sections = [
-      {
-        id: `${testId}-section-1`,
-        title: "Speaking Tasks",
-        instructions: "Complete the following speaking tasks. Your responses will be recorded.",
-        timeLimit: 15,
-        order: 1,
-        questions: [
-          {
-            id: `${testId}-q1`,
-            questionText: "Introduce yourself and talk about your hometown.",
-            questionType: "SPEAKING_TASK_1",
-            text: "Introduce yourself and talk about your hometown.",
-            type: "SPEAKING_TASK_1",
-            speakingPrompts: JSON.stringify(['What is your name?', 'Where are you from?', 'How long have you lived there?', 'What do you like about your hometown?']),
-            order: 1
-          },
-          {
-            id: `${testId}-q2`,
-            questionText: "Describe a memorable trip you have taken.",
-            questionType: "SPEAKING_TASK_2",
-            text: "Describe a memorable trip you have taken.",
-            type: "SPEAKING_TASK_2",
-            cueCard: "Describe a memorable trip you have taken. You should say:\n- Where you went\n- Who you went with\n- What you did there\n- Why it was memorable",
-            order: 2
-          }
-        ]
-      }
-    ];
-  } else if (detectedModuleType === 'WRITING') {
-    genericTest.sections = [
-      {
-        id: `${testId}-section-1`,
-        title: "Writing Tasks",
-        instructions: "Complete both writing tasks within the time limit.",
-        timeLimit: 60,
-        order: 1,
-        questions: [
-          {
-            id: `${testId}-q1`,
-            questionText: "The chart below shows information about changes in average house prices in five different cities between 1990 and 2010. Summarize the information by selecting and reporting the main features and make comparisons where relevant.",
-            questionType: "ESSAY",
-            text: "The chart below shows information about changes in average house prices in five different cities between 1990 and 2010. Summarize the information by selecting and reporting the main features and make comparisons where relevant.",
-            type: "ESSAY",
-            questionImage: "https://example.com/house-prices-chart.jpg",
-            order: 1
-          },
-          {
-            id: `${testId}-q2`,
-            questionText: "Some people believe that universities should focus on providing academic skills rather than preparing students for employment. To what extent do you agree or disagree?",
-            questionType: "ESSAY",
-            text: "Some people believe that universities should focus on providing academic skills rather than preparing students for employment. To what extent do you agree or disagree?",
-            type: "ESSAY",
-            order: 2
-          }
-        ]
-      }
-    ];
-  }
-  
-  return genericTest;
-}
-
-// Add a function to generate mock questions when API fails
-function generateMockQuestionsForSection(sectionId: string, moduleType: string) {
-  console.log(`Generating mock questions for section ${sectionId} (${moduleType})`);
-  
-  const mockQuestions = [];
-  
-  if (moduleType === 'READING') {
-    const readingPassage = `Global climate change presents one of the most significant challenges facing humanity in the 21st century. Scientific evidence indicates that the Earth's climate system is warming unequivocally, and many of the observed changes since the 1950s are unprecedented over decades to millennia. The atmosphere and oceans have warmed, the amounts of snow and ice have diminished, sea level has risen, and the concentrations of greenhouse gases have increased.
-
-Human influence on the climate system is clear. The primary cause of current global warming is the human-induced emissions of greenhouse gases, which have increased to unprecedented levels in recent decades. Carbon dioxide, methane, and nitrous oxide concentrations are now substantially higher than at any point in the last 800,000 years. The effects of these emissions, together with those of other anthropogenic factors, have been detected throughout the climate system.
-
-Addressing climate change requires substantial and sustained reductions in greenhouse gas emissions. This can be achieved through a combination of mitigation strategies, such as transitioning to renewable energy sources, improving energy efficiency, and adopting sustainable land management practices. Additionally, adaptation measures are necessary to prepare for and respond to the impacts of climate change that are already occurring or are projected to occur in the future.`;
-    
-    mockQuestions.push({
-      id: `${sectionId}-mock-q1`,
-      sectionId: sectionId,
-      questionText: "According to the passage, what is the primary cause of current global warming?",
-      questionType: "MULTIPLE_CHOICE",
-      options: JSON.stringify([
-        "Natural climate cycles",
-        "Human-induced emissions of greenhouse gases",
-        "Changes in solar radiation",
-        "Volcanic activity"
-      ]),
-      passage: readingPassage,
-      order: 1
-    });
-    
-    mockQuestions.push({
-      id: `${sectionId}-mock-q2`,
-      sectionId: sectionId,
-      questionText: "The passage suggests that the Earth's climate system has been warming since the 1950s.",
-      questionType: "TRUE_FALSE",
-      passage: readingPassage,
-      order: 2
-    });
-    
-    mockQuestions.push({
-      id: `${sectionId}-mock-q3`,
-      sectionId: sectionId,
-      questionText: "What does the passage identify as necessary to address climate change?",
-      questionType: "SHORT_ANSWER",
-      passage: readingPassage,
-      order: 3
-    });
-    
-    mockQuestions.push({
-      id: `${sectionId}-mock-q4`,
-      sectionId: sectionId,
-      questionText: "Complete the sentence: The Paris Agreement established a global framework to avoid dangerous climate change by limiting global warming to well below _____ above pre-industrial levels.",
-      questionType: "FILL_BLANK",
-      passage: readingPassage,
-      order: 4
-    });
-  } else if (moduleType === 'LISTENING') {
-    mockQuestions.push({
-      id: `${sectionId}-mock-q1`,
-      sectionId: sectionId,
-      questionText: "What is the main topic of the audio?",
-      questionType: "MULTIPLE_CHOICE",
-      options: JSON.stringify([
-        "Environmental conservation",
-        "Higher education",
-        "Public transportation",
-        "Urban development"
-      ]),
-      order: 1
-    });
-  } else {
-    // Default questions for other module types
-    mockQuestions.push({
-      id: `${sectionId}-mock-q1`,
-      sectionId: sectionId,
-      questionText: "Sample question 1",
-      questionType: "MULTIPLE_CHOICE",
-      options: JSON.stringify([
-        "Option A",
-        "Option B",
-        "Option C",
-        "Option D"
-      ]),
-      order: 1
-    });
-    
-    mockQuestions.push({
-      id: `${sectionId}-mock-q2`,
-      sectionId: sectionId,
-      questionText: "Sample question 2",
-      questionType: "SHORT_ANSWER",
-      order: 2
-    });
-  }
-  
-  return mockQuestions;
-}
-
-export default {
-  Auth: AuthAPI,
-  Tests: TestsAPI
-}; 

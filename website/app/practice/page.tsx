@@ -101,29 +101,17 @@ export default function PracticeTestsPage() {
           if (testsResponse.success && testsResponse.data && testsResponse.data.length > 0) {
             console.log(`Found ${testsResponse.data.length} tests from API`);
             
-            // Ensure all tests have the required fields
-            const validTests = testsResponse.data.filter(test => {
-              // Check if test has all required fields
-              const hasRequiredFields = 
-                test.id && 
-                test.title && 
-                test.moduleType && 
-                typeof test.totalTime !== 'undefined' && 
-                typeof test.totalQuestions !== 'undefined';
-                
-              if (!hasRequiredFields) {
-                console.warn(`Skipping invalid test:`, test);
-              }
-              return hasRequiredFields;
-            });
+            // Filter out fallback tests (they have IDs that start with "fallback-test-")
+            const realTests = testsResponse.data.filter(test => !test.id.startsWith('fallback-test-'));
             
-            setTests(validTests);
-            
-            // Check if we got fallback tests or real API tests
-            if (testsResponse.message?.includes("offline") || 
-                testsResponse.data[0]?.id?.startsWith("fallback-test-")) {
-              setApiStatus('fallback');
+            // Only show real tests if available
+            if (realTests.length > 0) {
+              console.log(`Found ${realTests.length} real tests created from admin panel`);
+              setTests(realTests);
+              setApiStatus('connected');
             } else {
+              console.log("No real tests available, showing empty list");
+              setTests([]);
               setApiStatus('connected');
             }
           } else {
