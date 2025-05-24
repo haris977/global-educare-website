@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "../../../../../../services/api";
-import { use } from "react";
 
 // Type definitions
 interface Question {
@@ -108,8 +107,7 @@ const formatQuestionType = (type: string): string => {
 export default function QuestionsPage({ params }: { params: { id: string; sectionId: string } }) {
   const router = useRouter();
   // Unwrap params using React.use() to fix the warning
-  const unwrappedParams = use(params);
-  const { id: testId, sectionId } = unwrappedParams;
+  const { id: testId, sectionId } = params;
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");

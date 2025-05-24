@@ -697,10 +697,10 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Edit Test</h1>
-          <p className="mt-2 text-sm text-gray-500">Make changes to "{test.title}"</p>
-        </div>
+                  <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Edit Test</h1>
+            <p className="mt-2 text-sm text-gray-500">Make changes to &quot;{test.title}&quot;</p>
+          </div>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setIsEditing(false)}
