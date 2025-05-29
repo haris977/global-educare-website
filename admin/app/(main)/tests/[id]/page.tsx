@@ -8,6 +8,8 @@ import React from "react";
 
 // Type definitions for backend data
 interface Question {
+  passage: React.JSX.Element;
+  questionImage: React.JSX.Element;
   id: string;
   questionText: string;
   questionType: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY" | "PARA_HEADINGS" | "COMPLETE_SENTENCE" | "NAME_MATCHING" | "FILL_BLANK" | "TRUE_FALSE_NOT_GIVEN" | "YES_NO_NOT_GIVEN" | "MAP" | "SPEAKING_TASK_1" | "SPEAKING_TASK_2" | "SPEAKING_TASK_3" | "SPEAKING_FOLLOW_UPS";

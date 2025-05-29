@@ -133,7 +133,9 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     questionImage: "",
     cueCard: "",
     speakingPrompts: [] as string[],
-    followUpQuestions: [] as string[]
+    followUpQuestions: [] as string[],
+    headings: [] as string[],
+    correctHeadings: [] as string[] // Array of selected headings for each paragraph
   });
   
   // Add state for moduleType
@@ -455,7 +457,9 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
           questionImage: "",
           cueCard: "",
           speakingPrompts: [],
-          followUpQuestions: []
+          followUpQuestions: [],
+          headings: [],
+          correctHeadings: []
         });
         
         // Clear success message after 3 seconds
@@ -812,37 +816,64 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                 {/* Paragraphs for paragraph headings */}
                 {currentQuestion.questionType === "PARA_HEADINGS" && (
                   <div className="mt-3">
-                    <label htmlFor="paragraphs" className="block text-sm font-medium text-gray-700">
+                    {/* Headings input */}
+                    <label className="block text-sm font-medium text-gray-700">
+                      Headings (one per line)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={currentQuestion.headings ? currentQuestion.headings.join('\n') : ''}
+                      onChange={e => {
+                        const headings = e.target.value.split('\n').filter(h => h.trim() !== '');
+                        setCurrentQuestion(prev => ({ ...prev, headings, correctHeadings: (prev.correctHeadings && headings.length === prev.correctHeadings.length) ? prev.correctHeadings : Array(headings.length).fill('') }));
+                      }}
+                      className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      placeholder="Enter each heading on a new line"
+                    />
+
+                    {/* Paragraphs input */}
+                    <label className="block text-sm font-medium text-gray-700 mt-4">
                       Paragraphs (one per line)
                     </label>
-                    <div className="mt-1">
-                      <textarea
-                        id="paragraphs"
-                        name="paragraphs"
-                        rows={4}
-                        value={currentQuestion.paragraphs.join('\n')}
-                        onChange={(e) => {
-                          const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
-                          setCurrentQuestion(prev => ({ ...prev, paragraphs }));
-                        }}
-                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                        placeholder="Enter each paragraph on a new line"
-                      />
-                    </div>
-                    <div className="mt-3">
-                      <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
-                        Correct Heading
-                      </label>
-                      <input
-                        type="text"
-                        id="correctAnswer"
-                        name="correctAnswer"
-                        value={currentQuestion.correctAnswer}
-                        onChange={handleQuestionChange}
-                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                        placeholder="Enter the correct heading"
-                      />
-                    </div>
+                    <textarea
+                      rows={4}
+                      value={currentQuestion.paragraphs ? currentQuestion.paragraphs.join('\n') : ''}
+                      onChange={e => {
+                        const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                        setCurrentQuestion(prev => ({ ...prev, paragraphs }));
+                      }}
+                      className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      placeholder="Enter each paragraph on a new line"
+                    />
+
+                    {/* Map each paragraph to a heading */}
+                    {currentQuestion.paragraphs && currentQuestion.headings && currentQuestion.paragraphs.length > 0 && currentQuestion.headings.length > 0 && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Assign correct heading to each paragraph
+                        </label>
+                        {currentQuestion.paragraphs.map((para, idx) => (
+                          <div key={idx} className="flex items-center mb-2">
+                            <span className="mr-2 text-gray-700 font-medium">Paragraph {idx + 1}:</span>
+                            <span className="flex-1 italic text-gray-600 truncate">{para}</span>
+                            <select
+                              value={currentQuestion.correctHeadings && currentQuestion.correctHeadings[idx] !== undefined ? currentQuestion.correctHeadings[idx] : ''}
+                              onChange={e => {
+                                const correctHeadings = [...(currentQuestion.correctHeadings || Array(currentQuestion.paragraphs.length).fill(''))];
+                                correctHeadings[idx] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, correctHeadings }));
+                              }}
+                              className="ml-4 border-gray-300 rounded-md"
+                            >
+                              <option value="">Select heading</option>
+                              {currentQuestion.headings.map((heading, hIdx) => (
+                                <option key={hIdx} value={heading}>{heading}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -1413,7 +1444,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                                       {typeof question.matchingPairs === 'string' ? (
                                         <div>
                                           {Object.entries(JSON.parse(question.matchingPairs)).slice(0, 2).map(([key, value], idx) => (
-                                            <div key={idx}>{key}: {value}</div>
+                                            <div key={String(idx)}>{String(key)}: {String(value)}</div>
                                           ))}
                                           {Object.keys(JSON.parse(question.matchingPairs)).length > 2 && "..."}
                                         </div>
@@ -1552,4 +1583,4 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       </div>
     </div>
   );
-} 
+}

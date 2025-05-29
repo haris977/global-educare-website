@@ -6,24 +6,34 @@ import Link from "next/link";
 import api from "../../../services/api";
 
 // Type definitions
-type QuestionType = 
-  | "MULTIPLE_CHOICE" 
-  | "TRUE_FALSE" 
-  | "SHORT_ANSWER" 
-  | "ESSAY" 
-  | "PARA_HEADINGS" 
-  | "COMPLETE_SENTENCE" 
-  | "NAME_MATCHING" 
-  | "FILL_BLANK" 
-  | "TRUE_FALSE_NOT_GIVEN" 
-  | "YES_NO_NOT_GIVEN" 
-  | "MAP" 
-  | "SPEAKING_TASK_1" 
-  | "SPEAKING_TASK_2" 
-  | "SPEAKING_TASK_3" 
-  | "SPEAKING_FOLLOW_UPS";
+type QuestionType =
+  | "MULTIPLE_CHOICE"
+  | "TRUE_FALSE"
+  | "SHORT_ANSWER"
+  | "ESSAY"
+  | "PARA_HEADINGS"
+  | "COMPLETE_SENTENCE"
+  | "NAME_MATCHING"
+  | "FILL_BLANK"
+  | "TRUE_FALSE_NOT_GIVEN"
+  | "YES_NO_NOT_GIVEN"
+  | "MAP"
+  | "SPEAKING_TASK_1"
+  | "SPEAKING_TASK_2"
+  | "SPEAKING_TASK_3"
+  | "SPEAKING_FOLLOW_UPS"
+  | "SENTENCE_ENDINGS_MATCHING"
+  | "SUMMARY"
+  | "DIAGRAM_LABELLING";
 
 interface Question {
+  diagramImage?: string;
+  diagramLabels?: string[];
+  diagramAnswers?: string[];
+  sentenceCompletionAnswers?: string[];
+  wordLimit?: string;
+  sentenceBeginnings?: string[];
+  sentenceEndings?: string[];
   id: string;
   text: string;
   type: QuestionType;
@@ -39,6 +49,9 @@ interface Question {
   cueCard?: string;
   speakingPrompts?: string[];
   followUpQuestions?: string[];
+  headings?: string[]; // For PARA_HEADINGS type
+  correctHeadings?: string[]; // For PARA_HEADINGS type
+  fillBlankAnswers?: string[]; // For FILL_BLANK: answers for each blank
 }
 
 interface Section {
@@ -65,17 +78,17 @@ export default function CreateTestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const moduleTypeParam = searchParams.get('moduleType');
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  
+
   // CSS styles inside the component
   const inputStyle = "text-gray-900 font-medium";
   const selectStyle = "text-gray-900 font-medium appearance-none bg-white pr-10 bg-select-arrow bg-no-repeat bg-right";
-  
+
   // Add style JSX for global styles
   const StyleJSX = () => (
     <style jsx global>{`
@@ -97,14 +110,14 @@ export default function CreateTestPage() {
       }
     `}</style>
   );
-  
+
   // Available module types based on backend schema
   const moduleTypes = ["LISTENING", "READING", "WRITING", "SPEAKING"];
   const difficultyLevels = ["EASY", "MEDIUM", "HARD", "VERY_HARD"];
-  
+
   // Get question types based on selected module type
   const getQuestionTypesByModule = (moduleType: string): QuestionType[] => {
-    switch(moduleType) {
+    switch (moduleType) {
       case "READING":
         return [
           "MULTIPLE_CHOICE",
@@ -114,13 +127,17 @@ export default function CreateTestPage() {
           "NAME_MATCHING",
           "FILL_BLANK",
           "TRUE_FALSE_NOT_GIVEN",
-          "YES_NO_NOT_GIVEN"
+          "YES_NO_NOT_GIVEN",
+          "SENTENCE_ENDINGS_MATCHING",
+          "COMPLETE_SENTENCE",
+          "SUMMARY",
+          "DIAGRAM_LABELLING"
         ];
       case "LISTENING":
         return [
           "MULTIPLE_CHOICE",
           "TRUE_FALSE",
-          "SHORT_ANSWER", 
+          "SHORT_ANSWER",
           "FILL_BLANK",
           "MAP"
         ];
@@ -142,7 +159,7 @@ export default function CreateTestPage() {
         ];
     }
   };
-  
+
   // Initial form state
   const [form, setForm] = useState<TestForm>({
     title: "",
@@ -161,7 +178,7 @@ export default function CreateTestPage() {
     difficulty: "MEDIUM",
     clbScore: 7
   });
-  
+
   // Update form if moduleType changes in URL
   useEffect(() => {
     if (moduleTypeParam) {
@@ -171,13 +188,13 @@ export default function CreateTestPage() {
       }));
     }
   }, [moduleTypeParam]);
-  
+
   // Get initial question type based on current module
   const getInitialQuestionType = (): QuestionType => {
     const validTypes = getQuestionTypesByModule(moduleTypeParam || "READING");
     return validTypes[0];
   };
-  
+
   // Current question being edited
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
     id: crypto.randomUUID(),
@@ -194,26 +211,33 @@ export default function CreateTestPage() {
     questionImage: "",
     cueCard: "",
     speakingPrompts: [],
-    followUpQuestions: []
+    followUpQuestions: [],
+    sentenceBeginnings: [],
+    sentenceEndings: [],
+    sentenceCompletionAnswers: [],
+    wordLimit: "",
+    headings: [],
+    correctHeadings: [],
+    fillBlankAnswers: []
   });
-  
+
   // Handle basic form field changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
-    
+
     setForm(prev => ({
       ...prev,
-      [name]: type === "checkbox" 
-        ? (e.target as HTMLInputElement).checked 
-        : type === "number" 
-          ? parseInt(value, 10) 
+      [name]: type === "checkbox"
+        ? (e.target as HTMLInputElement).checked
+        : type === "number"
+          ? parseInt(value, 10)
           : value
     }));
 
     // When module type changes, update the current question type to be valid for the new module
     if (name === "moduleType") {
       const validQuestionTypes = getQuestionTypesByModule(value);
-      
+
       // If current question type is not valid for the new module, change it to the first valid type
       if (!validQuestionTypes.includes(currentQuestion.type as QuestionType)) {
         setCurrentQuestion(prev => ({
@@ -227,31 +251,31 @@ export default function CreateTestPage() {
   // Handle section field changes
   const handleSectionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, sectionIndex: number) => {
     const { name, value, type } = e.target as HTMLInputElement;
-    
+
     setForm(prev => {
       const updatedSections = [...prev.sections];
       updatedSections[sectionIndex] = {
         ...updatedSections[sectionIndex],
         [name]: type === "number" ? parseInt(value, 10) : value
       };
-      
+
       return {
         ...prev,
         sections: updatedSections
       };
     });
   };
-  
+
   // Handle question field changes
   const handleQuestionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     setCurrentQuestion(prev => ({
       ...prev,
       [name]: name === "points" ? parseInt(value, 10) : value
     }));
   };
-  
+
   // Handle option changes
   const handleOptionChange = (index: number, value: string) => {
     setCurrentQuestion(prev => {
@@ -263,7 +287,7 @@ export default function CreateTestPage() {
       };
     });
   };
-  
+
   // Add option to multiple choice question
   const addOption = () => {
     setCurrentQuestion(prev => {
@@ -274,7 +298,7 @@ export default function CreateTestPage() {
       };
     });
   };
-  
+
   // Remove option from multiple choice question
   const removeOption = (index: number) => {
     setCurrentQuestion(prev => {
@@ -286,7 +310,7 @@ export default function CreateTestPage() {
       };
     });
   };
-  
+
   // Add section
   const addSection = () => {
     setForm(prev => {
@@ -305,46 +329,46 @@ export default function CreateTestPage() {
         ]
       };
     });
-    
+
     // Switch to the new section
     setCurrentSectionIndex(form.sections.length);
   };
-  
+
   // Remove section
   const removeSection = (index: number) => {
     if (form.sections.length <= 1) {
       setError("Test must have at least one section");
       return;
     }
-    
+
     setForm(prev => {
       const updatedSections = [...prev.sections];
       updatedSections.splice(index, 1);
-      
+
       // Rename sections to maintain sequence
       const renamedSections = updatedSections.map((section, idx) => ({
         ...section,
         title: `Section ${idx + 1}`
       }));
-      
+
       return {
         ...prev,
         sections: renamedSections
       };
     });
-    
+
     // Adjust current section index if needed
     if (index <= currentSectionIndex) {
       setCurrentSectionIndex(Math.max(0, currentSectionIndex - 1));
     }
   };
-  
+
   // Add question to current section
   const addQuestion = () => {
     setForm(prev => {
       const updatedSections = [...prev.sections];
       const currentSection = updatedSections[currentSectionIndex];
-      
+
       currentSection.questions = [
         ...currentSection.questions,
         {
@@ -353,14 +377,12 @@ export default function CreateTestPage() {
           text: currentQuestion.text || `Question ${currentSection.questions.length + 1}`
         }
       ];
-      
+
       return {
         ...prev,
         sections: updatedSections
       };
     });
-    
-    // Reset current question
     setCurrentQuestion({
       id: crypto.randomUUID(),
       text: "",
@@ -376,48 +398,55 @@ export default function CreateTestPage() {
       questionImage: "",
       cueCard: "",
       speakingPrompts: [],
-      followUpQuestions: []
+      followUpQuestions: [],
+      sentenceBeginnings: [],
+      sentenceEndings: [],
+      sentenceCompletionAnswers: [],
+      wordLimit: "",
+      headings: [],
+      correctHeadings: [],
+      fillBlankAnswers: []
     });
-    
+
     setSuccessMessage("Question added successfully!");
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       setSuccessMessage("");
     }, 3000);
   };
-  
+
   // Remove question from current section
   const removeQuestion = (questionId: string) => {
     setForm(prev => {
       const updatedSections = [...prev.sections];
       const currentSection = updatedSections[currentSectionIndex];
-      
+
       currentSection.questions = currentSection.questions.filter(q => q.id !== questionId);
-      
+
       return {
         ...prev,
         sections: updatedSections
       };
     });
   };
-  
+
   // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     try {
       // Calculate total questions
       const totalQuestions = form.sections.reduce((sum, section) => sum + section.questions.length, 0);
-      
+
       if (totalQuestions === 0) {
         setError("Test must have at least one question");
         setLoading(false);
         return;
       }
-      
+
       // Create the test first
       const testResponse = await api.Tests.createTest({
         title: form.title,
@@ -428,15 +457,15 @@ export default function CreateTestPage() {
         clbScore: form.clbScore,
         isPublished: form.isPublished
       });
-      
+
       const testId = testResponse.data.id;
-      
+
       // Delete the default section that was created automatically
       if (testResponse.data.sections && testResponse.data.sections.length > 0) {
         const defaultSectionId = testResponse.data.sections[0].id;
         await api.Tests.deleteSection(defaultSectionId);
       }
-      
+
       // Create each section
       for (const [index, section] of form.sections.entries()) {
         const sectionResponse = await api.Tests.createSection(testId, {
@@ -445,9 +474,9 @@ export default function CreateTestPage() {
           order: index + 1,
           timeLimit: section.timeLimit
         });
-        
+
         const sectionId = sectionResponse.data.id;
-        
+
         // Create questions for this section
         for (const [qIndex, question] of section.questions.entries()) {
           // Map frontend question structure to backend structure
@@ -459,12 +488,12 @@ export default function CreateTestPage() {
             options: question.options && question.options.length > 0 ? question.options : undefined,
             correctAnswer: question.correctAnswer || undefined
           };
-          
+
           // Add passage if provided (for reading sections)
           if (form.moduleType === "READING" && section.passage) {
             questionData.passage = section.passage;
           }
-          
+
           // Add other type-specific fields
           if (question.type === "PARA_HEADINGS" && question.paragraphs) {
             questionData.paragraphs = question.paragraphs;
@@ -481,18 +510,18 @@ export default function CreateTestPage() {
           } else if (question.type === "SPEAKING_FOLLOW_UPS" && question.followUpQuestions) {
             questionData.followUpQuestions = question.followUpQuestions;
           }
-          
+
           await api.Tests.createQuestion(sectionId, questionData);
         }
       }
-      
+
       setSuccessMessage("Test created successfully!");
-      
+
       // Navigate to the test list page
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-      
+
     } catch (error) {
       console.error("Error creating test:", error);
       setError("Failed to create test. Please try again.");
@@ -500,7 +529,7 @@ export default function CreateTestPage() {
       setLoading(false);
     }
   };
-  
+
   // UI component for test creation
   return (
     <div className="container mx-auto p-4 max-w-4xl">
@@ -511,24 +540,24 @@ export default function CreateTestPage() {
         </Link>
         <h1 className="text-3xl font-bold mt-2 text-gray-900">Create New Test</h1>
       </div>
-      
+
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
-      
+
       {successMessage && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
           {successMessage}
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Step 1: Basic Test Information */}
         <div className={`border rounded-lg p-6 shadow-sm bg-white ${currentStep === 1 ? 'block' : 'hidden'}`}>
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Test Information</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Test Title</label>
@@ -542,7 +571,7 @@ export default function CreateTestPage() {
                 placeholder="Enter test title"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Module Type</label>
               <select
@@ -558,7 +587,7 @@ export default function CreateTestPage() {
               </select>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Difficulty Level</label>
@@ -573,7 +602,7 @@ export default function CreateTestPage() {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">CLB Score (1-12)</label>
               <input
@@ -588,7 +617,7 @@ export default function CreateTestPage() {
               />
             </div>
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-800 mb-1">Description</label>
             <textarea
@@ -600,7 +629,7 @@ export default function CreateTestPage() {
               placeholder="Describe the test content and purpose"
             />
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Total Test Time (minutes)</label>
@@ -615,7 +644,7 @@ export default function CreateTestPage() {
                 placeholder="Enter time in minutes"
               />
             </div>
-            
+
             <div className="flex items-center mt-8">
               <input
                 type="checkbox"
@@ -629,7 +658,7 @@ export default function CreateTestPage() {
               </label>
             </div>
           </div>
-          
+
           <div className="mt-6 flex justify-end">
             <button
               type="button"
@@ -640,11 +669,11 @@ export default function CreateTestPage() {
             </button>
           </div>
         </div>
-        
+
         {/* Step 2: Sections and Questions */}
         <div className={`border rounded-lg p-6 shadow-sm bg-white ${currentStep === 2 ? 'block' : 'hidden'}`}>
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Sections and Questions</h2>
-          
+
           {/* Section Tabs */}
           <div className="mb-6">
             <div className="flex flex-wrap border-b border-gray-300">
@@ -652,11 +681,10 @@ export default function CreateTestPage() {
                 <button
                   key={section.id}
                   type="button"
-                  className={`px-4 py-3 font-medium ${
-                    currentSectionIndex === index
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-gray-800 hover:border-b hover:border-gray-300'
-                  }`}
+                  className={`px-4 py-3 font-medium ${currentSectionIndex === index
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-800 hover:border-b hover:border-gray-300'
+                    }`}
                   onClick={() => setCurrentSectionIndex(index)}
                 >
                   {section.title}
@@ -671,7 +699,7 @@ export default function CreateTestPage() {
               </button>
             </div>
           </div>
-          
+
           {/* Current Section */}
           {form.sections[currentSectionIndex] && (
             <div className="mb-6">
@@ -688,7 +716,7 @@ export default function CreateTestPage() {
                     placeholder="Enter section title"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-800 mb-1">Time Limit (minutes)</label>
                   <input
@@ -703,7 +731,7 @@ export default function CreateTestPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-800 mb-1">Section Instructions</label>
                 <textarea
@@ -715,7 +743,7 @@ export default function CreateTestPage() {
                   placeholder="Enter instructions for this section"
                 />
               </div>
-              
+
               {/* Reading passage for reading module */}
               {form.moduleType === "READING" && (
                 <div className="mb-4">
@@ -730,7 +758,7 @@ export default function CreateTestPage() {
                   />
                 </div>
               )}
-              
+
               <div className="flex justify-between mb-4">
                 <button
                   type="button"
@@ -741,21 +769,21 @@ export default function CreateTestPage() {
                   Remove Section
                 </button>
               </div>
-              
+
               {/* Section questions */}
               <div className="mt-6">
                 <h3 className="text-lg font-medium mb-2 text-gray-900">
                   Questions ({form.sections[currentSectionIndex].questions.length})
                 </h3>
-                
+
                 {form.sections[currentSectionIndex].questions.length > 0 && (
                   <div className="space-y-4 mb-6">
                     {form.sections[currentSectionIndex].questions.map((question, index) => (
                       <div key={question.id} className="border rounded p-4 bg-gray-50 shadow-sm">
                         <div className="flex justify-between">
                           <h4 className="font-medium text-gray-900">Q{index + 1}: {question.text}</h4>
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             onClick={() => removeQuestion(question.id)}
                             className="text-red-500 hover:text-red-700 font-medium"
                           >
@@ -771,11 +799,11 @@ export default function CreateTestPage() {
                     ))}
                   </div>
                 )}
-                
+
                 {/* Add new question form */}
                 <div className="border rounded-lg p-5 bg-gray-50 shadow-sm">
                   <h3 className="text-lg font-medium mb-4 text-gray-900">Add New Question</h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-800 mb-1">Question Text</label>
@@ -788,7 +816,7 @@ export default function CreateTestPage() {
                         placeholder="Enter your question text here"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-800 mb-1">Question Type</label>
                       <select
@@ -803,7 +831,7 @@ export default function CreateTestPage() {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-800 mb-1">Points</label>
                     <input
@@ -816,14 +844,14 @@ export default function CreateTestPage() {
                       placeholder="Points"
                     />
                   </div>
-                  
+
                   {/* Question type specific fields */}
                   {currentQuestion.type === "MULTIPLE_CHOICE" && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-800 mb-2">
                         Options
                       </label>
-                      
+
                       {currentQuestion.options?.map((option, index) => (
                         <div key={index} className="flex items-center mb-3">
                           <input
@@ -855,7 +883,7 @@ export default function CreateTestPage() {
                           )}
                         </div>
                       ))}
-                      
+
                       <button
                         type="button"
                         onClick={addOption}
@@ -868,7 +896,358 @@ export default function CreateTestPage() {
                       </button>
                     </div>
                   )}
-                  
+
+
+                  {currentQuestion.type === "SUMMARY" && (
+                    <div className="mb-4">
+                      {/* Summary input with blanks */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Summary Text (use <b>_</b> for each blank)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={currentQuestion.text}
+                        onChange={e => {
+                          const text = e.target.value;
+                          // Count blanks (support multiple)
+                          const blankCount = (text.match(/_/g) || []).length;
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            text,
+                            sentenceCompletionAnswers: Array.from({ length: blankCount }, (_, i) => prev.sentenceCompletionAnswers?.[i] || "")
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Type the summary here, use _ for each blank"
+                      />
+
+                      {/* Word/number limit instruction */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Word/Number Limit Instruction
+                      </label>
+                      <input
+                        type="text"
+                        value={currentQuestion.wordLimit || ""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder='e.g. NO MORE THAN TWO WORDS AND/OR A NUMBER'
+                      />
+
+                      {/* Correct answers for each blank */}
+                      {(currentQuestion.sentenceCompletionAnswers && currentQuestion.sentenceCompletionAnswers.length > 0) && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-800 mb-2">
+                            Correct Answer(s)
+                          </label>
+                          {currentQuestion.sentenceCompletionAnswers.map((ans, idx) => (
+                            <div key={idx} className="flex items-center mb-2">
+                              <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
+                              <input
+                                type="text"
+                                value={ans}
+                                onChange={e => {
+                                  const sentenceCompletionAnswers = [...currentQuestion.sentenceCompletionAnswers];
+                                  sentenceCompletionAnswers[idx] = e.target.value;
+                                  setCurrentQuestion(prev => ({ ...prev, sentenceCompletionAnswers }));
+                                }}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                                placeholder={`Answer for blank ${idx + 1}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+
+                  {currentQuestion.type === "DIAGRAM_LABELLING" && (
+                    <div className="mb-4">
+                      {/* Diagram image upload */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Diagram Image (optional)
+                      </label>
+                      <div className="flex items-center space-x-4 mb-2">
+                        <button
+                          type="button"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium shadow-sm"
+                          onClick={() => {
+                            // Trigger file input click
+                            document.getElementById("diagram-image-upload")?.click();
+                          }}
+                        >
+                          {currentQuestion.diagramImage ? "Change Image" : "Upload Image"}
+                        </button>
+                        {currentQuestion.diagramImage && (
+                          <button
+                            type="button"
+                            className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 font-medium shadow-sm"
+                            onClick={() => {
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                diagramImage: undefined
+                              }));
+                              // Also clear the file input value
+                              const input = document.getElementById("diagram-image-upload") as HTMLInputElement;
+                              if (input) input.value = "";
+                            }}
+                          >
+                            Remove Image
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        id="diagram-image-upload"
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={async e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                diagramImage: ev.target?.result as string
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      {currentQuestion.diagramImage && (
+                        <div className="mb-2">
+                          <img
+                            src={currentQuestion.diagramImage}
+                            alt="Diagram preview"
+                            className="max-w-xs border rounded shadow"
+                          />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                diagramImage: ev.target?.result as string
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="block mb-2"
+                      />
+                      {currentQuestion.diagramImage && (
+                        <img
+                          src={currentQuestion.diagramImage}
+                          alt="Diagram preview"
+                          className="max-w-xs mb-2 border rounded"
+                        />
+                      )}
+
+                      {/* Label blanks */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-2">
+                        Diagram Label Blanks (one per line, e.g. 1, 2, 3 or A, B, C)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentQuestion.diagramLabels ? currentQuestion.diagramLabels.join('\n') : ''}
+                        onChange={e => {
+                          const labels = e.target.value.split('\n').filter(l => l.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            diagramLabels: labels,
+                            diagramAnswers: prev.diagramAnswers && labels.length === prev.diagramAnswers.length
+                              ? prev.diagramAnswers
+                              : Array(labels.length).fill('')
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter each label blank (e.g. 1, 2, 3) on a new line"
+                      />
+
+                      {/* Word/number limit instruction */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Word/Number Limit Instruction
+                      </label>
+                      <input
+                        type="text"
+                        value={currentQuestion.wordLimit || ""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder='e.g. NO MORE THAN TWO WORDS AND/OR A NUMBER'
+                      />
+
+                      {/* Correct answers for each label */}
+                      {(currentQuestion.diagramLabels && currentQuestion.diagramLabels.length > 0) && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-800 mb-2">
+                            Correct Answer(s) for Each Label
+                          </label>
+                          {currentQuestion.diagramLabels.map((label, idx) => (
+                            <div key={idx} className="flex items-center mb-2">
+                              <span className="mr-2 text-gray-700">Label {label}:</span>
+                              <input
+                                type="text"
+                                value={currentQuestion.diagramAnswers?.[idx] || ""}
+                                onChange={e => {
+                                  const diagramAnswers = [...(currentQuestion.diagramAnswers || Array(currentQuestion.diagramLabels.length).fill(''))];
+                                  diagramAnswers[idx] = e.target.value;
+                                  setCurrentQuestion(prev => ({ ...prev, diagramAnswers }));
+                                }}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                                placeholder={`Answer for label ${label}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {currentQuestion.type === "COMPLETE_SENTENCE" && (
+                    <div className="mb-4">
+                      {/* Sentence input with blank */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Sentence (use <b>_</b> for the blank)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentQuestion.text}
+                        onChange={e => {
+                          const text = e.target.value;
+                          // Count blanks (usually 1, but support multiple)
+                          const blankCount = (text.match(/_/g) || []).length;
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            text,
+                            sentenceCompletionAnswers: Array.from({ length: blankCount }, (_, i) => prev.sentenceCompletionAnswers?.[i] || "")
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Type the sentence here, use _ for the blank"
+                      />
+
+                      {/* Word limit instruction */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Word/Number Limit Instruction
+                      </label>
+                      <input
+                        type="text"
+                        value={currentQuestion.wordLimit || ""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder='e.g. NO MORE THAN TWO WORDS AND/OR A NUMBER'
+                      />
+
+                      {/* Correct answer(s) for the blank(s) */}
+                      {(currentQuestion.sentenceCompletionAnswers && currentQuestion.sentenceCompletionAnswers.length > 0) && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-800 mb-2">
+                            Correct Answer(s)
+                          </label>
+                          {currentQuestion.sentenceCompletionAnswers.map((ans, idx) => (
+                            <div key={idx} className="flex items-center mb-2">
+                              <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
+                              <input
+                                type="text"
+                                value={ans}
+                                onChange={e => {
+                                  const sentenceCompletionAnswers = [...currentQuestion.sentenceCompletionAnswers];
+                                  sentenceCompletionAnswers[idx] = e.target.value;
+                                  setCurrentQuestion(prev => ({ ...prev, sentenceCompletionAnswers }));
+                                }}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                                placeholder={`Answer for blank ${idx + 1}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+
+                  {currentQuestion.type === "SENTENCE_ENDINGS_MATCHING" && (
+                    <div className="mb-4">
+                      {/* Sentence beginnings input */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Sentence Beginnings (one per line)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={currentQuestion.sentenceBeginnings ? currentQuestion.sentenceBeginnings.join('\n') : ''}
+                        onChange={e => {
+                          const beginnings = e.target.value.split('\n').filter(b => b.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            sentenceBeginnings: beginnings,
+                            correctEndings: prev.correctHeadings && beginnings.length === prev.correctHeadings.length
+                              ? prev.correctHeadings
+                              : Array(beginnings.length).fill('')
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter each sentence beginning on a new line"
+                      />
+
+                      {/* Sentence endings input */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Sentence Endings (one per line, more than beginnings)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={currentQuestion.sentenceEndings ? currentQuestion.sentenceEndings.join('\n') : ''}
+                        onChange={e => {
+                          const endings = e.target.value.split('\n').filter(e => e.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            sentenceEndings: endings
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter each sentence ending on a new line"
+                      />
+
+                      {/* Map each beginning to an ending */}
+                      {currentQuestion.sentenceBeginnings && currentQuestion.sentenceEndings &&
+                        currentQuestion.sentenceBeginnings.length > 0 && currentQuestion.sentenceEndings.length > 0 && (
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-800 mb-2">
+                              Assign correct ending to each beginning
+                            </label>
+                            {currentQuestion.sentenceBeginnings.map((begin, idx) => (
+                              <div key={idx} className="flex items-center mb-2">
+                                <span className="mr-2 text-gray-700 font-medium">Beg. {idx + 1}:</span>
+                                <span className="flex-1 italic text-gray-600 truncate">{begin}</span>
+                                <select
+                                  value={currentQuestion.correctHeadings && currentQuestion.correctHeadings[idx] !== undefined ? currentQuestion.correctHeadings[idx] : ''}
+                                  onChange={e => {
+                                    const correctEndings = [...(currentQuestion.correctHeadings || Array(currentQuestion.sentenceBeginnings.length).fill(''))];
+                                    correctEndings[idx] = e.target.value;
+                                    setCurrentQuestion(prev => ({ ...prev, correctEndings }));
+                                  }}
+                                  className="ml-4 border-gray-300 rounded-md"
+                                >
+                                  <option value="">Select ending</option>
+                                  {currentQuestion.sentenceEndings.map((ending, eIdx) => (
+                                    <option key={eIdx} value={String.fromCharCode(65 + eIdx)}>
+                                      {String.fromCharCode(65 + eIdx)}. {ending}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  )}
+
                   {currentQuestion.type === "TRUE_FALSE" && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-800 mb-2">
@@ -906,24 +1285,135 @@ export default function CreateTestPage() {
                       </div>
                     </div>
                   )}
-                  
-                  {(currentQuestion.type === "SHORT_ANSWER" || 
-                    currentQuestion.type === "FILL_BLANK") && (
+
+                  {currentQuestion.type === "PARA_HEADINGS" && (
                     <div className="mb-4">
+                      {/* Headings input */}
                       <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Correct Answer
+                        Headings (one per line)
                       </label>
-                      <input
-                        type="text"
-                        name="correctAnswer"
-                        value={currentQuestion.correctAnswer as string || ""}
-                        onChange={handleQuestionChange}
+                      <textarea
+                        rows={3}
+                        value={currentQuestion.headings ? currentQuestion.headings.join('\n') : ''}
+                        onChange={e => {
+                          const headings = e.target.value.split('\n').filter(h => h.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            headings,
+                            // Reset correctHeadings if headings count changes
+                            correctHeadings: prev.correctHeadings && headings.length === prev.correctHeadings.length
+                              ? prev.correctHeadings
+                              : Array(headings.length).fill('')
+                          }));
+                        }}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Enter the correct answer"
+                        placeholder="Enter each heading on a new line"
                       />
+
+                      {/* Paragraphs input */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Paragraphs (one per line)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={currentQuestion.paragraphs ? currentQuestion.paragraphs.join('\n') : ''}
+                        onChange={e => {
+                          const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            paragraphs,
+                            // Reset correctHeadings if paragraphs count changes
+                            correctHeadings: prev.correctHeadings && paragraphs.length === prev.correctHeadings.length
+                              ? prev.correctHeadings
+                              : Array(paragraphs.length).fill('')
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter each paragraph on a new line"
+                      />
+
+                      {/* Map each paragraph to a heading */}
+                      {currentQuestion.paragraphs && currentQuestion.headings && currentQuestion.paragraphs.length > 0 && currentQuestion.headings.length > 0 && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-800 mb-2">
+                            Assign correct heading to each paragraph
+                          </label>
+                          {currentQuestion.paragraphs.map((para, idx) => (
+                            <div key={idx} className="flex items-center mb-2">
+                              <span className="mr-2 text-gray-700 font-medium">Paragraph {idx + 1}:</span>
+                              <span className="flex-1 italic text-gray-600 truncate">{para}</span>
+                              <select
+                                value={currentQuestion.correctHeadings && currentQuestion.correctHeadings[idx] !== undefined ? currentQuestion.correctHeadings[idx] : ''}
+                                onChange={e => {
+                                  const correctHeadings = [...(currentQuestion.correctHeadings || Array(currentQuestion.paragraphs.length).fill(''))];
+                                  correctHeadings[idx] = e.target.value;
+                                  setCurrentQuestion(prev => ({ ...prev, correctHeadings }));
+                                }}
+                                className="ml-4 border-gray-300 rounded-md"
+                              >
+                                <option value="">Select heading</option>
+                                {currentQuestion.headings.map((heading, hIdx) => (
+                                  <option key={hIdx} value={heading}>{heading}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                  
+
+                  {currentQuestion.type === "FILL_BLANK" && (
+                    <div className="mb-4">
+                      {/* Sentence input with blanks */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Sentence (use <b>_</b> for blanks)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentQuestion.text}
+                        onChange={e => {
+                          const text = e.target.value;
+                          // Count blanks
+                          const blankCount = (text.match(/_/g) || []).length;
+                          // Adjust answers array to match blank count
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            text,
+                            fillBlankAnswers: Array.from({ length: blankCount }, (_, i) => prev.fillBlankAnswers?.[i] || "")
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Type the sentence here, use _ for each blank"
+                      />
+
+                      {/* Inputs for each blank's correct answer */}
+                      {(currentQuestion.fillBlankAnswers && currentQuestion.fillBlankAnswers.length > 0) && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-800 mb-2">
+                            Correct Answers for Each Blank
+                          </label>
+                          {currentQuestion.fillBlankAnswers.map((ans, idx) => (
+                            <div key={idx} className="flex items-center mb-2">
+                              <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
+                              <input
+                                type="text"
+                                value={ans}
+                                onChange={e => {
+                                  const fillBlankAnswers = [...currentQuestion.fillBlankAnswers];
+                                  fillBlankAnswers[idx] = e.target.value;
+                                  setCurrentQuestion(prev => ({ ...prev, fillBlankAnswers }));
+                                }}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                                placeholder={`Answer for blank ${idx + 1}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="mt-4">
                     <button
                       type="button"
@@ -940,7 +1430,7 @@ export default function CreateTestPage() {
               </div>
             </div>
           )}
-          
+
           <div className="mt-6 flex justify-between">
             <button
               type="button"
@@ -952,7 +1442,7 @@ export default function CreateTestPage() {
               </svg>
               Back to Test Information
             </button>
-            
+
             <button
               type="submit"
               disabled={loading}
