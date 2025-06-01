@@ -12,12 +12,12 @@ const prisma = new PrismaClient();
 // Create a new test
 export const createTest = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      title, 
-      description, 
-      difficulty, 
-      moduleType, 
-      totalTime, 
+    const {
+      title,
+      description,
+      difficulty,
+      moduleType,
+      totalTime,
       clbScore,
       isPublished
     } = req.body;
@@ -47,7 +47,7 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
     });
 
     console.log("Test created successfully:", newTest.id);
-    
+
     // Automatically create a default section for the test
     await prisma.section.create({
       data: {
@@ -58,7 +58,7 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
         timeLimit: totalTime
       }
     });
-    
+
     console.log("Default section created for test:", newTest.id);
 
     // Get the updated test with the new section
@@ -80,22 +80,22 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
 export const getAllTests = async (req: Request, res: Response) => {
   try {
     const { moduleType, difficulty, isPublished } = req.query;
-    
+
     // Build filter conditions
     const whereClause: any = {};
-    
+
     if (moduleType) {
       whereClause.moduleType = moduleType;
     }
-    
+
     if (difficulty) {
       whereClause.difficulty = difficulty;
     }
-    
+
     if (isPublished !== undefined) {
       whereClause.isPublished = isPublished === 'true';
     }
-    
+
     const tests = await prisma.test.findMany({
       where: whereClause,
       include: {
@@ -179,7 +179,7 @@ export const getTestById = async (req: Request, res: Response) => {
       sections: test.sections.map(section => {
         // Find the passage question (order 0) if it exists
         const passageQuestion = section.questions.find(q => q.order === 0);
-        
+
         // Add the passage to the section if found
         if (passageQuestion && passageQuestion.passage) {
           return {
@@ -189,7 +189,7 @@ export const getTestById = async (req: Request, res: Response) => {
             questions: section.questions.filter(q => q.order > 0)
           };
         }
-        
+
         return section;
       })
     };
@@ -204,12 +204,12 @@ export const getTestById = async (req: Request, res: Response) => {
 export const updateTest = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { 
-      title, 
-      description, 
-      difficulty, 
-      moduleType, 
-      totalTime, 
+    const {
+      title,
+      description,
+      difficulty,
+      moduleType,
+      totalTime,
       clbScore,
       isPublished
     } = req.body;
@@ -422,17 +422,27 @@ export const deleteSection = async (req: AuthenticatedRequest, res: Response) =>
 export const createQuestion = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { sectionId } = req.params;
-    const { 
-      questionText, 
-      questionType, 
-      questionImage, 
+    const {
+      questionText,
+      questionType,
+      questionImage,
       audioFile,
       additionalInfo,
       order,
       marks,
       options,
       correctAnswer,
+      headings,
+      correctHeadings,
+      fillBlankAnswers,
+      sentenceBeginnings,
+      sentenceEndings,
+      correctEndings,
+      diagramImage,
+      diagramAnswers,
+      wordLimit,
       // Fields for various question types
+
       passage,
       paragraphs,
       sentences,
@@ -464,15 +474,15 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       console.error(`Section not found with ID: ${sectionId}`);
       return sendErrorResponse(res, `Section not found with ID: ${sectionId}`, 404);
     }
-    
+
     // Get the module type to validate question type
     const moduleType = section.test.moduleType;
-    
+
     // Validate if the question type is appropriate for the module type
     if (!isQuestionTypeValidForModule(questionType, moduleType)) {
       return sendErrorResponse(res, `Question type ${questionType} is not valid for module ${moduleType}`, 400);
     }
-    
+
     // Validate required fields based on question type
     if (!validateQuestionFields(questionType, req.body)) {
       return sendErrorResponse(res, 'Missing required fields for this question type', 400);
@@ -490,7 +500,7 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       }
       return field;
     };
-    
+
     // Parse various fields that might be JSON strings
     const parsedOptions = parseJsonField(options);
     const parsedSpeakingPrompts = parseJsonField(speakingPrompts);
@@ -511,13 +521,37 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
     if (audioFile) questionData.audioFile = audioFile;
     if (additionalInfo) questionData.additionalInfo = additionalInfo;
     if (correctAnswer) questionData.correctAnswer = correctAnswer;
-    
+
+
+
     // For reading questions, try to get the passage from the section if it exists and none is provided
     if (moduleType === 'READING') {
+
+      if (headings) questionData.headings = Array.isArray(headings) ? headings : JSON.parse(headings);
+      if (correctHeadings) questionData.correctHeadings = Array.isArray(correctHeadings) ? correctHeadings : JSON.parse(correctHeadings);
+      if (fillBlankAnswers) questionData.fillBlankAnswers = Array.isArray(fillBlankAnswers) ? fillBlankAnswers : JSON.parse(fillBlankAnswers);
+      if (sentenceBeginnings) questionData.sentenceBeginnings = Array.isArray(sentenceBeginnings) ? sentenceBeginnings : JSON.parse(sentenceBeginnings);
+      if (sentenceEndings) questionData.sentenceEndings = Array.isArray(sentenceEndings) ? sentenceEndings : JSON.parse(sentenceEndings);
+      if (correctEndings) questionData.correctEndings = Array.isArray(correctEndings) ? correctEndings : JSON.parse(correctEndings);
+      if (diagramImage) questionData.diagramImage = diagramImage;
+      if (diagramAnswers) questionData.diagramAnswers = Array.isArray(diagramAnswers) ? diagramAnswers : JSON.parse(diagramAnswers);
+      if (wordLimit) questionData.wordLimit = wordLimit;
+
+
+      if (headings) questionData.headings = Array.isArray(headings) ? headings : JSON.parse(headings);
+      if (paragraphs) questionData.paragraphs = Array.isArray(paragraphs) ? paragraphs : JSON.parse(paragraphs);
+      if (correctHeadings) questionData.correctHeadings = Array.isArray(correctHeadings) ? correctHeadings : JSON.parse(correctHeadings);
+
+
+      
+
+
       // If a passage was provided in the request, use it
+
+
       if (passage) {
         questionData.passage = passage;
-      } 
+      }
       // Otherwise, check if the section has a passage question
       else if (section.questions && section.questions.length > 0 && section.questions[0].passage) {
         questionData.passage = section.questions[0].passage;
@@ -526,7 +560,7 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       // For non-reading questions, still set the passage if explicitly provided
       questionData.passage = passage;
     }
-    
+
     if (cueCard) questionData.cueCard = cueCard;
 
     // Add JSON fields with proper parsing
@@ -539,7 +573,7 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
     if (mapLabels) questionData.mapLabels = mapLabels;
     if (matchingPairs) questionData.matchingPairs = matchingPairs;
     if (sampleAnswer) questionData.sampleAnswer = sampleAnswer;
-    
+
     const question = await prisma.question.create({
       data: questionData
     });
@@ -568,16 +602,16 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
 // Helper function to check if question type is valid for the module type
 const isQuestionTypeValidForModule = (questionType: string, moduleType: string): boolean => {
   const readingQuestionTypes = [
-    'MULTIPLE_CHOICE', 
-    'PARA_HEADINGS', 
-    'COMPLETE_SENTENCE', 
-    'NAME_MATCHING', 
-    'FILL_BLANK', 
-    'TRUE_FALSE_NOT_GIVEN', 
+    'MULTIPLE_CHOICE',
+    'PARA_HEADINGS',
+    'COMPLETE_SENTENCE',
+    'NAME_MATCHING',
+    'FILL_BLANK',
+    'TRUE_FALSE_NOT_GIVEN',
     'YES_NO_NOT_GIVEN',
     'TRUE_FALSE'
   ];
-  
+
   const listeningQuestionTypes = [
     'MULTIPLE_CHOICE',
     'FILL_BLANK',
@@ -585,7 +619,7 @@ const isQuestionTypeValidForModule = (questionType: string, moduleType: string):
     'MAP',
     'SHORT_ANSWER'
   ];
-  
+
   const speakingQuestionTypes = [
     'SPEAKING_TASK_1',
     'SPEAKING_TASK_2',
@@ -596,7 +630,7 @@ const isQuestionTypeValidForModule = (questionType: string, moduleType: string):
   const writingQuestionTypes = [
     'ESSAY'
   ];
-  
+
   switch (moduleType) {
     case 'READING':
       return readingQuestionTypes.includes(questionType);
@@ -627,65 +661,82 @@ const validateQuestionFields = (questionType: string, questionData: any): boolea
     // Reading module question types
     case 'MULTIPLE_CHOICE':
       return !!questionData.options && !!questionData.correctAnswer;
-    
+
     case 'PARA_HEADINGS':
-      return !!questionData.paragraphs;
-    
+      return (
+        !!questionData.questionText &&
+        Array.isArray(questionData.paragraphs) && questionData.paragraphs.length > 0 &&
+        Array.isArray(questionData.headings) && questionData.headings.length > 0 &&
+        Array.isArray(questionData.correctHeadings) && questionData.correctHeadings.length === questionData.paragraphs.length
+      );
+
     case 'COMPLETE_SENTENCE':
       return !!questionData.sentences && !!questionData.correctAnswer;
-    
+
     case 'NAME_MATCHING':
       return !!questionData.matchingPairs;
-    
+
     case 'FILL_BLANK':
-      return !!questionData.sentences && !!questionData.correctAnswer;
-    
+      return !!questionData.questionText && Array.isArray(questionData.fillBlankAnswers) && questionData.fillBlankAnswers.length > 0;
+
     case 'TRUE_FALSE_NOT_GIVEN':
     case 'YES_NO_NOT_GIVEN':
       return !!questionData.passage && !!questionData.correctAnswer;
-    
+
     // Listening module question types
     case 'TRUE_FALSE':
       return !!questionData.correctAnswer;
-    
+
     case 'MAP':
       return !!questionData.questionImage && !!questionData.mapLabels;
-    
+
     // Speaking module question types
     case 'SPEAKING_TASK_1':
       return !!questionData.speakingPrompts;
-    
+
     case 'SPEAKING_TASK_2':
       return !!questionData.cueCard;
-    
+
     case 'SPEAKING_TASK_3':
     case 'SPEAKING_FOLLOW_UPS':
       return !!questionData.followUpQuestions;
-    
+
     // Other question types
     case 'SHORT_ANSWER':
       return !!questionData.correctAnswer;
-    
+
     case 'ESSAY':
       return true; // No special validation needed
-    
+
     case 'MATCHING':
     case 'HEADING_MATCHING':
     case 'INFORMATION_MATCHING':
     case 'FEATURES_MATCHING':
       return !!questionData.options;
-    
+
     case 'GAP_FILLING':
     case 'NOTE_COMPLETION':
     case 'TABLE_COMPLETION':
     case 'SENTENCE_COMPLETION':
       return !!questionData.correctAnswer;
-    
+
     case 'DIAGRAM_LABELLING':
+      return (!!questionData.questionText && 
+    // typeof questionData.diagramImage === "string" &&
+    Array.isArray(questionData.diagramLabels) &&
+    questionData.diagramLabels.length > 0 &&
+    questionData.diagramLabels.every(
+      (label: any) =>
+        typeof label.x === "number" &&
+        typeof label.y === "number" &&
+        typeof label.text === "string"&&
+        typeof label.id === undefined &&
+        typeof label.correctAnswer ==="string"
+    ))
     case 'MAP_LABELLING':
     case 'PROCESS_DIAGRAM':
       return !!questionData.questionImage && !!questionData.correctAnswer;
-    
+
     default:
       return true; // Allow other question types without specific validation
   }
@@ -695,10 +746,10 @@ const validateQuestionFields = (questionType: string, questionData: any): boolea
 export const updateQuestion = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { 
-      questionText, 
-      questionType, 
-      questionImage, 
+    const {
+      questionText,
+      questionType,
+      questionImage,
       audioFile,
       additionalInfo,
       order,
@@ -732,15 +783,16 @@ export const updateQuestion = async (req: AuthenticatedRequest, res: Response) =
     if (!question) {
       return sendErrorResponse(res, 'Question not found', 404);
     }
-    
+
     // Validate required fields based on question type
     if (!validateQuestionFields(questionType, req.body)) {
+      console.log("missing fields")
       return sendErrorResponse(res, 'Missing required fields for this question type', 400);
     }
 
     // Calculate marks difference for test total update
     const marksDifference = (marks || 1.0) - question.marks;
-    
+
     // Parse JSON data if needed
     let parsedOptions = options;
     if (typeof options === 'string') {
@@ -750,7 +802,7 @@ export const updateQuestion = async (req: AuthenticatedRequest, res: Response) =
         console.error("Error parsing options:", error);
       }
     }
-    
+
     let parsedSpeakingPrompts = speakingPrompts;
     if (typeof speakingPrompts === 'string') {
       try {
@@ -759,7 +811,7 @@ export const updateQuestion = async (req: AuthenticatedRequest, res: Response) =
         console.error("Error parsing speakingPrompts:", error);
       }
     }
-    
+
     let parsedBandDescriptors = bandDescriptors;
     if (typeof bandDescriptors === 'string') {
       try {
@@ -857,12 +909,12 @@ export const deleteQuestion = async (req: AuthenticatedRequest, res: Response) =
  */
 export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { 
-      title, 
-      description, 
-      difficulty, 
-      moduleType, 
-      totalTime, 
+    const {
+      title,
+      description,
+      difficulty,
+      moduleType,
+      totalTime,
       clbScore,
       isPublished,
       testCategory,
@@ -884,7 +936,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
     return await prisma.$transaction(async (tx) => {
       // Calculate total questions
       let totalQuestions = 0;
-      
+
       if (sections && Array.isArray(sections)) {
         for (const section of sections) {
           if (section.questions && Array.isArray(section.questions)) {
@@ -910,7 +962,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
       });
 
       console.log("IELTS test created successfully:", newTest.id);
-      
+
       // Create sections and questions
       if (sections && Array.isArray(sections)) {
         for (let i = 0; i < sections.length; i++) {
@@ -924,14 +976,14 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
               timeLimit: section.timeLimit
             }
           });
-          
+
           console.log(`Section ${createdSection.title} created for test: ${newTest.id}`);
-          
+
           // Create questions for this section
           if (section.questions && Array.isArray(section.questions)) {
             for (let j = 0; j < section.questions.length; j++) {
               const questionData = section.questions[j];
-              
+
               // Parse JSON fields if they are strings
               let options = questionData.options;
               if (typeof options === 'string') {
@@ -941,7 +993,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
                   console.error("Error parsing options:", error);
                 }
               }
-              
+
               let speakingPrompts = questionData.speakingPrompts;
               if (typeof speakingPrompts === 'string') {
                 try {
@@ -950,7 +1002,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
                   console.error("Error parsing speakingPrompts:", error);
                 }
               }
-              
+
               let bandDescriptors = questionData.bandDescriptors;
               if (typeof bandDescriptors === 'string') {
                 try {
@@ -959,7 +1011,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
                   console.error("Error parsing bandDescriptors:", error);
                 }
               }
-              
+
               await tx.question.create({
                 data: {
                   sectionId: createdSection.id,
@@ -980,7 +1032,7 @@ export const createCompleteIELTSTest = async (req: AuthenticatedRequest, res: Re
                 }
               });
             }
-            
+
             console.log(`Created ${section.questions.length} questions for section: ${createdSection.title}`);
           }
         }

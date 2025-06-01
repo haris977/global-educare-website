@@ -28,7 +28,13 @@ type QuestionType =
 
 interface Question {
   diagramImage?: string;
-  diagramLabels?: string[];
+  diagramLabels?: {
+    id: number;
+    x: number;
+    y: number;
+    text: string;
+    correctAnswer?: string;
+  }[];
   diagramAnswers?: string[];
   sentenceCompletionAnswers?: string[];
   wordLimit?: string;
@@ -47,6 +53,10 @@ interface Question {
   mapLabels?: string[];
   questionImage?: string;
   cueCard?: string;
+  features?: string[];
+  statements?: string[];
+  correctFeatures?: string[][];
+  reuseAllowed?: boolean;
   speakingPrompts?: string[];
   followUpQuestions?: string[];
   headings?: string[]; // For PARA_HEADINGS type
@@ -121,9 +131,7 @@ export default function CreateTestPage() {
       case "READING":
         return [
           "MULTIPLE_CHOICE",
-          "TRUE_FALSE",
           "PARA_HEADINGS",
-          "COMPLETE_SENTENCE",
           "NAME_MATCHING",
           "FILL_BLANK",
           "TRUE_FALSE_NOT_GIVEN",
@@ -447,6 +455,8 @@ export default function CreateTestPage() {
         return;
       }
 
+      console.log("Submitting test with the following data:")
+
       // Create the test first
       const testResponse = await api.Tests.createTest({
         title: form.title,
@@ -486,7 +496,9 @@ export default function CreateTestPage() {
             order: qIndex + 1,
             marks: question.points,
             options: question.options && question.options.length > 0 ? question.options : undefined,
-            correctAnswer: question.correctAnswer || undefined
+            correctAnswer: question.correctAnswer || undefined,
+            fillBlankAnswers: question.type === "FILL_BLANK" ? question.fillBlankAnswers : undefined
+
           };
 
           // Add passage if provided (for reading sections)
@@ -497,9 +509,20 @@ export default function CreateTestPage() {
           // Add other type-specific fields
           if (question.type === "PARA_HEADINGS" && question.paragraphs) {
             questionData.paragraphs = question.paragraphs;
-          } else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
+            questionData.headings = question.headings;
+            questionData.correctHeadings = question.correctHeadings;
+          }
+          else if (question.type === "DIAGRAM_LABELLING") {
+            questionData.diagramImage = question.diagramImage;
+            questionData.diagramLabels = question.diagramLabels;
+          }
+          else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
             questionData.sentences = question.sentences;
-          } else if (question.type === "NAME_MATCHING" && question.matchingPairs) {
+          }
+          else if (question.type === "FILL_BLANK") {
+            questionData.fillBlankAnswers = question.fillBlankAnswers;
+          }
+          else if (question.type === "NAME_MATCHING" && question.matchingPairs) {
             questionData.matchingPairs = question.matchingPairs;
           } else if (question.type === "MAP" && question.mapLabels) {
             questionData.mapLabels = question.mapLabels;
@@ -849,33 +872,65 @@ export default function CreateTestPage() {
                   {currentQuestion.type === "MULTIPLE_CHOICE" && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-800 mb-2">
+                        Question
+                      </label>
+                      <input
+                        type="text"
+                        value={currentQuestion.text}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, text: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-4"
+                        placeholder="Enter the question here"
+                        required
+                      />
+
+                      <label className="block text-sm font-medium text-gray-800 mb-2">
                         Options
                       </label>
-
                       {currentQuestion.options?.map((option, index) => (
-                        <div key={index} className="flex items-center mb-3">
+                        <div key={index} className="flex items-center mb-2">
                           <input
                             type="radio"
                             name="correctAnswer"
                             value={index.toString()}
                             checked={currentQuestion.correctAnswer === index.toString()}
-                            onChange={() => setCurrentQuestion(prev => ({
-                              ...prev,
-                              correctAnswer: index.toString()
-                            }))}
+                            onChange={() =>
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                correctAnswer: index.toString(),
+                              }))
+                            }
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            required
                           />
                           <input
                             type="text"
                             value={option}
-                            onChange={(e) => handleOptionChange(index, e.target.value)}
+                            onChange={e => {
+                              const updatedOptions = [...(currentQuestion.options || [])];
+                              updatedOptions[index] = e.target.value;
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                options: updatedOptions,
+                              }));
+                            }}
                             className="flex-1 ml-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                             placeholder={`Option ${index + 1}`}
+                            required
                           />
-                          {index > 1 && (
+                          {currentQuestion.options.length > 2 && (
                             <button
                               type="button"
-                              onClick={() => removeOption(index)}
+                              onClick={() => {
+                                const updatedOptions = [...(currentQuestion.options || [])];
+                                updatedOptions.splice(index, 1);
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  options: updatedOptions,
+                                  // Reset correctAnswer if it was the removed option
+                                  correctAnswer:
+                                    prev.correctAnswer === index.toString() ? "" : prev.correctAnswer,
+                                }));
+                              }}
                               className="ml-2 text-red-500 hover:text-red-700 font-medium"
                             >
                               Remove
@@ -886,7 +941,12 @@ export default function CreateTestPage() {
 
                       <button
                         type="button"
-                        onClick={addOption}
+                        onClick={() =>
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            options: [...(prev.options || []), ""],
+                          }))
+                        }
                         className="mt-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -894,6 +954,97 @@ export default function CreateTestPage() {
                         </svg>
                         Add Option
                       </button>
+                    </div>
+                  )}
+                  {currentQuestion.type === "NAME_MATCHING" && (
+                    <div className="mb-4">
+                      {/* Features/options input */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Features/Options (one per line, e.g. names, inventions)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={currentQuestion.features ? currentQuestion.features.join('\n') : ''}
+                        onChange={e => {
+                          const features = e.target.value.split('\n').filter(f => f.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            features,
+                            correctFeatures: prev.correctFeatures && features.length === prev.correctFeatures.length
+                              ? prev.correctFeatures
+                              : Array(features.length).fill([])
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter each feature/option on a new line"
+                      />
+
+                      {/* Statements input */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Statements (one per line)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={currentQuestion.statements ? currentQuestion.statements.join('\n') : ''}
+                        onChange={e => {
+                          const statements = e.target.value.split('\n').filter(s => s.trim() !== '');
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            statements,
+                            correctFeatures: prev.correctFeatures && statements.length === prev.correctFeatures.length
+                              ? prev.correctFeatures
+                              : Array(statements.length).fill([])
+                          }));
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Enter each statement on a new line"
+                      />
+
+                      {/* Allow reuse */}
+                      <div className="flex items-center mt-4">
+                        <input
+                          type="checkbox"
+                          checked={!!currentQuestion.reuseAllowed}
+                          onChange={e => setCurrentQuestion(prev => ({ ...prev, reuseAllowed: e.target.checked }))}
+                          className="mr-2"
+                          id="reuseAllowed"
+                        />
+                        <label htmlFor="reuseAllowed" className="text-sm text-gray-800">
+                          You may use any option more than once
+                        </label>
+                      </div>
+
+                      {/* Map each statement to feature(s) */}
+                      {currentQuestion.statements && currentQuestion.features && currentQuestion.statements.length > 0 && currentQuestion.features.length > 0 && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-800 mb-2">
+                            Assign correct feature(s) to each statement
+                          </label>
+                          {currentQuestion.statements.map((statement, idx) => (
+                            <div key={idx} className="flex items-center mb-2">
+                              <span className="mr-2 text-gray-700 font-medium">Statement {idx + 1}:</span>
+                              <span className="flex-1 italic text-gray-600 truncate">{statement}</span>
+                              <select
+                                multiple={!!currentQuestion.reuseAllowed}
+                                value={currentQuestion.correctFeatures?.[idx] || []}
+                                onChange={e => {
+                                  const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
+                                  const correctFeatures = [...(currentQuestion.correctFeatures || Array(currentQuestion.statements.length).fill([]))];
+                                  correctFeatures[idx] = selected;
+                                  setCurrentQuestion(prev => ({ ...prev, correctFeatures }));
+                                }}
+                                className="ml-4 border-gray-300 rounded-md"
+                              >
+                                {currentQuestion.features.map((feature, fIdx) => (
+                                  <option key={fIdx} value={String.fromCharCode(65 + fIdx)}>
+                                    {String.fromCharCode(65 + fIdx)}. {feature}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -963,67 +1114,9 @@ export default function CreateTestPage() {
 
                   {currentQuestion.type === "DIAGRAM_LABELLING" && (
                     <div className="mb-4">
-                      {/* Diagram image upload */}
                       <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Diagram Image (optional)
+                        Diagram Image
                       </label>
-                      <div className="flex items-center space-x-4 mb-2">
-                        <button
-                          type="button"
-                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium shadow-sm"
-                          onClick={() => {
-                            // Trigger file input click
-                            document.getElementById("diagram-image-upload")?.click();
-                          }}
-                        >
-                          {currentQuestion.diagramImage ? "Change Image" : "Upload Image"}
-                        </button>
-                        {currentQuestion.diagramImage && (
-                          <button
-                            type="button"
-                            className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 font-medium shadow-sm"
-                            onClick={() => {
-                              setCurrentQuestion(prev => ({
-                                ...prev,
-                                diagramImage: undefined
-                              }));
-                              // Also clear the file input value
-                              const input = document.getElementById("diagram-image-upload") as HTMLInputElement;
-                              if (input) input.value = "";
-                            }}
-                          >
-                            Remove Image
-                          </button>
-                        )}
-                      </div>
-                      <input
-                        id="diagram-image-upload"
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        onChange={async e => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = ev => {
-                              setCurrentQuestion(prev => ({
-                                ...prev,
-                                diagramImage: ev.target?.result as string
-                              }));
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                      {currentQuestion.diagramImage && (
-                        <div className="mb-2">
-                          <img
-                            src={currentQuestion.diagramImage}
-                            alt="Diagram preview"
-                            className="max-w-xs border rounded shadow"
-                          />
-                        </div>
-                      )}
                       <input
                         type="file"
                         accept="image/*"
@@ -1034,7 +1127,8 @@ export default function CreateTestPage() {
                             reader.onload = ev => {
                               setCurrentQuestion(prev => ({
                                 ...prev,
-                                diagramImage: ev.target?.result as string
+                                diagramImage: ev.target?.result as string,
+                                diagramLabels: [],
                               }));
                             };
                             reader.readAsDataURL(file);
@@ -1043,73 +1137,139 @@ export default function CreateTestPage() {
                         className="block mb-2"
                       />
                       {currentQuestion.diagramImage && (
-                        <img
-                          src={currentQuestion.diagramImage}
-                          alt="Diagram preview"
-                          className="max-w-xs mb-2 border rounded"
-                        />
-                      )}
-
-                      {/* Label blanks */}
-                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-2">
-                        Diagram Label Blanks (one per line, e.g. 1, 2, 3 or A, B, C)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={currentQuestion.diagramLabels ? currentQuestion.diagramLabels.join('\n') : ''}
-                        onChange={e => {
-                          const labels = e.target.value.split('\n').filter(l => l.trim() !== '');
-                          setCurrentQuestion(prev => ({
-                            ...prev,
-                            diagramLabels: labels,
-                            diagramAnswers: prev.diagramAnswers && labels.length === prev.diagramAnswers.length
-                              ? prev.diagramAnswers
-                              : Array(labels.length).fill('')
-                          }));
-                        }}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Enter each label blank (e.g. 1, 2, 3) on a new line"
-                      />
-
-                      {/* Word/number limit instruction */}
-                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
-                        Word/Number Limit Instruction
-                      </label>
-                      <input
-                        type="text"
-                        value={currentQuestion.wordLimit || ""}
-                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder='e.g. NO MORE THAN TWO WORDS AND/OR A NUMBER'
-                      />
-
-                      {/* Correct answers for each label */}
-                      {(currentQuestion.diagramLabels && currentQuestion.diagramLabels.length > 0) && (
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-800 mb-2">
-                            Correct Answer(s) for Each Label
-                          </label>
-                          {currentQuestion.diagramLabels.map((label, idx) => (
-                            <div key={idx} className="flex items-center mb-2">
-                              <span className="mr-2 text-gray-700">Label {label}:</span>
-                              <input
-                                type="text"
-                                value={currentQuestion.diagramAnswers?.[idx] || ""}
-                                onChange={e => {
-                                  const diagramAnswers = [...(currentQuestion.diagramAnswers || Array(currentQuestion.diagramLabels.length).fill(''))];
-                                  diagramAnswers[idx] = e.target.value;
-                                  setCurrentQuestion(prev => ({ ...prev, diagramAnswers }));
+                        <div className="mb-6">
+                          <div className="mb-4 flex justify-between items-center">
+                            <p className="text-sm text-gray-600">
+                              Click on the image to add labels. Currently {currentQuestion.diagramLabels?.length || 0} labels added.
+                            </p>
+                            {currentQuestion.diagramLabels?.length > 0 && (
+                              <button
+                                onClick={() =>
+                                  setCurrentQuestion(prev => ({ ...prev, diagramLabels: [] }))
+                                }
+                                className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                                type="button"
+                              >
+                                Clear All Labels
+                              </button>
+                            )}
+                          </div>
+                          <div className="relative inline-block border-2 border-gray-300 rounded-lg overflow-hidden shadow-lg">
+                            <img
+                              src={currentQuestion.diagramImage}
+                              alt="Diagram for labelling"
+                              onClick={e => {
+                                const img = e.target as HTMLImageElement;
+                                const rect = img.getBoundingClientRect();
+                                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  diagramLabels: [
+                                    ...(prev.diagramLabels || []),
+                                    { x, y, text: "", id: Date.now() }
+                                  ]
+                                }));
+                              }}
+                              className="max-w-full max-h-96 cursor-crosshair block"
+                              style={{
+                                minWidth: "200px",
+                                minHeight: "200px"
+                              }}
+                            />
+                            {/* Render Label Markers */}
+                            {currentQuestion.diagramLabels?.map((label, idx) => (
+                              <div
+                                key={label.id || idx}
+                                className="absolute pointer-events-none"
+                                style={{
+                                  left: `${label.x}%`,
+                                  top: `${label.y}%`,
+                                  transform: "translate(-50%, -100%)",
+                                  zIndex: 10
                                 }}
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                                placeholder={`Answer for label ${label}`}
-                              />
-                            </div>
-                          ))}
+                              >
+                                <div className="relative">
+                                  <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg border-2 border-white">
+                                    {String.fromCharCode(65 + idx)}
+                                  </div>
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-600"></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
+
+                      {/* Label Text Editor Section */}
+                      {currentQuestion.diagramLabels && currentQuestion.diagramLabels.length > 0 && (
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Label Descriptions & Correct Answers</h3>
+                          <div className="space-y-3">
+                            {currentQuestion.diagramLabels.map((label, idx) => (
+                              <div key={label.id || idx} className="flex flex-col md:flex-row items-center gap-3 bg-white p-3 rounded border">
+                                <div className="flex-shrink-0">
+                                  <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
+                                    {String.fromCharCode(65 + idx)}
+                                  </span>
+                                </div>
+                                <div className="flex-grow w-full">
+                                  <input
+                                    type="text"
+                                    value={label.text}
+                                    onChange={e => {
+                                      const diagramLabels = [...currentQuestion.diagramLabels];
+                                      diagramLabels[idx] = { ...diagramLabels[idx], text: e.target.value };
+                                      setCurrentQuestion(prev => ({ ...prev, diagramLabels }));
+                                    }}
+                                    className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                    placeholder={`Description for label ${String.fromCharCode(65 + idx)}`}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={label.correctAnswer || ""}
+                                    onChange={e => {
+                                      const diagramLabels = [...currentQuestion.diagramLabels];
+                                      diagramLabels[idx] = { ...diagramLabels[idx], correctAnswer: e.target.value };
+                                      setCurrentQuestion(prev => ({ ...prev, diagramLabels }));
+                                    }}
+                                    className="w-full px-3 py-2 border border-green-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                    placeholder={`Correct answer for label ${String.fromCharCode(65 + idx)}`}
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const diagramLabels = [...currentQuestion.diagramLabels];
+                                    diagramLabels.splice(idx, 1);
+                                    setCurrentQuestion(prev => ({ ...prev, diagramLabels }));
+                                  }}
+                                  className="flex-shrink-0 px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                                  title="Remove this label"
+                                  type="button"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Instructions */}
+                      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-blue-800 mb-2">Instructions:</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Upload an image using the file input above</li>
+                          <li>• Click anywhere on the image to add a label marker</li>
+                          <li>• Fill in descriptions for each label in the text fields below</li>
+                          <li>• Use the remove button to delete individual labels</li>
+                          <li>• Use "Clear All Labels" to start over</li>
+                        </ul>
+                      </div>
                     </div>
                   )}
-
                   {currentQuestion.type === "COMPLETE_SENTENCE" && (
                     <div className="mb-4">
                       {/* Sentence input with blank */}
@@ -1286,6 +1446,59 @@ export default function CreateTestPage() {
                     </div>
                   )}
 
+                  {currentQuestion.type === "TRUE_FALSE_NOT_GIVEN" && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Question
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentQuestion.text || ''}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, text: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Type the statement/question here"
+                      />
+                      <label className="block text-sm font-medium text-gray-800 mb-2 mt-4">
+                        Correct Answer
+                      </label>
+                      <div className="flex space-x-6">
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name="correctAnswerTFNG"
+                            value="true"
+                            checked={currentQuestion.correctAnswer === "true"}
+                            onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "true" }))}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="ml-2 text-gray-800">True</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name="correctAnswerTFNG"
+                            value="false"
+                            checked={currentQuestion.correctAnswer === "false"}
+                            onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "false" }))}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="ml-2 text-gray-800">False</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name="correctAnswerTFNG"
+                            value="not_given"
+                            checked={currentQuestion.correctAnswer === "not_given"}
+                            onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: "not_given" }))}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="ml-2 text-gray-800">Not Given</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   {currentQuestion.type === "PARA_HEADINGS" && (
                     <div className="mb-4">
                       {/* Headings input */}
@@ -1377,11 +1590,24 @@ export default function CreateTestPage() {
                           // Count blanks
                           const blankCount = (text.match(/_/g) || []).length;
                           // Adjust answers array to match blank count
-                          setCurrentQuestion(prev => ({
-                            ...prev,
-                            text,
-                            fillBlankAnswers: Array.from({ length: blankCount }, (_, i) => prev.fillBlankAnswers?.[i] || "")
-                          }));
+                          setCurrentQuestion(prev => {
+                            let fillBlankAnswers = prev.fillBlankAnswers ? [...prev.fillBlankAnswers] : [];
+                            if (blankCount > fillBlankAnswers.length) {
+                              // Add empty answers for new blanks
+                              fillBlankAnswers = [
+                                ...fillBlankAnswers,
+                                ...Array(blankCount - fillBlankAnswers.length).fill("")
+                              ];
+                            } else if (blankCount < fillBlankAnswers.length) {
+                              // Remove extra answers if blanks reduced
+                              fillBlankAnswers = fillBlankAnswers.slice(0, blankCount);
+                            }
+                            return {
+                              ...prev,
+                              text,
+                              fillBlankAnswers
+                            };
+                          });
                         }}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                         placeholder="Type the sentence here, use _ for each blank"
@@ -1400,9 +1626,11 @@ export default function CreateTestPage() {
                                 type="text"
                                 value={ans}
                                 onChange={e => {
-                                  const fillBlankAnswers = [...currentQuestion.fillBlankAnswers];
-                                  fillBlankAnswers[idx] = e.target.value;
-                                  setCurrentQuestion(prev => ({ ...prev, fillBlankAnswers }));
+                                  setCurrentQuestion(prev => {
+                                    const fillBlankAnswers = prev.fillBlankAnswers ? [...prev.fillBlankAnswers] : [];
+                                    fillBlankAnswers[idx] = e.target.value;
+                                    return { ...prev, fillBlankAnswers };
+                                  });
                                 }}
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                                 placeholder={`Answer for blank ${idx + 1}`}
@@ -1463,4 +1691,4 @@ export default function CreateTestPage() {
       </form>
     </div>
   );
-} 
+}

@@ -7,163 +7,132 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model with roles based on the PRD
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  password          String
-  name              String
-  phone             String?
-  role              Role      @default(USER)
-  profilePicture    String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Subscription related fields
-  subscriptionStatus SubscriptionStatus? @default(INACTIVE)
-  subscriptionPlan   SubscriptionPlan?
+  id                    String                @id @default(uuid())
+  email                 String                @unique
+  password              String
+  name                  String
+  phone                 String?
+  role                  Role                  @default(USER)
+  profilePicture        String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  subscriptionStatus    SubscriptionStatus?   @default(INACTIVE)
+  subscriptionPlan      SubscriptionPlan?
   subscriptionStartDate DateTime?
   subscriptionEndDate   DateTime?
-  freeTrialUsed        Boolean   @default(false)
-  refundRequested      Boolean   @default(false)
-  refundStatus         RefundStatus? @default(NONE)
-  refundRequestDate    DateTime?
-  refundProcessedDate  DateTime?
-
-  // User activity tracking
-  lastLoginAt        DateTime?
-  progressData       Json? // Stores user progress data in JSON format
-  
-  // Practice tests and content engagement
-  practiceTests      PracticeTest[]
-  userScores         UserScore[]
-  testAttempts       TestAttempt[]
-  responses          Response[]
-  
-  // Many-to-many relationship with institutions
-  institutions       UsersOnInstitutions[]
+  freeTrialUsed         Boolean               @default(false)
+  refundRequested       Boolean               @default(false)
+  refundStatus          RefundStatus?         @default(NONE)
+  refundRequestDate     DateTime?
+  refundProcessedDate   DateTime?
+  lastLoginAt           DateTime?
+  progressData          Json?
+  practiceTests         PracticeTest[]
+  responses             Response[]
+  testAttempts          TestAttempt[]
+  userScores            UserScore[]
+  institutions          UsersOnInstitutions[]
 }
 
-// Enhanced Test Models for IELTS
 model Test {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  difficulty      TestDifficulty @default(MEDIUM)
-  moduleType      ModuleType
-  totalTime       Int       // In minutes
-  totalQuestions  Int
-  clbScore        Int       @default(1)  // Canadian Language Benchmark score level (1-12)
-  isPublished     Boolean   @default(false)
-  isFeatured      Boolean   @default(false)
-  testCategory    String?   // For categorizing tests (e.g., "Practice", "Mock", "Official")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  // Content sections
-  sections        Section[]
-  
-  // User attempts
-  attempts        TestAttempt[]
+  id             String         @id @default(uuid())
+  title          String
+  description    String?
+  difficulty     TestDifficulty @default(MEDIUM)
+  moduleType     ModuleType
+  totalTime      Int
+  totalQuestions Int
+  isPublished    Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  isFeatured     Boolean        @default(false)
+  testCategory   String?
+  clbScore       Int            @default(1)
+  sections       Section[]
+  attempts       TestAttempt[]
 }
 
 model Section {
-  id              String    @id @default(uuid())
-  testId          String
-  title           String
-  instructions    String?
-  order           Int
-  timeLimit       Int?      // In minutes, null for unlimited
-  
-  // Relationship
-  test            Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
-  
-  // Questions in this section
-  questions       Question[]
+  id           String     @id @default(uuid())
+  testId       String
+  title        String
+  instructions String?
+  order        Int
+  timeLimit    Int?
+  questions    Question[]
+  test         Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
 }
 
 model Question {
-  id                String    @id @default(uuid())
+  id                String       @id @default(uuid())
   sectionId         String
   questionText      String
   questionType      QuestionType
-  questionImage     String?   // URL to image if applicable
-  audioFile         String?   // URL to audio file for listening questions
-  additionalInfo    String?   // Additional text, instructions, etc.
+  questionImage     String?
+  audioFile         String?
+  additionalInfo    String?
   order             Int
-  marks             Float     @default(1.0)
-  
-  // Specific content based on question type
-  options           Json?     // For MCQ, matching, etc.
-  correctAnswer     String?   // For text input, essay questions will be null (manual review)
-  
-  // Reading specific fields
-  passage           String?   // For reading passages
-  paragraphs        Json?     // For paragraph headings - stored as JSON rather than string
-  sentences         String?   // For complete the sentence and fill in the blanks
-  matchingPairs     String?   // For name matching
-  
-  // Listening specific fields
-  mapLabels         String?   // For map questions
-  
-  // Speaking specific fields
-  cueCard           String?   // For speaking task 2
-  speakingPrompts   Json?     // For speaking tasks
-  followUpQuestions String?   // For speaking follow-ups
-  
-  // Assessment fields
-  bandDescriptors   Json?     // Assessment criteria for writing/speaking
-  sampleAnswer      String?   // Sample answer for writing/speaking tasks
-  
-  // Relationship
-  section           Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  
-  // User responses
+  marks             Float        @default(1.0)
+  options           Json?
+  correctAnswer     String?
+  bandDescriptors   Json?
+  cueCard           String?
+  passage           String?
+
+  headings            Json?      // For PARA_HEADINGS
+  correctHeadings     Json?      // For PARA_HEADINGS
+  fillBlankAnswers    Json?      // For FILL_BLANK
+  sentenceBeginnings  Json?      // For SENTENCE_ENDINGS_MATCHING
+  sentenceEndings     Json?      // For SENTENCE_ENDINGS_MATCHING
+  correctEndings      Json?      // For SENTENCE_ENDINGS_MATCHING
+  diagramImage        String?    // For DIAGRAM_LABELLING
+  diagramAnswers      Json?      // For DIAGRAM_LABELLING
+  wordLimit           String? 
+  sampleAnswer      String?
+  speakingPrompts   Json?
+  paragraphs        Json?
+  sentences         String?
+  followUpQuestions String?
+  matchingPairs     String?
+  mapLabels         String?
+  section           Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   responses         Response[]
 }
 
-// User attempt at a test
 model TestAttempt {
-  id              String    @id @default(uuid())
-  userId          String
-  testId          String
-  startedAt       DateTime  @default(now())
-  completedAt     DateTime?
-  lastSavedAt     DateTime  @default(now())
-  totalScore      Float?
-  status          AttemptStatus @default(IN_PROGRESS)
-  currentSection  Int       @default(0) // Tracks which section user is on
-  timeRemaining   Int?      // Remaining time in seconds
-  
-  // Relationships
-  user            User      @relation(fields: [userId], references: [id])
-  test            Test      @relation(fields: [testId], references: [id])
-  
-  // User responses for this attempt
-  responses       Response[]
+  id             String        @id @default(uuid())
+  userId         String
+  testId         String
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+  lastSavedAt    DateTime      @default(now())
+  totalScore     Float?
+  status         AttemptStatus @default(IN_PROGRESS)
+  currentSection Int           @default(0)
+  timeRemaining  Int?
+  responses      Response[]
+  test           Test          @relation(fields: [testId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
 }
 
-// User response to a question
 model Response {
-  id              String    @id @default(uuid())
-  userId          String
-  testAttemptId   String
-  questionId      String
-  userAnswer      String?
-  audioRecording  String?   // For speaking questions
-  isCorrect       Boolean?
-  marksAwarded    Float?
-  feedback        String?
-  reviewStatus    ReviewStatus @default(PENDING)
-  submittedAt     DateTime  @default(now())
-  
-  // Relationships
-  user            User      @relation(fields: [userId], references: [id])
-  testAttempt     TestAttempt @relation(fields: [testAttemptId], references: [id], onDelete: Cascade)
-  question        Question  @relation(fields: [questionId], references: [id])
+  id             String       @id @default(uuid())
+  userId         String
+  testAttemptId  String
+  questionId     String
+  userAnswer     String?
+  audioRecording String?
+  isCorrect      Boolean?
+  marksAwarded   Float?
+  feedback       String?
+  reviewStatus   ReviewStatus @default(PENDING)
+  submittedAt    DateTime     @default(now())
+  question       Question     @relation(fields: [questionId], references: [id])
+  testAttempt    TestAttempt  @relation(fields: [testAttemptId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
 }
 
-// Original models
 model PracticeTest {
   id          String    @id @default(uuid())
   userId      String
@@ -171,43 +140,37 @@ model PracticeTest {
   testScore   Float?
   completedAt DateTime?
   startedAt   DateTime  @default(now())
-  
   user        User      @relation(fields: [userId], references: [id])
 }
 
 model UserScore {
-  id          String    @id @default(uuid())
-  userId      String
-  moduleType  ModuleType
-  score       Float
-  recordedAt  DateTime  @default(now())
-  
-  user        User      @relation(fields: [userId], references: [id])
+  id         String     @id @default(uuid())
+  userId     String
+  moduleType ModuleType
+  score      Float
+  recordedAt DateTime   @default(now())
+  user       User       @relation(fields: [userId], references: [id])
 }
 
 model Institution {
-  id          String    @id @default(uuid())
+  id          String                @id @default(uuid())
   name        String
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Many-to-many relationship with users
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   users       UsersOnInstitutions[]
 }
 
-// Join table for many-to-many relationship between User and Institution
 model UsersOnInstitutions {
-  user          User        @relation(fields: [userId], references: [id])
   userId        String
-  institution   Institution @relation(fields: [institutionId], references: [id])
   institutionId String
   assignedAt    DateTime    @default(now())
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
 
   @@id([userId, institutionId])
 }
 
-// Original enums
 enum Role {
   USER
   ADMIN
@@ -257,28 +220,10 @@ enum ModuleType {
   COMBINED
 }
 
-// New enums for enhanced test functionality
 enum QuestionType {
-  // Reading Question Types
   MULTIPLE_CHOICE
-  PARA_HEADINGS
-  COMPLETE_SENTENCE
-  NAME_MATCHING
-  FILL_BLANK
-  TRUE_FALSE_NOT_GIVEN
-  YES_NO_NOT_GIVEN
-  
-  // Listening Question Types
   TRUE_FALSE
-  MAP
-  
-  // Speaking Question Types
-  SPEAKING_TASK_1      // Introduction
-  SPEAKING_TASK_2      // Cue Card
-  SPEAKING_TASK_3      // Discussion
-  SPEAKING_FOLLOW_UPS  // Follow Up Questions
-  
-  // Other Question Types
+  FILL_BLANK
   SHORT_ANSWER
   ESSAY
   MATCHING
@@ -291,9 +236,19 @@ enum QuestionType {
   SENTENCE_COMPLETION
   MAP_LABELLING
   PROCESS_DIAGRAM
+  YES_NO_NOT_GIVEN
+  TRUE_FALSE_NOT_GIVEN
   HEADING_MATCHING
   INFORMATION_MATCHING
   FEATURES_MATCHING
+  SPEAKING_TASK_1
+  SPEAKING_TASK_2
+  SPEAKING_TASK_3
+  PARA_HEADINGS
+  COMPLETE_SENTENCE
+  NAME_MATCHING
+  MAP
+  SPEAKING_FOLLOW_UPS
 }
 
 enum AttemptStatus {
@@ -315,4 +270,4 @@ enum TestDifficulty {
   MEDIUM
   HARD
   VERY_HARD
-} 
+}
