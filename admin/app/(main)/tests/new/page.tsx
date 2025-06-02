@@ -62,6 +62,8 @@ interface Question {
   headings?: string[]; // For PARA_HEADINGS type
   correctHeadings?: string[]; // For PARA_HEADINGS type
   fillBlankAnswers?: string[]; // For FILL_BLANK: answers for each blank
+  summaryWords?: string[];
+  summaryBlankAnswers?: string[];
 }
 
 interface Section {
@@ -424,6 +426,20 @@ export default function CreateTestPage() {
     }, 3000);
   };
 
+  function getBlankIndex(words: string[], idx: number) {
+    // Returns the blank index for the _ at position idx
+    return words.slice(0, idx + 1).filter(w => w === "_").length - 1;
+  }
+
+  function updateBlankAnswers(words: string[], prevAnswers: string[]) {
+    const blankCount = words.filter(w => w === "_").length;
+    const newAnswers = [];
+    for (let i = 0; i < blankCount; i++) {
+      newAnswers.push(prevAnswers[i] || "");
+    }
+    return newAnswers;
+  }
+
   // Remove question from current section
   const removeQuestion = (questionId: string) => {
     setForm(prev => {
@@ -518,6 +534,15 @@ export default function CreateTestPage() {
           }
           else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
             questionData.sentences = question.sentences;
+          }
+
+          else if (question.type === "SUMMARY") {
+            questionData.summaryWords = question.summaryWords;
+            questionData.summaryBlankAnswers = question.summaryBlankAnswers;
+            questionData.paragraphs = question.paragraphs;
+            questionData.fillBlankSentence = question.text;
+            questionData.fillBlankAnswers = question.fillBlankAnswers;
+            questionData.wordLimit = question.wordLimit;
           }
           else if (question.type === "FILL_BLANK") {
             questionData.fillBlankAnswers = question.fillBlankAnswers;
@@ -1051,25 +1076,74 @@ export default function CreateTestPage() {
 
                   {currentQuestion.type === "SUMMARY" && (
                     <div className="mb-4">
-                      {/* Summary input with blanks */}
+                      {/* Editable summary as words and blanks */}
                       <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Summary Text (use <b>_</b> for each blank)
+                        Summary Words (add words and use <b>_</b> for blanks)
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {(currentQuestion.summaryWords || [""]).map((word, idx) => (
+                          <div key={idx} className="flex items-center">
+                            <input
+                              type="text"
+                              value={word}
+                              onChange={e => {
+                                const summaryWords = [...(currentQuestion.summaryWords || [])];
+                                summaryWords[idx] = e.target.value;
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  summaryWords,
+                                  summaryBlankAnswers: updateBlankAnswers(summaryWords, prev.summaryBlankAnswers || [])
+                                }));
+                              }}
+                              className="w-20 px-2 py-1 border border-gray-300 rounded"
+                              placeholder="Word or _"
+                            />
+                            {/* If word is '_', show correct answer input */}
+
+                            <button
+                              type="button"
+                              className="ml-1 text-red-500"
+                              onClick={() => {
+                                const summaryWords = [...(currentQuestion.summaryWords || [])];
+                                summaryWords.splice(idx, 1);
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  summaryWords,
+                                  summaryBlankAnswers: updateBlankAnswers(summaryWords, prev.summaryBlankAnswers || [])
+                                }));
+                              }}
+                              title="Remove"
+                            >✕</button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="ml-2 text-blue-600"
+                          onClick={() => {
+                            setCurrentQuestion(prev => ({
+                              ...prev,
+                              summaryWords: [...(prev.summaryWords || []), ""]
+                            }));
+                          }}
+                        >+ Add Word/Blank</button>
+                      </div>
+
+                      {/* Paragraphs textarea */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        Paragraphs (one per line)
                       </label>
                       <textarea
-                        rows={3}
-                        value={currentQuestion.text}
+                        rows={4}
+                        value={currentQuestion.paragraphs ? currentQuestion.paragraphs.join('\n') : ''}
                         onChange={e => {
-                          const text = e.target.value;
-                          // Count blanks (support multiple)
-                          const blankCount = (text.match(/_/g) || []).length;
+                          const paragraphs = e.target.value.split('\n').map(p => p.trim()).filter(Boolean);
                           setCurrentQuestion(prev => ({
                             ...prev,
-                            text,
-                            sentenceCompletionAnswers: Array.from({ length: blankCount }, (_, i) => prev.sentenceCompletionAnswers?.[i] || "")
+                            paragraphs
                           }));
                         }}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Type the summary here, use _ for each blank"
+                        placeholder="Enter each paragraph on a new line"
                       />
 
                       {/* Word/number limit instruction */}
@@ -1084,22 +1158,55 @@ export default function CreateTestPage() {
                         placeholder='e.g. NO MORE THAN TWO WORDS AND/OR A NUMBER'
                       />
 
-                      {/* Correct answers for each blank */}
-                      {(currentQuestion.sentenceCompletionAnswers && currentQuestion.sentenceCompletionAnswers.length > 0) && (
+                      {/* FILL BLANK style input for summary questions */}
+                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                        FILL BLANK Sentence (use <b>_</b> for blanks)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentQuestion.text || ""}
+                        onChange={e => {
+                          const text = e.target.value;
+                          const blankCount = (text.match(/_/g) || []).length;
+                          setCurrentQuestion(prev => {
+                            let fillBlankAnswers = prev.fillBlankAnswers ? [...prev.fillBlankAnswers] : [];
+                            if (blankCount > fillBlankAnswers.length) {
+                              fillBlankAnswers = [
+                                ...fillBlankAnswers,
+                                ...Array(blankCount - fillBlankAnswers.length).fill("")
+                              ];
+                            } else if (blankCount < fillBlankAnswers.length) {
+                              fillBlankAnswers = fillBlankAnswers.slice(0, blankCount);
+                            }
+                            return {
+                              ...prev,
+                              text,
+                              fillBlankAnswers
+                            };
+                          });
+                        }}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder="Type the sentence here, use _ for each blank"
+                      />
+
+                      {/* Inputs for each blank's correct answer */}
+                      {(currentQuestion.fillBlankAnswers && currentQuestion.fillBlankAnswers.length > 0) && (
                         <div className="mt-4">
                           <label className="block text-sm font-medium text-gray-800 mb-2">
-                            Correct Answer(s)
+                            Correct Answers for Each Blank
                           </label>
-                          {currentQuestion.sentenceCompletionAnswers.map((ans, idx) => (
+                          {currentQuestion.fillBlankAnswers.map((ans, idx) => (
                             <div key={idx} className="flex items-center mb-2">
                               <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
                               <input
                                 type="text"
                                 value={ans}
                                 onChange={e => {
-                                  const sentenceCompletionAnswers = [...currentQuestion.sentenceCompletionAnswers];
-                                  sentenceCompletionAnswers[idx] = e.target.value;
-                                  setCurrentQuestion(prev => ({ ...prev, sentenceCompletionAnswers }));
+                                  setCurrentQuestion(prev => {
+                                    const fillBlankAnswers = prev.fillBlankAnswers ? [...prev.fillBlankAnswers] : [];
+                                    fillBlankAnswers[idx] = e.target.value;
+                                    return { ...prev, fillBlankAnswers };
+                                  });
                                 }}
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
                                 placeholder={`Answer for blank ${idx + 1}`}
@@ -1110,7 +1217,6 @@ export default function CreateTestPage() {
                       )}
                     </div>
                   )}
-
 
                   {currentQuestion.type === "DIAGRAM_LABELLING" && (
                     <div className="mb-4">
@@ -1270,111 +1376,135 @@ export default function CreateTestPage() {
                       </div>
                     </div>
                   )}
+
+
+
                   {currentQuestion.type === "COMPLETE_SENTENCE" && (
-                    <div className="mb-4">
-                      {/* Sentence input with blank */}
-                      <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Sentence (use <b>_</b> for the blank)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={currentQuestion.text}
-                        onChange={e => {
-                          const text = e.target.value;
-                          // Count blanks (usually 1, but support multiple)
-                          const blankCount = (text.match(/_/g) || []).length;
-                          setCurrentQuestion(prev => ({
-                            ...prev,
-                            text,
-                            sentenceCompletionAnswers: Array.from({ length: blankCount }, (_, i) => prev.sentenceCompletionAnswers?.[i] || "")
-                          }));
-                        }}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Type the sentence here, use _ for the blank"
-                      />
+                    <>
+                      <div className="mb-4">
+                        {/* Sentence input with blank */}
+                        <label className="block text-sm font-medium text-gray-800 mb-1">
+                          Sentence Beginnings
+                        </label>
+                        {(currentQuestion.sentenceBeginnings || []).map((begin, idx) => (
+                          <div key={idx} className="flex items-center mb-2">
+                            <input
+                              type="text"
+                              value={begin}
+                              onChange={e => {
+                                const sentenceBeginnings = [...(currentQuestion.sentenceBeginnings || [])];
+                                sentenceBeginnings[idx] = e.target.value;
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  sentenceBeginnings,
+                                  correctEndings: prev.correctHeadings && sentenceBeginnings.length === prev.correctHeadings.length
+                                    ? prev.correctHeadings
+                                    : Array(sentenceBeginnings.length).fill('')
+                                }));
+                              }}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                              placeholder={`Beginning ${idx + 1}`} />
+                            <button
+                              type="button"
+                              className="ml-2 text-red-500"
+                              onClick={() => {
+                                const sentenceBeginnings = [...(currentQuestion.sentenceBeginnings || [])];
+                                sentenceBeginnings.splice(idx, 1);
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  sentenceBeginnings,
+                                  correctEndings: prev.correctHeadings && sentenceBeginnings.length === prev.correctHeadings.length
+                                    ? prev.correctHeadings
+                                    : Array(sentenceBeginnings.length).fill('')
+                                }));
+                              }}
+                              title="Remove beginning"
+                            >✕</button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="mt-2 text-blue-600"
+                          onClick={() => {
+                            setCurrentQuestion(prev => ({
+                              ...prev,
+                              sentenceBeginnings: [...(prev.sentenceBeginnings || []), ""]
+                            }));
+                          }}
+                        >
+                          + Add Beginning
+                        </button>
 
-                      {/* Word limit instruction */}
+                        {/* Correct answer(s) for the blank(s) */}
+                        {(currentQuestion.sentenceCompletionAnswers && currentQuestion.sentenceCompletionAnswers.length > 0) && (
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-800 mb-2">
+                              Correct Answer(s)
+                            </label>
+                            {currentQuestion.sentenceCompletionAnswers.map((ans, idx) => (
+                              <div key={idx} className="flex items-center mb-2">
+                                <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
+                                <input
+                                  type="text"
+                                  value={ans}
+                                  onChange={e => {
+                                    const sentenceCompletionAnswers = [...currentQuestion.sentenceCompletionAnswers];
+                                    sentenceCompletionAnswers[idx] = e.target.value;
+                                    setCurrentQuestion(prev => ({ ...prev, sentenceCompletionAnswers }));
+                                  }}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                                  placeholder={`Answer for blank ${idx + 1}`} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
-                        Word/Number Limit Instruction
+                        Sentence Endings
                       </label>
-                      <input
-                        type="text"
-                        value={currentQuestion.wordLimit || ""}
-                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder='e.g. NO MORE THAN TWO WORDS AND/OR A NUMBER'
-                      />
-
-                      {/* Correct answer(s) for the blank(s) */}
-                      {(currentQuestion.sentenceCompletionAnswers && currentQuestion.sentenceCompletionAnswers.length > 0) && (
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-800 mb-2">
-                            Correct Answer(s)
-                          </label>
-                          {currentQuestion.sentenceCompletionAnswers.map((ans, idx) => (
-                            <div key={idx} className="flex items-center mb-2">
-                              <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
-                              <input
-                                type="text"
-                                value={ans}
-                                onChange={e => {
-                                  const sentenceCompletionAnswers = [...currentQuestion.sentenceCompletionAnswers];
-                                  sentenceCompletionAnswers[idx] = e.target.value;
-                                  setCurrentQuestion(prev => ({ ...prev, sentenceCompletionAnswers }));
-                                }}
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                                placeholder={`Answer for blank ${idx + 1}`}
-                              />
-                            </div>
-                          ))}
+                      {(currentQuestion.sentenceEndings || []).map((ending, idx) => (
+                        <div key={idx} className="flex items-center mb-2">
+                          <input
+                            type="text"
+                            value={ending}
+                            onChange={e => {
+                              const sentenceEndings = [...(currentQuestion.sentenceEndings || [])];
+                              sentenceEndings[idx] = e.target.value;
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                sentenceEndings
+                              }));
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                            placeholder={`Ending ${idx + 1}`}
+                          />
+                          <button
+                            type="button"
+                            className="ml-2 text-red-500"
+                            onClick={() => {
+                              const sentenceEndings = [...(currentQuestion.sentenceEndings || [])];
+                              sentenceEndings.splice(idx, 1);
+                              setCurrentQuestion(prev => ({
+                                ...prev, sentenceEndings
+                              }));
+                            }}
+                            title="Remove ending"
+                          >✕</button>
                         </div>
-                      )}
-                    </div>
-                  )}
-
-
-                  {currentQuestion.type === "SENTENCE_ENDINGS_MATCHING" && (
-                    <div className="mb-4">
-                      {/* Sentence beginnings input */}
-                      <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Sentence Beginnings (one per line)
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={currentQuestion.sentenceBeginnings ? currentQuestion.sentenceBeginnings.join('\n') : ''}
-                        onChange={e => {
-                          const beginnings = e.target.value.split('\n').filter(b => b.trim() !== '');
+                      ))}
+                      <button
+                        type="button"
+                        className="mt-2 text-blue-600"
+                        onClick={() => {
                           setCurrentQuestion(prev => ({
                             ...prev,
-                            sentenceBeginnings: beginnings,
-                            correctEndings: prev.correctHeadings && beginnings.length === prev.correctHeadings.length
-                              ? prev.correctHeadings
-                              : Array(beginnings.length).fill('')
+                            sentenceEndings: [...(prev.sentenceEndings || []), ""]
                           }));
                         }}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Enter each sentence beginning on a new line"
-                      />
+                      >
+                        + Add Ending
+                      </button>
 
-                      {/* Sentence endings input */}
-                      <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
-                        Sentence Endings (one per line, more than beginnings)
-                      </label>
-                      <textarea
-                        rows={4}
-                        value={currentQuestion.sentenceEndings ? currentQuestion.sentenceEndings.join('\n') : ''}
-                        onChange={e => {
-                          const endings = e.target.value.split('\n').filter(e => e.trim() !== '');
-                          setCurrentQuestion(prev => ({
-                            ...prev,
-                            sentenceEndings: endings
-                          }));
-                        }}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Enter each sentence ending on a new line"
-                      />
-
-                      {/* Map each beginning to an ending */}
                       {currentQuestion.sentenceBeginnings && currentQuestion.sentenceEndings &&
                         currentQuestion.sentenceBeginnings.length > 0 && currentQuestion.sentenceEndings.length > 0 && (
                           <div className="mt-4">
@@ -1405,46 +1535,171 @@ export default function CreateTestPage() {
                             ))}
                           </div>
                         )}
-                    </div>
+                    </>
                   )}
 
-                  {currentQuestion.type === "TRUE_FALSE" && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-800 mb-2">
-                        Correct Answer
-                      </label>
-                      <div className="flex space-x-6">
-                        <label className="inline-flex items-center">
-                          <input
-                            type="radio"
-                            name="correctAnswer"
-                            value="true"
-                            checked={currentQuestion.correctAnswer === "true"}
-                            onChange={() => setCurrentQuestion(prev => ({
+
+
+    {currentQuestion.type === "SENTENCE_ENDINGS_MATCHING" && (<div className = "mb-4">
+                    {/* Sentence input with blank */}
+                    <label className="block text-sm font-medium text-gray-800 mb-1">
+                      Sentence Beginnings
+                    </label>
+                    {(currentQuestion.sentenceBeginnings || []).map((begin, idx) => (
+                      <div key={idx} className="flex items-center mb-2">
+                        <input
+                          type="text"
+                          value={begin}
+                          onChange={e => {
+                            const sentenceBeginnings = [...(currentQuestion.sentenceBeginnings || [])];
+                            sentenceBeginnings[idx] = e.target.value;
+                            setCurrentQuestion(prev => ({
                               ...prev,
-                              correctAnswer: "true"
-                            }))}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="ml-2 text-gray-800">True</span>
-                        </label>
-                        <label className="inline-flex items-center">
-                          <input
-                            type="radio"
-                            name="correctAnswer"
-                            value="false"
-                            checked={currentQuestion.correctAnswer === "false"}
-                            onChange={() => setCurrentQuestion(prev => ({
+                              sentenceBeginnings,
+                              correctEndings: prev.correctHeadings && sentenceBeginnings.length === prev.correctHeadings.length
+                                ? prev.correctHeadings
+                                : Array(sentenceBeginnings.length).fill('')
+                            }));
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                          placeholder={`Beginning ${idx + 1}`}
+                        />
+                        <button
+                          type="button"
+                          className="ml-2 text-red-500"
+                          onClick={() => {
+                            const sentenceBeginnings = [...(currentQuestion.sentenceBeginnings || [])];
+                            sentenceBeginnings.splice(idx, 1);
+                            setCurrentQuestion(prev => ({
                               ...prev,
-                              correctAnswer: "false"
-                            }))}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="ml-2 text-gray-800">False</span>
-                        </label>
+                              sentenceBeginnings,
+                              correctEndings: prev.correctHeadings && sentenceBeginnings.length === prev.correctHeadings.length
+                                ? prev.correctHeadings
+                                : Array(sentenceBeginnings.length).fill('')
+                            }));
+                          }}
+                          title="Remove "
+                        >✕</button>
                       </div>
-                    </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="mt-2 text-blue-600"
+                      onClick={() => {
+                        setCurrentQuestion(prev => ({
+                          ...prev,
+                          sentenceBeginnings: [...(prev.sentenceBeginnings || []), ""]
+                        }));
+                      }}
+                    >
+                      + Add
+                    </button>
+
+                    {/* Correct answer(s) for the blank(s) */}
+                    {(currentQuestion.sentenceCompletionAnswers && currentQuestion.sentenceCompletionAnswers.length > 0) && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-800 mb-2">
+                          Correct Answer(s)
+                        </label>
+                        {currentQuestion.sentenceCompletionAnswers.map((ans, idx) => (
+                          <div key={idx} className="flex items-center mb-2">
+                            <span className="mr-2 text-gray-700">Blank {idx + 1}:</span>
+                            <input
+                              type="text"
+                              value={ans}
+                              onChange={e => {
+                                const sentenceCompletionAnswers = [...currentQuestion.sentenceCompletionAnswers];
+                                sentenceCompletionAnswers[idx] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, sentenceCompletionAnswers }));
+                              }}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                              placeholder={`Answer for blank ${idx + 1}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   )}
+                  <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
+                    Sentence Endings
+                  </label>
+                  {(currentQuestion.sentenceEndings || []).map((ending, idx) => (
+                    <div key={idx} className="flex items-center mb-2">
+                      <input
+                        type="text"
+                        value={ending}
+                        onChange={e => {
+                          const sentenceEndings = [...(currentQuestion.sentenceEndings || [])];
+                          sentenceEndings[idx] = e.target.value;
+                          setCurrentQuestion(prev => ({
+                            ...prev,
+                            sentenceEndings
+                          }));
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                        placeholder={`Ending ${idx + 1}`}
+                      />
+                      <button
+                        type="button"
+                        className="ml-2 text-red-500"
+                        onClick={() => {
+                          const sentenceEndings = [...(currentQuestion.sentenceEndings || [])];
+                          sentenceEndings.splice(idx, 1);
+                          setCurrentQuestion(prev => ({
+                            ...prev, sentenceEndings
+                          }));
+                        }}
+                        title="Remove ending"
+                      >✕</button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="mt-2 text-blue-600"
+                    onClick={() => {
+                      setCurrentQuestion(prev => ({
+                        ...prev,
+                        sentenceEndings: [...(prev.sentenceEndings || []), ""]
+                      }));
+                    }}
+                  >
+                    + Add Ending
+                  </button>
+
+                  {currentQuestion.sentenceBeginnings && currentQuestion.sentenceEndings &&
+                    currentQuestion.sentenceBeginnings.length > 0 && currentQuestion.sentenceEndings.length > 0 && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-800 mb-2">
+                          Assign correct ending to each beginning
+                        </label>
+                        {currentQuestion.sentenceBeginnings.map((begin, idx) => (
+                          <div key={idx} className="flex items-center mb-2">
+                            <span className="mr-2 text-gray-700 font-medium">Beg. {idx + 1}:</span>
+                            <span className="flex-1 italic text-gray-600 truncate">{begin}</span>
+                            <select
+                              value={currentQuestion.correctHeadings && currentQuestion.correctHeadings[idx] !== undefined ? currentQuestion.correctHeadings[idx] : ''}
+                              onChange={e => {
+                                const correctEndings = [...(currentQuestion.correctHeadings || Array(currentQuestion.sentenceBeginnings.length).fill(''))];
+                                correctEndings[idx] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, correctEndings }));
+                              }}
+                              className="ml-4 border-gray-300 rounded-md"
+                            >
+                              <option value="">Select ending</option>
+                              {currentQuestion.sentenceEndings.map((ending, eIdx) => (
+                                <option key={eIdx} value={String.fromCharCode(65 + eIdx)}>
+                                  {String.fromCharCode(65 + eIdx)}. {ending}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                  )}
+
+
+
 
                   {currentQuestion.type === "TRUE_FALSE_NOT_GIVEN" && (
                     <div className="mb-4">
@@ -1503,47 +1758,104 @@ export default function CreateTestPage() {
                     <div className="mb-4">
                       {/* Headings input */}
                       <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Headings (one per line)
+                        Headings
                       </label>
-                      <textarea
-                        rows={3}
-                        value={currentQuestion.headings ? currentQuestion.headings.join('\n') : ''}
-                        onChange={e => {
-                          const headings = e.target.value.split('\n').filter(h => h.trim() !== '');
+                      {(currentQuestion.headings || []).map((heading, idx) => (
+                        <div key={idx} className="flex items-center mb-2">
+                          <input
+                            type="text"
+                            value={heading}
+                            onChange={e => {
+                              const headings = [...(currentQuestion.headings || [])];
+                              headings[idx] = e.target.value;
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                headings,
+                                correctHeadings: prev.correctHeadings && headings.length === prev.correctHeadings.length
+                                  ? prev.correctHeadings
+                                  : Array(headings.length).fill('')
+                              }));
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                            placeholder={`Heading ${idx + 1}`}
+                          />
+                          <button
+                            type="button"
+                            className="ml-2 text-red-500"
+                            onClick={() => {
+                              const headings = [...(currentQuestion.headings || [])];
+                              headings.splice(idx, 1);
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                headings,
+                                correctHeadings: prev.correctHeadings && headings.length === prev.correctHeadings.length
+                                  ? prev.correctHeadings
+                                  : Array(headings.length).fill('')
+                              }));
+                            }}
+                            title="Remove heading"
+                          >✕</button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="mt-2 text-blue-600"
+                        onClick={() => {
                           setCurrentQuestion(prev => ({
                             ...prev,
-                            headings,
-                            // Reset correctHeadings if headings count changes
-                            correctHeadings: prev.correctHeadings && headings.length === prev.correctHeadings.length
-                              ? prev.correctHeadings
-                              : Array(headings.length).fill('')
+                            headings: [...(prev.headings || []), ""]
                           }));
                         }}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Enter each heading on a new line"
-                      />
+                      >
+                        + Add Heading
+                      </button>
 
-                      {/* Paragraphs input */}
                       <label className="block text-sm font-medium text-gray-800 mb-1 mt-4">
-                        Paragraphs (one per line)
+                        Paragraphs
                       </label>
-                      <textarea
-                        rows={4}
-                        value={currentQuestion.paragraphs ? currentQuestion.paragraphs.join('\n') : ''}
-                        onChange={e => {
-                          const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
+                      {(currentQuestion.paragraphs || []).map((para, idx) => (
+                        <div key={idx} className="flex items-center mb-2">
+                          <textarea
+                            rows={2}
+                            value={para}
+                            onChange={e => {
+                              const paragraphs = [...(currentQuestion.paragraphs || [])];
+                              paragraphs[idx] = e.target.value;
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                paragraphs
+                              }));
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
+                            placeholder={`Paragraph ${idx + 1}`}
+                          />
+                          <button
+                            type="button"
+                            className="ml-2 text-red-500"
+                            onClick={() => {
+                              const paragraphs = [...(currentQuestion.paragraphs || [])];
+                              paragraphs.splice(idx, 1);
+                              setCurrentQuestion(prev => ({
+                                ...prev,
+                                paragraphs
+                              }));
+                            }}
+                            title="Remove paragraph"
+                          >✕</button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="mt-2 text-blue-600"
+                        onClick={() => {
                           setCurrentQuestion(prev => ({
                             ...prev,
-                            paragraphs,
-                            // Reset correctHeadings if paragraphs count changes
-                            correctHeadings: prev.correctHeadings && paragraphs.length === prev.correctHeadings.length
-                              ? prev.correctHeadings
-                              : Array(paragraphs.length).fill('')
+                            paragraphs: [...(prev.paragraphs || []), ""]
                           }));
                         }}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                        placeholder="Enter each paragraph on a new line"
-                      />
+                      >
+                        + Add Paragraph
+                      </button>
 
                       {/* Map each paragraph to a heading */}
                       {currentQuestion.paragraphs && currentQuestion.headings && currentQuestion.paragraphs.length > 0 && currentQuestion.headings.length > 0 && (

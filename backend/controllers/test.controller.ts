@@ -435,6 +435,7 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       headings,
       correctHeadings,
       fillBlankAnswers,
+      fillBlankSentence,
       sentenceBeginnings,
       sentenceEndings,
       correctEndings,
@@ -443,6 +444,8 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       wordLimit,
       // Fields for various question types
 
+      summaryWords,
+      summaryBlankAnswers,
       passage,
       paragraphs,
       sentences,
@@ -537,13 +540,19 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       if (diagramAnswers) questionData.diagramAnswers = Array.isArray(diagramAnswers) ? diagramAnswers : JSON.parse(diagramAnswers);
       if (wordLimit) questionData.wordLimit = wordLimit;
 
+      if (summaryWords) questionData.summaryWords = Array.isArray(summaryWords) ? summaryWords : JSON.parse(summaryWords);
+      if (summaryBlankAnswers) questionData.summaryBlankAnswers = Array.isArray(summaryBlankAnswers) ? summaryBlankAnswers : JSON.parse(summaryBlankAnswers);
+      if (paragraphs) questionData.paragraphs = Array.isArray(paragraphs) ? paragraphs : JSON.parse(paragraphs);
+      if (fillBlankSentence) questionData.fillBlankSentence = fillBlankSentence;
+      if (fillBlankAnswers) questionData.fillBlankAnswers = Array.isArray(fillBlankAnswers) ? fillBlankAnswers : JSON.parse(fillBlankAnswers);
+
 
       if (headings) questionData.headings = Array.isArray(headings) ? headings : JSON.parse(headings);
       if (paragraphs) questionData.paragraphs = Array.isArray(paragraphs) ? paragraphs : JSON.parse(paragraphs);
       if (correctHeadings) questionData.correctHeadings = Array.isArray(correctHeadings) ? correctHeadings : JSON.parse(correctHeadings);
 
 
-      
+
 
 
       // If a passage was provided in the request, use it
@@ -609,7 +618,8 @@ const isQuestionTypeValidForModule = (questionType: string, moduleType: string):
     'FILL_BLANK',
     'TRUE_FALSE_NOT_GIVEN',
     'YES_NO_NOT_GIVEN',
-    'TRUE_FALSE'
+    'TRUE_FALSE',
+    'SUMMARY'
   ];
 
   const listeningQuestionTypes = [
@@ -721,18 +731,18 @@ const validateQuestionFields = (questionType: string, questionData: any): boolea
       return !!questionData.correctAnswer;
 
     case 'DIAGRAM_LABELLING':
-      return (!!questionData.questionText && 
-    // typeof questionData.diagramImage === "string" &&
-    Array.isArray(questionData.diagramLabels) &&
-    questionData.diagramLabels.length > 0 &&
-    questionData.diagramLabels.every(
-      (label: any) =>
-        typeof label.x === "number" &&
-        typeof label.y === "number" &&
-        typeof label.text === "string"&&
-        typeof label.id === undefined &&
-        typeof label.correctAnswer ==="string"
-    ))
+      return (!!questionData.questionText &&
+        // typeof questionData.diagramImage === "string" &&
+        Array.isArray(questionData.diagramLabels) &&
+        questionData.diagramLabels.length > 0 &&
+        questionData.diagramLabels.every(
+          (label: any) =>
+            typeof label.x === "number" &&
+            typeof label.y === "number" &&
+            typeof label.text === "string" &&
+            typeof label.id === undefined &&
+            typeof label.correctAnswer === "string"
+        ))
     case 'MAP_LABELLING':
     case 'PROCESS_DIAGRAM':
       return !!questionData.questionImage && !!questionData.correctAnswer;

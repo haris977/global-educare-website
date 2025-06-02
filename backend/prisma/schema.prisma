@@ -80,6 +80,10 @@ model Question {
   cueCard           String?
   passage           String?
 
+  summaryWords        Json?
+  summaryBlankAnswers Json?
+  fillBlankSentence   String?
+
   headings            Json?      // For PARA_HEADINGS
   correctHeadings     Json?      // For PARA_HEADINGS
   fillBlankAnswers    Json?      // For FILL_BLANK
@@ -249,6 +253,7 @@ enum QuestionType {
   NAME_MATCHING
   MAP
   SPEAKING_FOLLOW_UPS
+  SUMMARY
 }
 
 enum AttemptStatus {

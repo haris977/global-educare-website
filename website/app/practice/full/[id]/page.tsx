@@ -10,6 +10,8 @@ import AudioPlayer from '@/components/AudioPlayer';
 
 // Types
 interface Question {
+  summaryWords?: string[];
+  fillBlankSentence: string;
   features: any[];
   statements: any[];
   reuseAllowed: any;
@@ -186,7 +188,9 @@ export default function PracticeTestDetailPage() {
             passage: "İklim değişikliği, gezegenimizin karşı karşıya olduğu en acil sorunlardan biridir. Bilimsel görüş birliği, insan faaliyetlerinin, özellikle fosil yakıtların yakılması ve ormansızlaşmanın, iklim değişikliğinin başlıca nedenleri olduğu yönündedir. Bu faaliyetler, atmosfere sera gazları salarak ısının hapsolmasına ve küresel ısınmaya yol açar.",
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            summaryWords: ["okay", "yeah"],
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q2`,
@@ -195,7 +199,9 @@ export default function PracticeTestDetailPage() {
             order: 2,
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            summaryWords: ["okay", "yeah"],
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q3`,
@@ -204,7 +210,9 @@ export default function PracticeTestDetailPage() {
             order: 3,
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            summaryWords: ["okay", "yeah"],
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q4`,
@@ -213,7 +221,9 @@ export default function PracticeTestDetailPage() {
             order: 4,
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            summaryWords: ["okay", "yeah"],
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q5`,
@@ -222,7 +232,9 @@ export default function PracticeTestDetailPage() {
             order: 5,
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            summaryWords: ["okay", "yeah"],
+            fillBlankSentence: ''
           }
         ];
         break;
@@ -246,7 +258,8 @@ export default function PracticeTestDetailPage() {
             audioFile: "https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3",
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q2`,
@@ -256,7 +269,8 @@ export default function PracticeTestDetailPage() {
             audioFile: "https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3",
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q3`,
@@ -266,7 +280,8 @@ export default function PracticeTestDetailPage() {
             audioFile: "https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3",
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           }
         ];
         break;
@@ -289,7 +304,8 @@ export default function PracticeTestDetailPage() {
             questionImage: "https://miro.medium.com/max/1400/1*3whP7XYRrVDDwY7ddqogTw.png",
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q2`,
@@ -298,7 +314,8 @@ export default function PracticeTestDetailPage() {
             order: 2,
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           }
         ];
         break;
@@ -320,7 +337,8 @@ export default function PracticeTestDetailPage() {
             order: 1,
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q2`,
@@ -330,7 +348,8 @@ export default function PracticeTestDetailPage() {
             cueCard: "Describe a time when you helped someone",
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           },
           {
             id: `${id}-q3`,
@@ -344,7 +363,8 @@ export default function PracticeTestDetailPage() {
             ],
             features: [],
             statements: [],
-            reuseAllowed: undefined
+            reuseAllowed: undefined,
+            fillBlankSentence: ''
           }
         ];
         break;
@@ -843,6 +863,65 @@ export default function PracticeTestDetailPage() {
     );
   };
 
+  function renderDiagramLabelling(question: Question) {
+    // Normalize fields
+    const questionText = question.questionText || question.text || "";
+    let diagramLabels: string[] = [];
+    let diagramAnswers: string[] = [];
+    try {
+      diagramLabels = question.diagramLabels
+        ? (typeof question.diagramLabels === "string"
+          ? JSON.parse(question.diagramLabels)
+          : question.diagramLabels)
+        : [];
+    } catch { diagramLabels = []; }
+    try {
+      diagramAnswers = question.diagramAnswers
+        ? (typeof question.diagramAnswers === "string"
+          ? JSON.parse(question.diagramAnswers)
+          : question.diagramAnswers)
+        : [];
+    } catch { diagramAnswers = []; }
+
+    return (
+      <div className="space-y-4">
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
+        {question.diagramImage && (
+          <div className="mb-4">
+            <img
+              src={question.diagramImage}
+              alt="Diagram for labelling"
+              className="max-w-full h-auto rounded-md border"
+            />
+          </div>
+        )}
+        <div className="space-y-3">
+          <h4 className="font-medium text-gray-900">Label the Diagram</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {diagramLabels.map((label, idx) => (
+              <div key={idx} className="flex items-center space-x-3">
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-medium text-sm">
+                  {label}
+                </span>
+                <input
+                  type="text"
+                  value={responses[`${question.id}-${idx}`] || ""}
+                  onChange={e => handleAnswerChange(`${question.id}-${idx}`, e.target.value)}
+                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  placeholder={`Label for ${label}`}
+                  autoComplete="off"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+
+
   const renderTrueFalse = (question: Question) => {
     // Get normalized field values
     const questionText = question.questionText || question.text;
@@ -930,51 +1009,73 @@ export default function PracticeTestDetailPage() {
 
 
   const renderSummaryCompletion = (question: Question) => {
-    const text = question.text || '';
-    const blanks = (text.match(/_/g) || []).length;
-    return (
-      <div>
-        <div className="mb-2">{text.split('_').map((part, i, arr) => (
-          <span key={i}>
-            {part}
-            {i < arr.length - 1 && (
-              <input
-                type="text"
-                value={responses[`${question.id}-${i}`] || ''}
-                onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-                className="border rounded px-2 py-1 mx-1"
-                placeholder={`Blank ${i + 1}`}
-                style={{ width: 120 }}
-              />
-            )}
-          </span>
-        ))}</div>
-        {question.wordLimit && <div className="text-sm text-gray-600 mb-2">{question.wordLimit}</div>}
-      </div>
-    );
-  };
 
+    console.log("SUMMARY QUESTION DATA", question);
+    const summaryWords: string[] = Array.isArray(question.summaryWords)
+      ? question.summaryWords
+      : (typeof question.summaryWords === "string" && question.summaryWords
+        ? JSON.parse(question.summaryWords)
+        : []);
 
-  const renderDiagramLabelling = (question: Question) => {
-    const labels = question.diagramLabels || [];
+    const paragraphs: string[] = Array.isArray(question.paragraphs)
+      ? question.paragraphs
+      : (typeof question.paragraphs === "string" && question.paragraphs
+        ? JSON.parse(question.paragraphs)
+        : []);
+
+    const fillBlankSentence = question.fillBlankSentence || question.questionText || "";
+
     return (
-      <div>
-        {question.diagramImage && (
-          <img src={question.diagramImage} alt="Diagram" className="mb-4 max-w-xs border rounded" />
-        )}
-        <div className="mb-2">{question.wordLimit && <span className="text-sm text-gray-600">{question.wordLimit}</span>}</div>
-        {labels.map((label, i) => (
-          <div key={i} className="mb-3 flex items-center">
-            <span className="mr-2 font-medium">{label}:</span>
-            <input
-              type="text"
-              value={responses[`${question.id}-${i}`] || ''}
-              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-              className="border rounded px-2 py-1 flex-1"
-              placeholder={`Label for ${label}`}
-            />
+      <div className="space-y-4">
+        {/* Word Bank */}
+        {summaryWords.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2">Word Bank</h4>
+            <div className="flex flex-wrap gap-2">
+              {summaryWords.map((word, idx) => (
+                <span key={idx} className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
+                  {word}
+                </span>
+              ))}
+            </div>
           </div>
-        ))}
+        )}
+
+        {/* Paragraphs */}
+        {paragraphs.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2">Paragraphs</h4>
+            <div className="space-y-2">
+              {paragraphs.map((p, idx) => (
+                <div key={idx} className="bg-white border rounded p-2 text-gray-800">{p}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Summary Sentence with blanks */}
+        {fillBlankSentence && (
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2">Summary</h4>
+            <div className="mb-2">
+              {fillBlankSentence.split("_").map((part, i, arr) => (
+                <span key={i}>
+                  {part}
+                  {i < arr.length - 1 && (
+                    <input
+                      type="text"
+                      value={responses[`${question.id}-summary-${i}`] || ""}
+                      onChange={e => handleAnswerChange(`${question.id}-summary-${i}`, e.target.value)}
+                      className="border-b-2 border-blue-400 px-2 py-1 w-28 mx-1"
+                      placeholder={`Blank`}
+                      autoComplete="off"
+                    />
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1115,35 +1216,35 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderFillBlank = (question: Question) => {
-  const questionText = question.questionText || question.text || "";
-  // Count blanks
-  const blanks = (questionText.match(/_/g) || []).length;
+    const questionText = question.questionText || question.text || "";
+    // Count blanks
+    const blanks = (questionText.match(/_/g) || []).length;
 
-  return (
-    <div className="space-y-6">
-      <div className="p-5 bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-xl shadow-inner">
-        <div className="text-base font-semibold text-blue-800 mb-2">Fill in the blank</div>
-        <div className="text-lg text-gray-900 mb-4">
-          {questionText.split("_").map((part, idx, arr) => (
-            <span key={idx}>
-              {part}
-              {idx < arr.length - 1 && (
-                <input
-                  type="text"
-                  value={responses[`${question.id}-${idx}`] || ""}
-                  onChange={e => handleAnswerChange(`${question.id}-${idx}`, e.target.value)}
-                  className="inline-block w-32 mx-2 px-2 py-1 border-b-2 border-blue-400 bg-transparent text-blue-900 font-medium focus:outline-none focus:border-blue-600 transition"
-                  placeholder={`Blank ${idx + 1}`}
-                  autoComplete="off"
-                />
-              )}
-            </span>
-          ))}
+    return (
+      <div className="space-y-6">
+        <div className="p-5 bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-xl shadow-inner">
+          <div className="text-base font-semibold text-blue-800 mb-2">Fill in the blank</div>
+          <div className="text-lg text-gray-900 mb-4">
+            {questionText.split("_").map((part, idx, arr) => (
+              <span key={idx}>
+                {part}
+                {idx < arr.length - 1 && (
+                  <input
+                    type="text"
+                    value={responses[`${question.id}-${idx}`] || ""}
+                    onChange={e => handleAnswerChange(`${question.id}-${idx}`, e.target.value)}
+                    className="inline-block w-32 mx-2 px-2 py-1 border-b-2 border-blue-400 bg-transparent text-blue-900 font-medium focus:outline-none focus:border-blue-600 transition"
+                    placeholder={`Blank ${idx + 1}`}
+                    autoComplete="off"
+                  />
+                )}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   const renderMapQuestion = (question: Question) => {
     // Get normalized field values
@@ -1718,5 +1819,7 @@ export default function PracticeTestDetailPage() {
         </div>
       </div>
     </div>
-  );
-} 
+
+
+  )
+}
