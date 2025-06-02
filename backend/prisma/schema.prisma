@@ -83,6 +83,7 @@ model Question {
   summaryWords        Json?
   summaryBlankAnswers Json?
   fillBlankSentence   String?
+  completeSentenceAnswers Json? 
 
   headings            Json?      // For PARA_HEADINGS
   correctHeadings     Json?      // For PARA_HEADINGS

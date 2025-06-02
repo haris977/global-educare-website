@@ -150,6 +150,9 @@ export const getTestById = async (req: Request, res: Response) => {
                 followUpQuestions: true,
                 bandDescriptors: true,
                 sampleAnswer: true,
+                headings: true,           // <-- Add this
+                correctHeadings: true,    // <-- Add this
+                fillBlankAnswers: true, 
               },
               orderBy: {
                 order: 'asc'
@@ -193,7 +196,7 @@ export const getTestById = async (req: Request, res: Response) => {
         return section;
       })
     };
-
+    console.log("Processed test with sections and questions:", JSON.stringify(processedTest, null, 2));
     return sendSuccessResponse(res, processedTest, 'Test retrieved successfully');
   } catch (error) {
     return sendErrorResponse(res, 'Error retrieving test', 500, error);
