@@ -289,10 +289,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         setError("Please provide either a passage or sentences");
         return;
       }
-      if (!currentQuestion.correctAnswer) {
-        setError("Please provide the correct sentence completion");
-        return;
-      }
+      
     } else if (currentQuestion.questionType === "NAME_MATCHING") {
       if (Object.keys(currentQuestion.matchingPairs).length === 0) {
         setError("Please provide at least one matching pair");
