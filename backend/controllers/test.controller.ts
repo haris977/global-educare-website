@@ -135,7 +135,11 @@ export const getTestById = async (req: Request, res: Response) => {
                 questionType: true,
                 questionImage: true,
                 audioFile: true,
+                sentenceBeginnings: true,
+                sentenceEndings: true,
+                correctHeadings: true,
                 additionalInfo: true,
+                completeSentenceAnswers : true,
                 order: true,
                 marks: true,
                 options: true,
@@ -150,8 +154,7 @@ export const getTestById = async (req: Request, res: Response) => {
                 followUpQuestions: true,
                 bandDescriptors: true,
                 sampleAnswer: true,
-                headings: true,           // <-- Add this
-                correctHeadings: true,    // <-- Add this
+                headings: true,           
                 fillBlankAnswers: true, 
               },
               orderBy: {
@@ -446,11 +449,11 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       diagramAnswers,
       wordLimit,
       // Fields for various question types
-
       summaryWords,
       summaryBlankAnswers,
       passage,
       paragraphs,
+      
       sentences,
       matchingPairs,
       mapLabels,
@@ -458,7 +461,8 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       speakingPrompts,
       followUpQuestions,
       bandDescriptors,
-      sampleAnswer
+      sampleAnswer,
+      completeSentenceAnswers // <-- Added this line
     } = req.body;
 
     console.log("Received question creation request for sectionId:", sectionId);
@@ -542,6 +546,11 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       if (diagramImage) questionData.diagramImage = diagramImage;
       if (diagramAnswers) questionData.diagramAnswers = Array.isArray(diagramAnswers) ? diagramAnswers : JSON.parse(diagramAnswers);
       if (wordLimit) questionData.wordLimit = wordLimit;
+
+      if (completeSentenceAnswers) questionData.completeSentenceAnswers = Array.isArray(completeSentenceAnswers) ? completeSentenceAnswers : JSON.parse(completeSentenceAnswers);
+
+      if (sentences) questionData.sentences = Array.isArray(sentences) ? sentences : JSON.parse(sentences);
+
 
       if (summaryWords) questionData.summaryWords = Array.isArray(summaryWords) ? summaryWords : JSON.parse(summaryWords);
       if (summaryBlankAnswers) questionData.summaryBlankAnswers = Array.isArray(summaryBlankAnswers) ? summaryBlankAnswers : JSON.parse(summaryBlankAnswers);
@@ -684,10 +693,14 @@ const validateQuestionFields = (questionType: string, questionData: any): boolea
       );
 
     case 'COMPLETE_SENTENCE':
-      return !!questionData.sentences && !!questionData.correctAnswer;
+      return !!questionData.sentences && Array.isArray(questionData.sentences) && questionData.sentences.length > 0 &&
+    Array.isArray(questionData.completeSentenceAnswers) && questionData.completeSentenceAnswers.length > 0;
 
     case 'NAME_MATCHING':
-      return !!questionData.matchingPairs;
+      return (
+      Array.isArray(questionData.sentenceBeginnings) && questionData.sentenceBeginnings.length > 0 &&
+    Array.isArray(questionData.sentenceEndings) && questionData.sentenceEndings.length > 0
+  );
 
     case 'FILL_BLANK':
       return !!questionData.questionText && Array.isArray(questionData.fillBlankAnswers) && questionData.fillBlankAnswers.length > 0;
