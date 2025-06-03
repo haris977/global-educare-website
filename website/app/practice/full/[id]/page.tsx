@@ -1082,32 +1082,61 @@ export default function PracticeTestDetailPage() {
 
 
   const renderSentenceEndingsMatching = (question: Question) => {
-    const beginnings = question.sentenceBeginnings || [];
-    const endings = question.sentenceEndings || [];
-    return (
+  // Normalize beginnings and endings
+  const beginnings: string[] = Array.isArray(question.sentenceBeginnings)
+    ? question.sentenceBeginnings
+    : (typeof question.sentenceBeginnings === "string" && question.sentenceBeginnings
+        ? JSON.parse(question.sentenceBeginnings)
+        : []);
+  const endings: string[] = Array.isArray(question.sentenceEndings)
+    ? question.sentenceEndings
+    : (typeof question.sentenceEndings === "string" && question.sentenceEndings
+        ? JSON.parse(question.sentenceEndings)
+        : []);
+
+  return (
+    <div className="space-y-6">
+      {/* Endings List */}
       <div>
-        <h4 className="font-medium mb-2">Sentence Endings</h4>
-        <ul className="mb-4">{endings.map((e, i) => <li key={i}>{String.fromCharCode(65 + i)}. {e}</li>)}</ul>
-        {beginnings.map((b, i) => (
-          <div key={i} className="mb-3">
-            <div className="mb-1">{b} ...</div>
-            <select
-              value={responses[`${question.id}-${i}`] || ''}
-              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-              className="border rounded px-2 py-1"
-            >
-              <option value="">Select ending</option>
-              {endings.map((_, idx) => (
-                <option key={idx} value={String.fromCharCode(65 + idx)}>
-                  {String.fromCharCode(65 + idx)}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+        <h4 className="font-medium text-gray-900 mb-2">Sentence Endings</h4>
+        <ul className="mb-4 flex flex-wrap gap-4">
+          {endings.map((ending, idx) => (
+            <li key={idx} className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
+                {String.fromCharCode(65 + idx)}
+              </span>
+              <span className="text-gray-900">{ending}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-    );
-  };
+
+      {/* Beginnings with dropdowns */}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-2">Sentence Beginnings</h4>
+        <div className="space-y-4">
+          {beginnings.map((begin, idx) => (
+            <div key={idx} className="border rounded p-3 flex flex-col gap-2">
+              <div className="text-gray-800 mb-2">{begin} ...</div>
+              <select
+                value={responses[`${question.id}-beginning-${idx}`] || ""}
+                onChange={e => handleAnswerChange(`${question.id}-beginning-${idx}`, e.target.value)}
+                className="border rounded px-2 py-1 w-40"
+              >
+                <option value="">Select ending</option>
+                {endings.map((_, eIdx) => (
+                  <option key={eIdx} value={String.fromCharCode(65 + eIdx)}>
+                    {String.fromCharCode(65 + eIdx)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 const renderParaHeadings = (question: Question) => {

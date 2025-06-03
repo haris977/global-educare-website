@@ -226,10 +226,10 @@ export default function CreateTestPage() {
     sentenceBeginnings: [],
     sentenceEndings: [],
     sentenceCompletionAnswers: [],
-    completeSentenceAnswers: [], 
+    completeSentenceAnswers: [],
     headings: [],
     correctHeadings: [],
-    fillBlankAnswers: []
+    fillBlankAnswers: [],
   });
 
   // Handle basic form field changes
@@ -413,8 +413,7 @@ export default function CreateTestPage() {
       sentenceBeginnings: [],
       sentenceEndings: [],
       sentenceCompletionAnswers: [],
-      completeSentenceAnswers: [], // <-- Add this line
-      wordLimit: "",
+      completeSentenceAnswers: [],
       headings: [],
       correctHeadings: [],
       fillBlankAnswers: []
@@ -536,6 +535,8 @@ export default function CreateTestPage() {
           }
           else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
             questionData.sentences = question.sentences;
+              questionData.completeSentenceAnswers = question.completeSentenceAnswers;
+
           }
 
           else if (question.type === "SUMMARY") {
@@ -549,8 +550,19 @@ export default function CreateTestPage() {
           else if (question.type === "FILL_BLANK") {
             questionData.fillBlankAnswers = question.fillBlankAnswers;
           }
-          else if (question.type === "NAME_MATCHING" && question.matchingPairs) {
-            questionData.matchingPairs = question.matchingPairs;
+          else if (question.type === "SENTENCE_ENDINGS_MATCHING" && question.sentenceBeginnings && question.sentenceEndings) {
+            questionData.sentenceBeginnings = question.sentenceBeginnings;
+            questionData.sentenceEndings = question.sentenceEndings;
+            questionData.correctHeadings = question.correctHeadings;
+          }
+          else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
+            questionData.sentences = question.sentences;
+            questionData.completeSentenceAnswers = question.completeSentenceAnswers;
+          }
+          else if (question.type === "NAME_MATCHING" && question.sentenceBeginnings && question.sentenceEndings) {
+            questionData.sentenceBeginnings = question.sentenceBeginnings;
+            questionData.sentenceEndings = question.sentenceEndings;
+            questionData.correctHeadings = question.correctHeadings;
           } else if (question.type === "MAP" && question.mapLabels) {
             questionData.mapLabels = question.mapLabels;
           } else if (question.type === "SPEAKING_TASK_2" && question.cueCard) {
