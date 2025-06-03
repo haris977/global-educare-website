@@ -1446,127 +1446,112 @@ const renderParaHeadings = (question: Question) => {
     );
   };
 
-  const renderCompleteSentence = (question: Question) => {
-    // Get normalized field values
-    const questionText = question.questionText || question.text;
-
-    let sentences;
-    try {
-      if (question.sentences) {
-        if (typeof question.sentences === 'string') {
-          sentences = question.sentences.split('\n');
-          // If there's no newline, try to parse it as JSON array
-          if (sentences.length === 1) {
-            try {
-              const parsed = JSON.parse(question.sentences);
-              if (Array.isArray(parsed)) {
-                sentences = parsed;
-              }
-            } catch (e) {
-              // Keep as is if parsing fails
-            }
-          }
-        } else if (Array.isArray(question.sentences)) {
-          sentences = question.sentences;
-        }
-      } else {
-        sentences = [];
+ const renderCompleteSentence = (question: Question) => {
+  // Normalize sentences
+  let sentences: string[] = [];
+  try {
+    if (question.sentences) {
+      if (typeof question.sentences === 'string') {
+        sentences = JSON.parse(question.sentences);
+      } else if (Array.isArray(question.sentences)) {
+        sentences = question.sentences;
       }
-    } catch (error) {
-      console.error("Error processing sentences:", error);
-      sentences = [];
     }
+  } catch {
+    sentences = [];
+  }
 
-    return (
+  return (
+    <div className="space-y-6">
+      <div className="font-medium text-gray-900 mb-4">{question.questionText || question.text}</div>
       <div className="space-y-4">
-        {question.passage && (
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
-            <p className="text-gray-800 whitespace-pre-line">{question.passage}</p>
-          </div>
-        )}
+        {sentences.map((sentence, sIdx) => {
+          // Split sentence by blanks
+          const parts = sentence.split("_");
+          const blankCount = parts.length - 1;
+          return (
+            <div key={sIdx} className="border p-4 rounded-md bg-white flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {parts.map((part, idx) => (
+                  <span key={idx} className="flex items-center">
+                    <span>{part}</span>
+                    {idx < blankCount && (
+                      <input
+                        type="text"
+                        value={responses[`${question.id}-${sIdx}-blank-${idx}`] || ""}
+                        onChange={e => handleAnswerChange(`${question.id}-${sIdx}-blank-${idx}`, e.target.value)}
+                        className="mx-1 px-2 py-1 border-b-2 border-blue-400 bg-transparent text-blue-900 font-medium focus:outline-none focus:border-blue-600 transition w-32"
+                        placeholder={`Blank ${idx + 1}`}
+                        autoComplete="off"
+                      />
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
-        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
+  const renderNameMatching = (question: Question) => {
+  // Normalize names and features
+  const names: string[] = Array.isArray(question.sentenceBeginnings)
+    ? question.sentenceBeginnings
+    : (typeof question.sentenceBeginnings === "string" && question.sentenceBeginnings
+        ? JSON.parse(question.sentenceBeginnings)
+        : []);
+  const features: string[] = Array.isArray(question.sentenceEndings)
+    ? question.sentenceEndings
+    : (typeof question.sentenceEndings === "string" && question.sentenceEndings
+        ? JSON.parse(question.sentenceEndings)
+        : []);
 
+  return (
+    <div className="space-y-6">
+      {/* Names List */}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-2">Names</h4>
+        <ul className="mb-4 flex flex-wrap gap-4">
+          {names.map((name, idx) => (
+            <li key={idx} className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
+                {String.fromCharCode(65 + idx)}
+              </span>
+              <span className="text-gray-900">{name}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Features with dropdowns */}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-2">Features</h4>
         <div className="space-y-4">
-          {sentences && sentences.map((sentence: string, index: number) => (
-            <div key={index} className="border p-3 rounded-md">
-              <p className="text-gray-800 mb-2">{sentence.replace(/___+/g, '___________')}</p>
-              <input
-                type="text"
-                value={responses[`${question.id}-${index}`] || ''}
-                onChange={(e) => handleAnswerChange(`${question.id}-${index}`, e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                placeholder="Complete the sentence"
-              />
+          {features.map((feature, idx) => (
+            <div key={idx} className="border rounded p-3 flex flex-col gap-2">
+              <div className="text-gray-800 mb-2">{feature}</div>
+              <select
+                value={responses[`${question.id}-feature-${idx}`] || ""}
+                onChange={e => handleAnswerChange(`${question.id}-feature-${idx}`, e.target.value)}
+                className="border rounded px-2 py-1 w-40"
+              >
+                <option value="">Select name</option>
+                {names.map((_, nIdx) => (
+                  <option key={nIdx} value={String.fromCharCode(65 + nIdx)}>
+                    {String.fromCharCode(65 + nIdx)}
+                  </option>
+                ))}
+              </select>
             </div>
           ))}
         </div>
       </div>
-    );
-  };
-
-  const renderNameMatching = (question: Question) => {
-    // Get normalized field values
-    const questionText = question.questionText || question.text;
-
-    let matchingPairs;
-    try {
-      matchingPairs = question.matchingPairs ? (typeof question.matchingPairs === 'string' ? JSON.parse(question.matchingPairs) : question.matchingPairs) : {};
-    } catch (error) {
-      console.error("Error parsing matching pairs:", error);
-      matchingPairs = {};
-    }
-
-    const names = Object.keys(matchingPairs);
-    const statements = Object.values(matchingPairs);
-
-    return (
-      <div className="space-y-4">
-        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Names</h4>
-            <div className="space-y-2 bg-gray-50 p-4 rounded-md">
-              {names.map((name, index) => (
-                <div key={index} className="flex items-center">
-                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-medium text-sm mr-3">
-                    {index + 1}
-                  </span>
-                  <span className="text-gray-800">{name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Statements</h4>
-            <div className="space-y-4">
-              {statements.map((statement, index) => (
-                <div key={index} className="border p-3 rounded-md">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-700">Statement {String.fromCharCode(65 + index)}</span>
-                    <select
-                      value={responses[`${question.id}-${index}`] || ''}
-                      onChange={(e) => handleAnswerChange(`${question.id}-${index}`, e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="">Match with name</option>
-                      {names.map((_, nameIndex) => (
-                        <option key={nameIndex} value={nameIndex + 1}>{nameIndex + 1}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <p className="text-sm text-gray-800">{String(statement)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    </div>
+  );
+};
 
   const renderSpeakingTask = (question: Question) => {
     // Get normalized field values
