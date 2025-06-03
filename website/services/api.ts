@@ -901,12 +901,60 @@ export const TestsAPI = {
           attemptData.status = 'COMPLETED';
           attemptData.completedAt = new Date().toISOString();
           
-          // Calculate a score between 70-99%
-          const percentageScore = Math.floor(Math.random() * 30) + 70;
+          // Prepare proper section results based on actual responses
+          const responses = attemptData.responses || {};
+          const questions = (attemptData.test?.sections || []).flatMap(section => section.questions || []);
+          
+          let correctAnswers = 0;
+          let totalQuestions = questions.length;
+          let totalScore = 0;
+          let maxPossibleScore = 0;
+          
+          const sectionResults = (attemptData.test?.sections || []).map(section => {
+            const sectionQuestions = questions.filter(q => q.sectionId === section.id);
+            let sectionScore = 0;
+            let sectionMaxScore = 0;
+            
+            const questionResults = sectionQuestions.map(question => {
+              const userAnswer = responses[question.id] || '';
+              const correctAnswer = question.correctAnswer || '';
+              const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+              const questionScore = isCorrect ? question.marks : 0;
+              
+              if (isCorrect) correctAnswers++;
+              sectionScore += questionScore;
+              sectionMaxScore += question.marks;
+              
+              return {
+                questionId: question.id,
+                questionText: question.questionText,
+                userAnswer,
+                correctAnswer,
+                isCorrect,
+                score: questionScore,
+                maxScore: question.marks
+              };
+            });
+            
+            totalScore += sectionScore;
+            maxPossibleScore += sectionMaxScore;
+            
+            return {
+              sectionId: section.id,
+              title: section.title,
+              score: sectionScore,
+              maxScore: sectionMaxScore,
+              questionResults
+            };
+          });
+          
+          // Calculate percentage score based on actual performance
+          const percentageScore = maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+          
           attemptData.percentageScore = percentageScore;
-          attemptData.score = percentageScore;
-          attemptData.totalScore = Math.floor((percentageScore / 100) * 40);
-          attemptData.maxScore = 40;
+          attemptData.score = totalScore;
+          attemptData.maxScore = maxPossibleScore;
+          attemptData.totalScore = totalScore;
           
           // Add IELTS band score
           attemptData.bandScore = calculateIeltsBand(percentageScore);
@@ -918,22 +966,28 @@ export const TestsAPI = {
             testId: attemptData.testId,
             userId: ANONYMOUS_USER_ID,
             status: 'COMPLETED',
-            score: attemptData.totalScore,
-            maxScore: 40,
-            percentageScore: percentageScore,
-            feedback: "This is an anonymous test attempt. In a real test, you would receive detailed feedback from our experts.",
+            score: totalScore,
+            maxScore: maxPossibleScore,
+            percentageScore,
+            feedback: `You answered ${correctAnswers} out of ${totalQuestions} questions correctly. Your IELTS band score is ${attemptData.bandScore?.toFixed(1) || calculateIeltsBand(totalScore / maxPossibleScore * 100).toFixed(1)}.`,
             startedAt: attemptData.startedAt,
             completedAt: attemptData.completedAt,
-            test: attemptData.test || { title: "Test", description: "Description", moduleType: "MODULE", difficulty: "MEDIUM" }
+            sectionResults,
+            test: attemptData.test || { 
+              title: "Test", 
+              description: "Description", 
+              moduleType: "MODULE", 
+              difficulty: "MEDIUM" 
+            }
           };
           
           // Save both the attempt and result to localStorage
           localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
-          localStorage.setItem(`testResult-${attemptId}`, JSON.stringify(resultData));
+          localStorage.setItem(`testResult-${resultId}`, JSON.stringify(resultData));
           
           return {
             success: true,
-            message: "Test submitted (anonymous mode)",
+            message: "Test submitted and evaluated based on your answers",
             data: attemptData
           };
         }
@@ -955,11 +1009,59 @@ export const TestsAPI = {
           attemptData.status = 'COMPLETED';
           attemptData.completedAt = new Date().toISOString();
           
-          // Calculate a score between 70-99%
-          const percentageScore = Math.floor(Math.random() * 30) + 70;
+          // Prepare proper section results based on actual responses
+          const responses = attemptData.responses || {};
+          const questions = (attemptData.test?.sections || []).flatMap(section => section.questions || []);
+          
+          let correctAnswers = 0;
+          let totalQuestions = questions.length;
+          let totalScore = 0;
+          let maxPossibleScore = 0;
+          
+          const sectionResults = (attemptData.test?.sections || []).map(section => {
+            const sectionQuestions = questions.filter(q => q.sectionId === section.id);
+            let sectionScore = 0;
+            let sectionMaxScore = 0;
+            
+            const questionResults = sectionQuestions.map(question => {
+              const userAnswer = responses[question.id] || '';
+              const correctAnswer = question.correctAnswer || '';
+              const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+              const questionScore = isCorrect ? question.marks : 0;
+              
+              if (isCorrect) correctAnswers++;
+              sectionScore += questionScore;
+              sectionMaxScore += question.marks;
+              
+              return {
+                questionId: question.id,
+                questionText: question.questionText,
+                userAnswer,
+                correctAnswer,
+                isCorrect,
+                score: questionScore,
+                maxScore: question.marks
+              };
+            });
+            
+            totalScore += sectionScore;
+            maxPossibleScore += sectionMaxScore;
+            
+            return {
+              sectionId: section.id,
+              title: section.title,
+              score: sectionScore,
+              maxScore: sectionMaxScore,
+              questionResults
+            };
+          });
+          
+          // Calculate percentage score based on actual performance
+          const percentageScore = maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+          
           attemptData.percentageScore = percentageScore;
-          attemptData.totalScore = Math.floor((percentageScore / 100) * 40);
-          attemptData.maxScore = 40;
+          attemptData.totalScore = totalScore;
+          attemptData.maxScore = maxPossibleScore;
           
           // Add IELTS band score
           attemptData.bandScore = calculateIeltsBand(percentageScore);
@@ -968,7 +1070,7 @@ export const TestsAPI = {
           
           return {
             success: true,
-            message: "Test submitted (offline mode)",
+            message: "Test submitted and evaluated based on your answers",
             data: attemptData
           };
         }
@@ -1024,22 +1126,66 @@ export const TestsAPI = {
             localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
           }
           
-          // Prepare mock section results for the result display
-          const mockSectionResults = createMockSectionResults(attemptData);
+          // Prepare proper section results based on actual responses
+          const responses = attemptData.responses || {};
+          const questions = (attemptData.test?.sections || []).flatMap(section => section.questions || []);
+          
+          let correctAnswers = 0;
+          let totalQuestions = questions.length;
+          let totalScore = 0;
+          let maxPossibleScore = 0;
+          
+          const sectionResults = (attemptData.test?.sections || []).map(section => {
+            const sectionQuestions = questions.filter(q => q.sectionId === section.id);
+            let sectionScore = 0;
+            let sectionMaxScore = 0;
+            
+            const questionResults = sectionQuestions.map(question => {
+              const userAnswer = responses[question.id] || '';
+              const correctAnswer = question.correctAnswer || '';
+              const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+              const questionScore = isCorrect ? question.marks : 0;
+              
+              if (isCorrect) correctAnswers++;
+              sectionScore += questionScore;
+              sectionMaxScore += question.marks;
+              
+              return {
+                questionId: question.id,
+                questionText: question.questionText,
+                userAnswer,
+                correctAnswer,
+                isCorrect,
+                score: questionScore,
+                maxScore: question.marks
+              };
+            });
+            
+            totalScore += sectionScore;
+            maxPossibleScore += sectionMaxScore;
+            
+            return {
+              sectionId: section.id,
+              title: section.title,
+              score: sectionScore,
+              maxScore: sectionMaxScore,
+              questionResults
+            };
+          });
           
           const resultData = {
             id: `result-${attemptId}`,
             testId: attemptData.testId,
             userId: ANONYMOUS_USER_ID,
             status: 'COMPLETED',
-            score: attemptData.totalScore || Math.floor((attemptData.percentageScore / 100) * 40),
-            maxScore: attemptData.maxScore || 40,
+            score: totalScore,
+            maxScore: maxPossibleScore,
             percentageScore: attemptData.percentageScore,
             bandScore: attemptData.bandScore,
-            feedback: "This is an anonymous test attempt with automatically generated results.",
+            feedback: `You answered ${correctAnswers} out of ${totalQuestions} questions correctly. Your IELTS band score is ${attemptData.bandScore?.toFixed(1) || calculateIeltsBand(totalScore / maxPossibleScore * 100).toFixed(1)}.`,
             startedAt: attemptData.startedAt,
             completedAt: attemptData.completedAt || new Date().toISOString(),
-            sectionResults: mockSectionResults,
+            sectionResults,
             test: attemptData.test || { 
               title: "Test", 
               description: "Description", 
