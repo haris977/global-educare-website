@@ -779,6 +779,8 @@ export default function PracticeTestDetailPage() {
       case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
         return renderTrueFalseNotGiven(question);
+      case 'COMPLETE_SENTENCE': 
+        return renderCompleteSentence(question);
       case 'NAME_MATCHING':
         return renderNameMatching(question);
       case 'SPEAKING_TASK':

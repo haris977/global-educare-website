@@ -97,7 +97,7 @@ model Question {
   sampleAnswer      String?
   speakingPrompts   Json?
   paragraphs        Json?
-  sentences         String?
+  sentences         Json?
   csentences        Json?
   followUpQuestions String?
   matchingPairs     String?
