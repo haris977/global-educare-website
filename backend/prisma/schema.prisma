@@ -85,6 +85,8 @@ model Question {
   fillBlankSentence   String?
   completeSentenceAnswers Json? 
 
+  tableData           Json?
+
   headings            Json?      // For PARA_HEADINGS
   correctHeadings     Json?      // For PARA_HEADINGS
   fillBlankAnswers    Json?      // For FILL_BLANK

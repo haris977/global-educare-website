@@ -18,6 +18,7 @@ type QuestionType =
   | "TRUE_FALSE_NOT_GIVEN"
   | "YES_NO_NOT_GIVEN"
   | "MAP"
+  | "TABLE_COMPLETION"
   | "SPEAKING_TASK_1"
   | "SPEAKING_TASK_2"
   | "SPEAKING_TASK_3"
@@ -27,6 +28,7 @@ type QuestionType =
   | "DIAGRAM_LABELLING";
 
 interface Question {
+  tableData?: TableData;
   completeSentenceAnswers: any;
   diagramImage?: string;
   diagramLabels?: {
@@ -66,6 +68,22 @@ interface Question {
   summaryWords?: string[];
   summaryBlankAnswers?: string[];
 }
+
+interface TableCell {
+  content: string;
+  isBlank: boolean;
+  correctAnswer: string;
+}
+interface TableRow {
+  id: number;
+  cells: TableCell[];
+}
+interface TableData {
+  headers: string[];
+  rows: TableRow[];
+}
+
+
 
 interface Section {
   id: string;
@@ -142,7 +160,9 @@ export default function CreateTestPage() {
           "SENTENCE_ENDINGS_MATCHING",
           "COMPLETE_SENTENCE",
           "SUMMARY",
-          "DIAGRAM_LABELLING"
+          "DIAGRAM_LABELLING",
+          "TABLE_COMPLETION"
+
         ];
       case "LISTENING":
         return [
@@ -535,7 +555,7 @@ export default function CreateTestPage() {
           }
           else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
             questionData.sentences = question.sentences;
-              questionData.completeSentenceAnswers = question.completeSentenceAnswers;
+            questionData.completeSentenceAnswers = question.completeSentenceAnswers;
 
           }
 
@@ -572,6 +592,9 @@ export default function CreateTestPage() {
           } else if (question.type === "SPEAKING_FOLLOW_UPS" && question.followUpQuestions) {
             questionData.followUpQuestions = question.followUpQuestions;
           }
+          else if (question.type === "TABLE_COMPLETION" && question.tableData) {
+  questionData.tableData = question.tableData;
+}
 
           await api.Tests.createQuestion(sectionId, questionData);
         }
@@ -996,6 +1019,252 @@ export default function CreateTestPage() {
                     </div>
                   )}
 
+                  {currentQuestion.type === "TABLE_COMPLETION" && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Table Completion Title
+                      </label>
+                      <input
+                        type="text"
+                        value={""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, title: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-2"
+                        placeholder="e.g., Early methods of producing flat glass"
+                      />
+
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Instructions
+                      </label>
+                      <input
+                        type="text"
+                        value={ ""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, instructions: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-2"
+                        placeholder="Complete the table and diagram below."
+                      />
+
+                      <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Word Limit Instruction
+                      </label>
+                      <input
+                        type="text"
+                        value={currentQuestion.wordLimit || ""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-4"
+                        placeholder="NO MORE THAN TWO WORDS"
+                      />
+
+                      {/* Table Builder */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium text-gray-800">Table Structure</span>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  tableData: {
+                                    ...prev.tableData,
+                                    headers: [...(prev.tableData?.headers || []), 'New Column'],
+                                    rows: (prev.tableData?.rows || []).map(row => ({
+                                      ...row,
+                                      cells: [...row.cells, { content: '', isBlank: false, correctAnswer: '' }]
+                                    }))
+                                  }
+                                }));
+                              }}
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                            >+ Add Column</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const headers = currentQuestion.tableData?.headers || [];
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  tableData: {
+                                    ...prev.tableData,
+                                    rows: [
+                                      ...(prev.tableData?.rows || []),
+                                      {
+                                        id: Date.now(),
+                                        cells: headers.map(() => ({ content: '', isBlank: false, correctAnswer: '' }))
+                                      }
+                                    ]
+                                  }
+                                }));
+                              }}
+                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                            >+ Add Row</button>
+                          </div>
+                        </div>
+                        {/* Table Headers */}
+                        <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `repeat(${currentQuestion.tableData?.headers?.length || 1}, 1fr) auto` }}>
+                          {(currentQuestion.tableData?.headers || []).map((header, idx) => (
+                            <div key={idx} className="flex items-center">
+                              <input
+                                type="text"
+                                value={header}
+                                onChange={e => {
+                                  setCurrentQuestion(prev => ({
+                                    ...prev,
+                                    tableData: {
+                                      ...prev.tableData,
+                                      headers: prev.tableData.headers.map((h, i) => i === idx ? e.target.value : h),
+                                      rows: prev.tableData.rows
+                                    }
+                                  }));
+                                }}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                placeholder={`Header ${idx + 1}`}
+                              />
+                            </div>
+                          ))}
+                          <div>
+                            {currentQuestion.tableData?.headers?.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCurrentQuestion(prev => ({
+                                    ...prev,
+                                    tableData: {
+                                      headers: prev.tableData.headers.filter((_, i) => i !== prev.tableData.headers.length - 1),
+                                      rows: prev.tableData.rows.map(row => ({
+                                        ...row,
+                                        cells: row.cells.filter((_, i) => i !== prev.tableData.headers.length - 1)
+                                      }))
+                                    }
+                                  }));
+                                }}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                title="Remove last column"
+                              >Remove</button>
+                            )}
+                          </div>
+                        </div>
+                        {/* Table Rows */}
+                        <div className="space-y-4">
+                          {(currentQuestion.tableData?.rows || []).map((row, rowIdx) => (
+                            <div key={row.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-gray-700">Row {rowIdx + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCurrentQuestion(prev => ({
+                                      ...prev,
+                                      tableData: {
+                                        ...prev.tableData,
+                                        rows: prev.tableData.rows.filter((_, idx) => idx !== rowIdx)
+                                      }
+                                    }));
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-1"
+                                  title="Remove row"
+                                >Remove</button>
+                              </div>
+                              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${row.cells.length}, 1fr)` }}>
+                                {row.cells.map((cell, cellIdx) => (
+                                  <div key={cellIdx} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <label className="text-xs font-medium text-gray-600">
+                                        {currentQuestion.tableData.headers[cellIdx]}
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setCurrentQuestion(prev => ({
+                                            ...prev,
+                                            tableData: {
+                                              ...prev.tableData,
+                                              rows: prev.tableData.rows.map((r, rIdx) =>
+                                                rIdx === rowIdx
+                                                  ? {
+                                                    ...r,
+                                                    cells: r.cells.map((c, cIdx) =>
+                                                      cIdx === cellIdx ? { ...c, isBlank: !c.isBlank } : c
+                                                    )
+                                                  }
+                                                  : r
+                                              )
+                                            }
+                                          }));
+                                        }}
+                                        className={`text-xs px-2 py-1 rounded ${cell.isBlank
+                                            ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                                            : 'bg-gray-100 text-gray-600 border border-gray-300'
+                                          }`}
+                                      >
+                                        {cell.isBlank ? 'Has Blank' : 'No Blank'}
+                                      </button>
+                                    </div>
+                                    <textarea
+                                      value={cell.content}
+                                      onChange={e => {
+                                        setCurrentQuestion(prev => ({
+                                          ...prev,
+                                          tableData: {
+                                            ...prev.tableData,
+                                            rows: prev.tableData.rows.map((r, rIdx) =>
+                                              rIdx === rowIdx
+                                                ? {
+                                                  ...r,
+                                                  cells: r.cells.map((c, cIdx) =>
+                                                    cIdx === cellIdx ? { ...c, content: e.target.value } : c
+                                                  )
+                                                }
+                                                : r
+                                            )
+                                          }
+                                        }));
+                                      }}
+                                      className={`w-full px-2 py-1 border rounded text-sm resize-none ${cell.isBlank
+                                          ? 'border-orange-300 bg-orange-50 focus:ring-orange-500 focus:border-orange-500'
+                                          : 'border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500'
+                                        }`}
+                                      rows={2}
+                                      placeholder={cell.isBlank ? "Enter content with blanks" : "Enter cell content"}
+                                    />
+                                    {cell.isBlank && (
+                                      <div>
+                                        <label className="block text-xs font-medium text-orange-700 mb-1">
+                                          Correct Answer(s) for this cell
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={cell.correctAnswer}
+                                          onChange={e => {
+                                            setCurrentQuestion(prev => ({
+                                              ...prev,
+                                              tableData: {
+                                                ...prev.tableData,
+                                                rows: prev.tableData.rows.map((r, rIdx) =>
+                                                  rIdx === rowIdx
+                                                    ? {
+                                                      ...r,
+                                                      cells: r.cells.map((c, cIdx) =>
+                                                        cIdx === cellIdx ? { ...c, correctAnswer: e.target.value } : c
+                                                      )
+                                                    }
+                                                    : r
+                                                )
+                                              }
+                                            }));
+                                          }}
+                                          className="w-full px-2 py-1 border border-orange-300 rounded text-sm bg-orange-50 focus:ring-orange-500 focus:border-orange-500"
+                                          placeholder="Enter correct answers (comma separated if multiple)"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {currentQuestion.type === "NAME_MATCHING" && (
                     <div className="mb-4">
