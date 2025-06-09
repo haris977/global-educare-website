@@ -10,11 +10,6 @@ import AudioPlayer from '@/components/AudioPlayer';
 
 // Types
 interface Question {
-  summaryWords?: string[];
-  fillBlankSentence: string;
-  features: any[];
-  statements: any[];
-  reuseAllowed: any;
   id: string;
   questionText?: string;  // From backend
   text?: string;          // From admin panel  
@@ -183,58 +178,33 @@ export default function PracticeTestDetailPage() {
             id: `${id}-q1`,
             questionText: "According to the passage, what is the main cause of climate change?",
             questionType: "MULTIPLE_CHOICE",
-            options: JSON.stringify(['İnsan faaliyeti', 'Doğal döngüler', 'Güneş radyasyonu', 'Volkanik patlamalar']),
+            options: JSON.stringify(['Human activity', 'Natural cycles', 'Solar radiation', 'Volcanic eruptions']),
             order: 1,
-            passage: "İklim değişikliği, gezegenimizin karşı karşıya olduğu en acil sorunlardan biridir. Bilimsel görüş birliği, insan faaliyetlerinin, özellikle fosil yakıtların yakılması ve ormansızlaşmanın, iklim değişikliğinin başlıca nedenleri olduğu yönündedir. Bu faaliyetler, atmosfere sera gazları salarak ısının hapsolmasına ve küresel ısınmaya yol açar.",
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            summaryWords: ["okay", "yeah"],
-            fillBlankSentence: ''
+            passage: "Climate change is one of the most pressing issues facing our planet today. The scientific consensus is that human activities, particularly the burning of fossil fuels and deforestation, are the primary drivers of climate change. These activities release greenhouse gases into the atmosphere, which trap heat and lead to global warming."
           },
           {
             id: `${id}-q2`,
-            questionText: "Parçada, ormansızlaşmanın iklim değişikliğine katkıda bulunduğu öne sürülmektedir.",
+            questionText: "The passage suggests that deforestation contributes to climate change.",
             questionType: "TRUE_FALSE",
-            order: 2,
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            summaryWords: ["okay", "yeah"],
-            fillBlankSentence: ''
+            order: 2
           },
           {
             id: `${id}-q3`,
-            questionText: "Cümleyi tamamlayınız: Atmosferdeki sera gazları _________.",
+            questionText: "Complete the sentence: Greenhouse gases in the atmosphere _________.",
             questionType: "FILL_BLANK",
-            order: 3,
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            summaryWords: ["okay", "yeah"],
-            fillBlankSentence: ''
+            order: 3
           },
           {
             id: `${id}-q4`,
-            questionText: "Parçada bahsedilen iklim değişikliğinin iki ana nedeni nedir?",
+            questionText: "What are two major contributors to climate change mentioned in the passage?",
             questionType: "SHORT_ANSWER",
-            order: 4,
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            summaryWords: ["okay", "yeah"],
-            fillBlankSentence: ''
+            order: 4
           },
           {
             id: `${id}-q5`,
-            questionText: "Parçaya göre insan faaliyetlerinin iklim değişikliğine nasıl katkıda bulunduğunu açıklayınız.",
+            questionText: "Explain how human activities contribute to climate change based on the passage.",
             questionType: "ESSAY",
-            order: 5,
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            summaryWords: ["okay", "yeah"],
-            fillBlankSentence: ''
+            order: 5
           }
         ];
         break;
@@ -255,33 +225,21 @@ export default function PracticeTestDetailPage() {
             questionType: "MULTIPLE_CHOICE",
             options: JSON.stringify(['Travel plans', 'University courses', 'Housing options', 'Job opportunities']),
             order: 1,
-            audioFile: "https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3",
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            audioFile: "https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3"
           },
           {
             id: `${id}-q2`,
             questionText: "The speakers agree to meet at 5 PM.",
             questionType: "TRUE_FALSE",
             order: 2,
-            audioFile: "https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3",
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            audioFile: "https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3"
           },
           {
             id: `${id}-q3`,
             questionText: "What time did the speakers agree to meet?",
             questionType: "SHORT_ANSWER",
             order: 3,
-            audioFile: "https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3",
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            audioFile: "https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3"
           }
         ];
         break;
@@ -301,21 +259,13 @@ export default function PracticeTestDetailPage() {
             questionText: "The graph below shows the population of India and China since the year 2000 and projected to 2050. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
             questionType: "ESSAY",
             order: 1,
-            questionImage: "https://miro.medium.com/max/1400/1*3whP7XYRrVDDwY7ddqogTw.png",
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            questionImage: "https://miro.medium.com/max/1400/1*3whP7XYRrVDDwY7ddqogTw.png"
           },
           {
             id: `${id}-q2`,
             questionText: "Some people believe that technological innovations have made our lives more complicated rather than simpler. To what extent do you agree or disagree?",
             questionType: "ESSAY",
-            order: 2,
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            order: 2
           }
         ];
         break;
@@ -334,22 +284,14 @@ export default function PracticeTestDetailPage() {
             id: `${id}-q1`,
             questionText: "Let's talk about your hometown. Where is it and what is it known for?",
             questionType: "SPEAKING_TASK_1",
-            order: 1,
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            order: 1
           },
           {
             id: `${id}-q2`,
             questionText: "Describe a time when you helped someone. You should say: who you helped, how you helped them, why they needed help, and how you felt about helping them.",
             questionType: "SPEAKING_TASK_2",
             order: 2,
-            cueCard: "Describe a time when you helped someone",
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            cueCard: "Describe a time when you helped someone"
           },
           {
             id: `${id}-q3`,
@@ -360,11 +302,7 @@ export default function PracticeTestDetailPage() {
               "What are some reasons why people might hesitate to help others?",
               "Do you think technology has made it easier or harder for people to help each other?",
               "How can governments encourage people to volunteer more in their communities?"
-            ],
-            features: [],
-            statements: [],
-            reuseAllowed: undefined,
-            fillBlankSentence: ''
+            ]
           }
         ];
         break;
@@ -679,14 +617,9 @@ export default function PracticeTestDetailPage() {
     if (question.passage || sectionPassage) {
       return (
         <div className="space-y-6">
-          <div className="p-4 bg-white rounded-md border border-gray-200 shadow-sm overflow-y-auto max-h-96">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Reading Passage</h3>
-            <div className="prose prose-sm prose-blue max-w-none">
-              <p className="whitespace-pre-line">{question.passage || sectionPassage}</p>
-            </div>
-          </div>
+         
 
-          {questionType && renderQuestionByType(question, questionType)}
+          {questionType && renderQuestionByType(question, questionType, currentQuestion)}
         </div>
       );
     }
@@ -700,7 +633,7 @@ export default function PracticeTestDetailPage() {
             <AudioPlayer src={question.audioFile} />
           </div>
 
-          {questionType && renderQuestionByType(question, questionType)}
+          {questionType && renderQuestionByType(question, questionType, currentQuestion)}
         </div>
       );
     }
@@ -717,7 +650,7 @@ export default function PracticeTestDetailPage() {
             />
           </div>
 
-          {questionType && renderQuestionByType(question, questionType)}
+          {questionType && renderQuestionByType(question, questionType, currentQuestion)}
         </div>
       );
     }
@@ -736,30 +669,30 @@ export default function PracticeTestDetailPage() {
             </div>
           </div>
 
-          {questionType && renderQuestionByType(question, questionType)}
+          {questionType && renderQuestionByType(question, questionType, currentQuestion)}
         </div>
       );
     }
 
     // Fallback to just rendering the question
-    return renderQuestionByType(question, questionType);
+    return renderQuestionByType(question, questionType, currentQuestion);
   };
 
-  const renderQuestionByType = (question: Question, questionType: string) => {
+  const renderQuestionByType = (question: Question, questionType: string, idx: number) => {
     console.log(`Rendering question type: ${questionType}`);
 
     switch (questionType) {
       case 'MULTIPLE_CHOICE':
-        return renderMultipleChoice(question);
+        return renderMultipleChoice(question, idx);
       case 'TRUE_FALSE':
       case 'YES_NO_NOT_GIVEN':
-        return renderTrueFalse(question);
+        return renderTrueFalse(question, idx);
       case 'SHORT_ANSWER':
         return renderShortAnswer(question);
       case 'ESSAY':
         return renderEssay(question);
       case 'FILL_BLANK':
-        return renderFillBlank(question);
+        return renderFillBlank(question, idx);
       case 'MAP_LABELING':
         return renderMapQuestion(question);
       case 'TABLE_COMPLETION':
@@ -767,22 +700,17 @@ export default function PracticeTestDetailPage() {
       case 'PARAGRAPH_HEADINGS':
         return renderParagraphHeadings(question);
       case 'PARA_HEADINGS':
-        return renderParaHeadings(question);
+        return renderParaHeadings(question, idx);
       case 'SENTENCE_ENDINGS_MATCHING':
-        return renderSentenceEndingsMatching(question);
+        return renderSentenceEndingsMatching(question, idx);
       case 'DIAGRAM_LABELLING':
         return renderDiagramLabelling(question);
       case 'SUMMARY':
-        return renderSummaryCompletion(question);
+        return renderSummaryCompletion(question, idx);
       case 'SENTENCE_COMPLETION':
-        return renderCompleteSentence(question);
-      case 'TRUE_FALSE_NOT_GIVEN':
-      case 'YES_NO_NOT_GIVEN':
-        return renderTrueFalseNotGiven(question);
-      case 'COMPLETE_SENTENCE': 
-        return renderCompleteSentence(question);
+        return renderCompleteSentence(question, idx);
       case 'NAME_MATCHING':
-        return renderNameMatching(question);
+        return renderNameMatching(question, idx);
       case 'SPEAKING_TASK':
         return renderSpeakingTask(question);
       default:
@@ -795,54 +723,19 @@ export default function PracticeTestDetailPage() {
     }
   };
 
-
-
-
-
-
-  const renderMultipleChoice = (question: Question) => {
-    // Get normalized field values
+  const renderMultipleChoice = (question: Question, idx: number) => {
     const questionText = question.questionText || question.text;
-
     let options;
     try {
       options = question.options ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : [];
-    } catch (error) {
-      console.error("Error parsing options:", error);
+    } catch {
       options = [];
     }
-
     return (
       <div className="space-y-4">
-        {question.passage && (
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
-            <p className="text-gray-800 whitespace-pre-line">{question.passage}</p>
-          </div>
-        )}
-
-        {question.audioFile && (
-          <div className="mb-4">
-            <AudioPlayer
-              src={question.audioFile}
-              title="Listen to complete this question"
-              autoPlay={test?.moduleType === "LISTENING" && currentQuestion === 0}
-            />
-          </div>
-        )}
-
-        {question.questionImage && (
-          <div className="mb-4">
-            <img
-              src={question.questionImage}
-              alt="Question visual"
-              className="max-w-full h-auto rounded-md border"
-            />
-          </div>
-        )}
-
-        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
-
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {questionText}
+        </div>
         <div className="space-y-2">
           {options.map((option: string, index: number) => (
             <div key={index} className="flex items-center">
@@ -865,99 +758,18 @@ export default function PracticeTestDetailPage() {
     );
   };
 
-  function renderDiagramLabelling(question: Question) {
-    // Normalize fields
-    const questionText = question.questionText || question.text || "";
-    let diagramLabels: string[] = [];
-    let diagramAnswers: string[] = [];
-    try {
-      diagramLabels = question.diagramLabels
-        ? (typeof question.diagramLabels === "string"
-          ? JSON.parse(question.diagramLabels)
-          : question.diagramLabels)
-        : [];
-    } catch { diagramLabels = []; }
-    try {
-      diagramAnswers = question.diagramAnswers
-        ? (typeof question.diagramAnswers === "string"
-          ? JSON.parse(question.diagramAnswers)
-          : question.diagramAnswers)
-        : [];
-    } catch { diagramAnswers = []; }
-
-    return (
-      <div className="space-y-4">
-        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
-        {question.diagramImage && (
-          <div className="mb-4">
-            <img
-              src={question.diagramImage}
-              alt="Diagram for labelling"
-              className="max-w-full h-auto rounded-md border"
-            />
-          </div>
-        )}
-        <div className="space-y-3">
-          <h4 className="font-medium text-gray-900">Label the Diagram</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {diagramLabels.map((label, idx) => (
-              <div key={idx} className="flex items-center space-x-3">
-                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-medium text-sm">
-                  {label}
-                </span>
-                <input
-                  type="text"
-                  value={responses[`${question.id}-${idx}`] || ""}
-                  onChange={e => handleAnswerChange(`${question.id}-${idx}`, e.target.value)}
-                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  placeholder={`Label for ${label}`}
-                  autoComplete="off"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-
-
-
-  const renderTrueFalse = (question: Question) => {
-    // Get normalized field values
+  const renderTrueFalse = (question: Question, idx: number) => {
     const questionText = question.questionText || question.text;
     const questionType = question.questionType || question.type;
-
-    // Different options based on the question type
     let options = ['true', 'false'];
-
-    if (questionType === 'TRUE_FALSE_NOT_GIVEN') {
-      options = ['true', 'false', 'not given'];
-    } else if (questionType === 'YES_NO_NOT_GIVEN') {
-      options = ['yes', 'no', 'not given'];
-    }
+    if (questionType === 'TRUE_FALSE_NOT_GIVEN') options = ['true', 'false', 'not given'];
+    else if (questionType === 'YES_NO_NOT_GIVEN') options = ['yes', 'no', 'not given'];
 
     return (
       <div className="space-y-4">
-        {question.passage && (
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
-            <p className="text-gray-800 whitespace-pre-line">{question.passage}</p>
-          </div>
-        )}
-
-        {question.audioFile && (
-          <div className="mb-4">
-            <AudioPlayer
-              src={question.audioFile}
-              title="Listen to complete this question"
-              autoPlay={test?.moduleType === "LISTENING" && currentQuestion === 0}
-            />
-          </div>
-        )}
-
-        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {questionText}
+        </div>
 
         <div className="space-y-2">
           {options.map((option) => (
@@ -981,221 +793,124 @@ export default function PracticeTestDetailPage() {
     );
   };
 
-  const renderTrueFalseNotGiven = (question: Question) => {
-    const options = ['True', 'False', 'Not Given'];
+  const renderSummaryCompletion = (question: Question, idx: number) => {
+    const text = question.text || '';
+    const blanks = (text.match(/_/g) || []).length;
     return (
-      <div className="flex gap-4 mt-4">
-        <div className="font-medium text-gray-900 mb-4">{question.questionText}</div>
-        {options.map(opt => {
-          const isSelected = responses[question.id] === opt;
-          return (
-
-            <>
-              <button
-                key={opt}
-                type="button"
-                onClick={() => handleAnswerChange(question.id, opt)}
-                className={`px-4 py-2 rounded-lg border transition-all
-              ${isSelected
-                    ? 'bg-blue-600 text-white border-blue-700 shadow'
-                    : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-            `}
-              >
-                {opt}
-              </button></>
-          );
-        })}
+      <div>
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {question.questionText || question.text}
+        </div>
+        <div className="mb-2">{text.split('_').map((part, i, arr) => (
+          <span key={i}>
+            {part}
+            {i < arr.length - 1 && (
+              <input
+                type="text"
+                value={responses[`${question.id}-${i}`] || ''}
+                onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
+                className="border rounded px-2 py-1 mx-1"
+                placeholder={`Blank ${i + 1}`}
+                style={{ width: 120 }}
+              />
+            )}
+          </span>
+        ))}</div>
+        {question.wordLimit && <div className="text-sm text-gray-600 mb-2">{question.wordLimit}</div>}
       </div>
     );
   };
 
 
-  const renderSummaryCompletion = (question: Question) => {
-
-    console.log("SUMMARY QUESTION DATA", question);
-    const summaryWords: string[] = Array.isArray(question.summaryWords)
-      ? question.summaryWords
-      : (typeof question.summaryWords === "string" && question.summaryWords
-        ? JSON.parse(question.summaryWords)
-        : []);
-
-    const paragraphs: string[] = Array.isArray(question.paragraphs)
-      ? question.paragraphs
-      : (typeof question.paragraphs === "string" && question.paragraphs
-        ? JSON.parse(question.paragraphs)
-        : []);
-
-    const fillBlankSentence = question.fillBlankSentence || question.questionText || "";
-
+  const renderDiagramLabelling = (question: Question) => {
+    const labels = question.diagramLabels || [];
     return (
-      <div className="space-y-4">
-        {/* Word Bank */}
-        {summaryWords.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Word Bank</h4>
-            <div className="flex flex-wrap gap-2">
-              {summaryWords.map((word, idx) => (
-                <span key={idx} className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
-                  {word}
-                </span>
-              ))}
-            </div>
-          </div>
+      <div>
+        {question.diagramImage && (
+          <img src={question.diagramImage} alt="Diagram" className="mb-4 max-w-xs border rounded" />
         )}
-
-        {/* Paragraphs */}
-        {paragraphs.length > 0 && (
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Paragraphs</h4>
-            <div className="space-y-2">
-              {paragraphs.map((p, idx) => (
-                <div key={idx} className="bg-white border rounded p-2 text-gray-800">{p}</div>
-              ))}
-            </div>
+        <div className="mb-2">{question.wordLimit && <span className="text-sm text-gray-600">{question.wordLimit}</span>}</div>
+        {labels.map((label, i) => (
+          <div key={i} className="mb-3 flex items-center">
+            <span className="mr-2 font-medium">{label}:</span>
+            <input
+              type="text"
+              value={responses[`${question.id}-${i}`] || ''}
+              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
+              className="border rounded px-2 py-1 flex-1"
+              placeholder={`Label for ${label}`}
+            />
           </div>
-        )}
-
-        {/* Summary Sentence with blanks */}
-        {fillBlankSentence && (
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Summary</h4>
-            <div className="mb-2">
-              {fillBlankSentence.split("_").map((part, i, arr) => (
-                <span key={i}>
-                  {part}
-                  {i < arr.length - 1 && (
-                    <input
-                      type="text"
-                      value={responses[`${question.id}-summary-${i}`] || ""}
-                      onChange={e => handleAnswerChange(`${question.id}-summary-${i}`, e.target.value)}
-                      className="border-b-2 border-blue-400 px-2 py-1 w-28 mx-1"
-                      placeholder={`Blank`}
-                      autoComplete="off"
-                    />
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        ))}
       </div>
     );
   };
 
 
-  const renderSentenceEndingsMatching = (question: Question) => {
-  // Normalize beginnings and endings
-  const beginnings: string[] = Array.isArray(question.sentenceBeginnings)
-    ? question.sentenceBeginnings
-    : (typeof question.sentenceBeginnings === "string" && question.sentenceBeginnings
-        ? JSON.parse(question.sentenceBeginnings)
-        : []);
-  const endings: string[] = Array.isArray(question.sentenceEndings)
-    ? question.sentenceEndings
-    : (typeof question.sentenceEndings === "string" && question.sentenceEndings
-        ? JSON.parse(question.sentenceEndings)
-        : []);
-
-  return (
-    <div className="space-y-6">
-      {/* Endings List */}
+  const renderSentenceEndingsMatching = (question: Question, idx: number) => {
+    const beginnings = question.sentenceBeginnings || [];
+    const endings = question.sentenceEndings || [];
+    return (
       <div>
-        <h4 className="font-medium text-gray-900 mb-2">Sentence Endings</h4>
-        <ul className="mb-4 flex flex-wrap gap-4">
-          {endings.map((ending, idx) => (
-            <li key={idx} className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
-                {String.fromCharCode(65 + idx)}
-              </span>
-              <span className="text-gray-900">{ending}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Beginnings with dropdowns */}
-      <div>
-        <h4 className="font-medium text-gray-900 mb-2">Sentence Beginnings</h4>
-        <div className="space-y-4">
-          {beginnings.map((begin, idx) => (
-            <div key={idx} className="border rounded p-3 flex flex-col gap-2">
-              <div className="text-gray-800 mb-2">{begin} ...</div>
-              <select
-                value={responses[`${question.id}-beginning-${idx}`] || ""}
-                onChange={e => handleAnswerChange(`${question.id}-beginning-${idx}`, e.target.value)}
-                className="border rounded px-2 py-1 w-40"
-              >
-                <option value="">Select ending</option>
-                {endings.map((_, eIdx) => (
-                  <option key={eIdx} value={String.fromCharCode(65 + eIdx)}>
-                    {String.fromCharCode(65 + eIdx)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {question.questionText || question.text}
         </div>
+        <h4 className="font-medium mb-2">Sentence Endings</h4>
+        <ul className="mb-4">{endings.map((e, i) => <li key={i}>{String.fromCharCode(65 + i)}. {e}</li>)}</ul>
+        {beginnings.map((b, i) => (
+          <div key={i} className="mb-3">
+            <div className="mb-1">{b} ...</div>
+            <select
+              value={responses[`${question.id}-${i}`] || ''}
+              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">Select ending</option>
+              {endings.map((_, idx) => (
+                <option key={idx} value={String.fromCharCode(65 + idx)}>
+                  {String.fromCharCode(65 + idx)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 
-const renderParaHeadings = (question: Question) => {
-  const headings: string[] = Array.isArray(question.headings)
-    ? question.headings
-    : (typeof question.headings === "string" && question.headings
-        ? JSON.parse(question.headings)
-        : []);
-  const paragraphs: string[] = Array.isArray(question.paragraphs)
-    ? question.paragraphs
-    : (typeof question.paragraphs === "string" && question.paragraphs
-        ? JSON.parse(question.paragraphs)
-        : []);
-
-  return (
-    <div className="space-y-6">
-      {/* Headings List */}
+  const renderParaHeadings = (question: Question, idx: number) => {
+    const headings = question.headings || [];
+    const paragraphs = question.paragraphs || [];
+    return (
       <div>
-        <h4 className="font-medium text-gray-900 mb-2">Headings</h4>
-        <ul className="mb-4 flex flex-wrap gap-4">
-          {headings.map((heading, idx) => (
-            <li key={idx} className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
-                {String.fromCharCode(65 + idx)}
-              </span>
-              <span className="text-gray-900">{heading}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Paragraphs with dropdowns */}
-      <div>
-        <h4 className="font-medium text-gray-900 mb-2">Paragraphs</h4>
-        <div className="space-y-4">
-          {paragraphs.map((para, idx) => (
-            <div key={idx} className="border rounded p-3 flex flex-col gap-2">
-              <div className="text-gray-800 mb-2">{para}</div>
-              <select
-                value={responses[`${question.id}-para-${idx}`] || ""}
-                onChange={e => handleAnswerChange(`${question.id}-para-${idx}`, e.target.value)}
-                className="border rounded px-2 py-1 w-40"
-              >
-                <option value="">Select heading</option>
-                {headings.map((_, hIdx) => (
-                  <option key={hIdx} value={String.fromCharCode(65 + hIdx)}>
-                    {String.fromCharCode(65 + hIdx)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {question.questionText || question.text}
         </div>
+        <h4 className="font-medium mb-2">Headings</h4>
+        <ul className="mb-4">{headings.map((h, i) => <li key={i}>{String.fromCharCode(65 + i)}. {h}</li>)}</ul>
+        <h4 className="font-medium mb-2">Paragraphs</h4>
+        {paragraphs.map((p, i) => (
+          <div key={i} className="mb-3">
+            <div className="mb-1">{p}</div>
+            <select
+              value={responses[`${question.id}-${i}`] || ''}
+              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">Select heading</option>
+              {headings.map((_, idx) => (
+                <option key={idx} value={String.fromCharCode(65 + idx)}>
+                  {String.fromCharCode(65 + idx)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
-    </div>
-  );
-};
+    );
+  };
+
 
   const renderShortAnswer = (question: Question) => {
     // Get normalized field values
@@ -1273,8 +988,8 @@ const renderParaHeadings = (question: Question) => {
     );
   };
 
-  const renderFillBlank = (question: Question) => {
-    const questionText = question.questionText || question.text || "";
+  const renderFillBlank = (question: Question, idx: number) => {
+     const questionText = question.questionText || question.text || "";
     // Count blanks
     const blanks = (questionText.match(/_/g) || []).length;
 
@@ -1301,8 +1016,7 @@ const renderParaHeadings = (question: Question) => {
           </div>
         </div>
       </div>
-    );
-  };
+    )};
 
   const renderMapQuestion = (question: Question) => {
     // Get normalized field values
@@ -1477,112 +1191,125 @@ const renderParaHeadings = (question: Question) => {
     );
   };
 
- const renderCompleteSentence = (question: Question) => {
-  // Normalize sentences
-  let sentences: string[] = [];
-  try {
-    if (question.sentences) {
-      if (typeof question.sentences === 'string') {
-        sentences = JSON.parse(question.sentences);
-      } else if (Array.isArray(question.sentences)) {
-        sentences = question.sentences;
+  const renderCompleteSentence = (question: Question, idx: number) => {
+    const questionText = question.questionText || question.text;
+
+    let sentences;
+    try {
+      if (question.sentences) {
+        if (typeof question.sentences === 'string') {
+          sentences = question.sentences.split('\n');
+          // If there's no newline, try to parse it as JSON array
+          if (sentences.length === 1) {
+            try {
+              const parsed = JSON.parse(question.sentences);
+              if (Array.isArray(parsed)) {
+                sentences = parsed;
+              }
+            } catch (e) {
+              // Keep as is if parsing fails
+            }
+          }
+        } else if (Array.isArray(question.sentences)) {
+          sentences = question.sentences;
+        }
+      } else {
+        sentences = [];
       }
+    } catch (error) {
+      console.error("Error processing sentences:", error);
+      sentences = [];
     }
-  } catch {
-    sentences = [];
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="font-medium text-gray-900 mb-4">{question.questionText || question.text}</div>
+    return (
       <div className="space-y-4">
-        {sentences.map((sentence, sIdx) => {
-          // Split sentence by blanks
-          const parts = sentence.split("_");
-          const blankCount = parts.length - 1;
-          return (
-            <div key={sIdx} className="border p-4 rounded-md bg-white flex flex-col gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                {parts.map((part, idx) => (
-                  <span key={idx} className="flex items-center">
-                    <span>{part}</span>
-                    {idx < blankCount && (
-                      <input
-                        type="text"
-                        value={responses[`${question.id}-${sIdx}-blank-${idx}`] || ""}
-                        onChange={e => handleAnswerChange(`${question.id}-${sIdx}-blank-${idx}`, e.target.value)}
-                        className="mx-1 px-2 py-1 border-b-2 border-blue-400 bg-transparent text-blue-900 font-medium focus:outline-none focus:border-blue-600 transition w-32"
-                        placeholder={`Blank ${idx + 1}`}
-                        autoComplete="off"
-                      />
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {questionText}
+        </div>        {question.passage && (
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md mb-4">
+            <h4 className="font-medium text-gray-900 mb-2">Reading Passage</h4>
+            <p className="text-gray-800 whitespace-pre-line">{question.passage}</p>
+          </div>
+        )}
 
-  const renderNameMatching = (question: Question) => {
-  // Normalize names and features
-  const names: string[] = Array.isArray(question.sentenceBeginnings)
-    ? question.sentenceBeginnings
-    : (typeof question.sentenceBeginnings === "string" && question.sentenceBeginnings
-        ? JSON.parse(question.sentenceBeginnings)
-        : []);
-  const features: string[] = Array.isArray(question.sentenceEndings)
-    ? question.sentenceEndings
-    : (typeof question.sentenceEndings === "string" && question.sentenceEndings
-        ? JSON.parse(question.sentenceEndings)
-        : []);
+        <div className="font-medium text-gray-900 mb-4">{questionText}</div>
 
-  return (
-    <div className="space-y-6">
-      {/* Names List */}
-      <div>
-        <h4 className="font-medium text-gray-900 mb-2">Names</h4>
-        <ul className="mb-4 flex flex-wrap gap-4">
-          {names.map((name, idx) => (
-            <li key={idx} className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
-                {String.fromCharCode(65 + idx)}
-              </span>
-              <span className="text-gray-900">{name}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Features with dropdowns */}
-      <div>
-        <h4 className="font-medium text-gray-900 mb-2">Features</h4>
         <div className="space-y-4">
-          {features.map((feature, idx) => (
-            <div key={idx} className="border rounded p-3 flex flex-col gap-2">
-              <div className="text-gray-800 mb-2">{feature}</div>
-              <select
-                value={responses[`${question.id}-feature-${idx}`] || ""}
-                onChange={e => handleAnswerChange(`${question.id}-feature-${idx}`, e.target.value)}
-                className="border rounded px-2 py-1 w-40"
-              >
-                <option value="">Select name</option>
-                {names.map((_, nIdx) => (
-                  <option key={nIdx} value={String.fromCharCode(65 + nIdx)}>
-                    {String.fromCharCode(65 + nIdx)}
-                  </option>
-                ))}
-              </select>
+          {sentences && sentences.map((sentence: string, index: number) => (
+            <div key={index} className="border p-3 rounded-md">
+              <p className="text-gray-800 mb-2">{sentence.replace(/___+/g, '___________')}</p>
+              <input
+                type="text"
+                value={responses[`${question.id}-${index}`] || ''}
+                onChange={(e) => handleAnswerChange(`${question.id}-${index}`, e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                placeholder="Complete the sentence"
+              />
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
+
+  const renderNameMatching = (question: Question, idx: number) => {
+    const questionText = question.questionText || question.text;
+    let matchingPairs;
+    try {
+      matchingPairs = question.matchingPairs ? (typeof question.matchingPairs === 'string' ? JSON.parse(question.matchingPairs) : question.matchingPairs) : {};
+    } catch (error) {
+      matchingPairs = {};
+    }
+    const names = Object.keys(matchingPairs);
+    const statements = Object.values(matchingPairs);
+
+    return (
+      <div className="space-y-4">
+        <div className="font-medium text-blue-800 mb-4">
+          Q{idx + 1}. {questionText}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Names</h4>
+            <div className="space-y-2 bg-gray-50 p-4 rounded-md">
+              {names.map((name, index) => (
+                <div key={index} className="flex items-center">
+                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-800 font-medium text-sm mr-3">
+                    {index + 1}
+                  </span>
+                  <span className="text-gray-800">{name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Statements</h4>
+            <div className="space-y-4">
+              {statements.map((statement, index) => (
+                <div key={index} className="border p-3 rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-700">Statement {String.fromCharCode(65 + index)}</span>
+                    <select
+                      value={responses[`${question.id}-${index}`] || ''}
+                      onChange={(e) => handleAnswerChange(`${question.id}-${index}`, e.target.value)}
+                      className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="">Match with name</option>
+                      {names.map((_, nameIndex) => (
+                        <option key={nameIndex} value={nameIndex + 1}>{nameIndex + 1}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-sm text-gray-800">{String(statement)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSpeakingTask = (question: Question) => {
     // Get normalized field values
@@ -1715,34 +1442,27 @@ const renderParaHeadings = (question: Question) => {
 
                 <h3 className="text-lg font-medium text-gray-900 mt-8">Test sections</h3>
                 <ul className="mt-3 space-y-4">
-                  {test.sections.map((section, index) => (
-                    <li key={section.id} className="bg-gray-50 p-4 rounded-md">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                          <span className="text-sm font-medium text-white">{index + 1}</span>
-                        </div>
-                        <div className="ml-4">
-                          <h4 className="text-base font-medium text-gray-900">{section.title}</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {section.timeLimit} minutes • {section.questions.length} questions
-                          </p>
-                          {section.instructions && (
-                            <p className="text-sm text-gray-600 mt-2 italic">{section.instructions}</p>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium text-gray-900">Important information</h3>
-                  <ul className="mt-3 list-disc pl-5 text-gray-600 space-y-2">
-                    <li>Each section has its own time limit. Once a section is completed, you cannot return to it.</li>
-                    <li>Your responses are automatically saved as you progress through the test.</li>
-                    <li>For writing and speaking tasks, your responses will be evaluated by our system.</li>
-                    <li>Results will be available immediately after completing the test.</li>
-                  </ul>
+  {test.sections
+    .filter(section => section.questions && section.questions.length > 0)
+    .map((section, index) => (
+      <li key={section.id} className="bg-gray-50 p-4 rounded-md">
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+            <span className="text-sm font-medium text-white">{index + 1}</span>
+          </div>
+          <div className="ml-4">
+            <h4 className="text-base font-medium text-gray-900">{section.title}</h4>
+            <p className="text-sm text-gray-500 mt-1">
+              {section.timeLimit} minutes • {section.questions.length} questions
+            </p>
+            {section.instructions && (
+              <p className="text-sm text-gray-600 mt-2 italic">{section.instructions}</p>
+            )}
+          </div>
+        </div>
+      </li>
+    ))}
+</ul>
                 </div>
               </div>
             </div>
@@ -1766,7 +1486,6 @@ const renderParaHeadings = (question: Question) => {
             </div>
           </div>
         </div>
-      </div>
     );
   }
 
@@ -1812,11 +1531,10 @@ const renderParaHeadings = (question: Question) => {
       </div>
 
       {/* Main content */}
-      {/* Main content: Passage left, Questions right */}
       <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col md:flex-row gap-8 h-[calc(100vh-140px)]">
           {/* Passage on the left */}
-          <div className="md:w-1/2 mb-8 md:mb-0">
+          <div className="md:w-1/2 mb-8 md:mb-0 h-full">
             <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-xl shadow-lg p-6 h-full flex flex-col">
               <div className="flex items-center mb-4">
                 <svg className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1826,43 +1544,82 @@ const renderParaHeadings = (question: Question) => {
               </div>
               <div className="flex-1 overflow-y-auto prose prose-blue prose-sm max-w-none bg-white rounded-lg p-4 border border-blue-100 shadow-inner">
                 {
-                  currentSectionData.questions.find(q => q.passage)?.passage
-                  || currentSectionData.passage
-                  || <span className="text-gray-400">No passage for this section.</span>
+                  currentQuestionData.passage ||
+                  currentSectionData.passage ||
+                  <span className="text-gray-400">No passage for this section.</span>
                 }
               </div>
             </div>
           </div>
           {/* Questions on the right */}
-          <div className="md:w-1/2 flex flex-col gap-6">
-            <h2 className="text-lg font-semibold mb-4">Questions</h2>
-            {currentSectionData.questions.map((question, idx) => (
-              <div key={question.id} className="bg-gray-50 border rounded-lg p-4 shadow-sm">
-                <div className="font-medium mb-2">Q{idx + 1}. {question.questionText || question.text}</div>
-                {renderQuestionByType(question, question.questionType || question.type)}
+          <div className="md:w-1/2 flex flex-col gap-6 h-full">
+            <div className="flex-1 flex flex-col overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4 sticky top-0 bg-gray-50 z-10">Questions</h2>
+              <div className="bg-white shadow-md rounded-lg p-6 mb-4">
+                {renderQuestionContent(currentQuestionData)}
               </div>
-            ))}
-            {/* Navigation/Submit at the bottom */}
-            <div className="mt-8 flex justify-end gap-4">
-              <button
-                onClick={completeSection}
-                disabled={isCompletingSection}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                {isLastSection ? 'Submit Test' : 'Next Section'}
-                {isCompletingSection && (
-                  <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+              {/* Navigation buttons */}
+              <div className="mt-6 flex justify-between">
+                <button
+                  onClick={handlePrevQuestion}
+                  disabled={currentQuestion === 0}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                {isLastQuestion ? (
+                  <button
+                    onClick={completeSection}
+                    disabled={isCompletingSection}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    {isLastSection ? 'Submit Test' : 'Next Section'}
+                    {isCompletingSection && (
+                      <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleNextQuestion}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Next
+                  </button>
                 )}
-              </button>
+              </div>
+              {/* Question navigation bar */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Questions</h3>
+                  <span className="text-xs text-gray-500">Click to navigate</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {currentSectionData.questions.map((_, index) => {
+                    const isAnswered = !!responses[currentSectionData.questions[index].id];
+                    const isCurrent = index === currentQuestion;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentQuestion(index)}
+                        className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium ${isCurrent
+                          ? 'bg-blue-600 text-white'
+                          : isAnswered
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                          }`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-
-  )
+</div>)
 }

@@ -462,7 +462,8 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       followUpQuestions,
       bandDescriptors,
       sampleAnswer,
-      completeSentenceAnswers // <-- Added this line
+      completeSentenceAnswers, // <-- Added this line
+      tableData // <-- Added this line to fix the error
     } = req.body;
 
     console.log("Received question creation request for sectionId:", sectionId);
@@ -546,6 +547,12 @@ export const createQuestion = async (req: AuthenticatedRequest, res: Response) =
       if (diagramImage) questionData.diagramImage = diagramImage;
       if (diagramAnswers) questionData.diagramAnswers = Array.isArray(diagramAnswers) ? diagramAnswers : JSON.parse(diagramAnswers);
       if (wordLimit) questionData.wordLimit = wordLimit;
+
+      if (tableData) {
+  questionData.tableData = Array.isArray(tableData) || typeof tableData === 'object'
+    ? tableData
+    : JSON.parse(tableData);
+}
 
       if (completeSentenceAnswers) questionData.completeSentenceAnswers = Array.isArray(completeSentenceAnswers) ? completeSentenceAnswers : JSON.parse(completeSentenceAnswers);
 

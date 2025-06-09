@@ -1032,28 +1032,9 @@ export default function CreateTestPage() {
                         placeholder="e.g., Early methods of producing flat glass"
                       />
 
-                      <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Instructions
-                      </label>
-                      <input
-                        type="text"
-                        value={ ""}
-                        onChange={e => setCurrentQuestion(prev => ({ ...prev, instructions: e.target.value }))}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-2"
-                        placeholder="Complete the table and diagram below."
-                      />
+                      
 
-                      <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Word Limit Instruction
-                      </label>
-                      <input
-                        type="text"
-                        value={currentQuestion.wordLimit || ""}
-                        onChange={e => setCurrentQuestion(prev => ({ ...prev, wordLimit: e.target.value }))}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-4"
-                        placeholder="NO MORE THAN TWO WORDS"
-                      />
-
+                     
                       {/* Table Builder */}
                       <div className="mb-4">
                         <div className="flex justify-between items-center mb-2">
