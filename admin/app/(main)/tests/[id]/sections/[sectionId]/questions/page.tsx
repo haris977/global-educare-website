@@ -42,7 +42,7 @@ interface Test {
 
 // Function to get valid question types based on module type
 const getQuestionTypesByModule = (moduleType: string): string[] => {
-  switch(moduleType) {
+  switch (moduleType) {
     case "READING":
       return [
         "MULTIPLE_CHOICE",
@@ -58,7 +58,7 @@ const getQuestionTypesByModule = (moduleType: string): string[] => {
       return [
         "MULTIPLE_CHOICE",
         "TRUE_FALSE",
-        "SHORT_ANSWER", 
+        "SHORT_ANSWER",
         "FILL_BLANK",
         "MAP"
       ];
@@ -100,7 +100,7 @@ const formatQuestionType = (type: string): string => {
     "SPEAKING_TASK_3": "Speaking - Discussion",
     "SPEAKING_FOLLOW_UPS": "Speaking - Follow Ups"
   };
-  
+
   return typeMap[type] || type.replace(/_/g, ' ');
 };
 
@@ -108,15 +108,15 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
   const router = useRouter();
   // Unwrap params using React.use() to fix the warning
   const { id: testId, sectionId } = params;
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  
+
   const [test, setTest] = useState<Test | null>(null);
   const [section, setSection] = useState<Section | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  
+
   // Current question form state
   const [currentQuestion, setCurrentQuestion] = useState({
     questionText: "",
@@ -137,10 +137,10 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     headings: [] as string[],
     correctHeadings: [] as string[] // Array of selected headings for each paragraph
   });
-  
+
   // Add state for moduleType
   const [moduleType, setModuleType] = useState<string>("READING");
-  
+
   // Fetch test, section and questions data
   useEffect(() => {
     const fetchData = async () => {
@@ -154,22 +154,22 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
             id: testResponse.data.id,
             title: testResponse.data.title
           });
-          
+
           // Store the module type
           setModuleType(testResponse.data.moduleType);
-          
+
           // Find the section in the test data
           const foundSection = testResponse.data.sections.find(
             (section: any) => section.id === sectionId
           );
-          
+
           if (foundSection) {
             setSection(foundSection);
             // Extract questions from the section
             if (foundSection.questions && foundSection.questions.length > 0) {
               setQuestions(foundSection.questions);
             }
-            
+
             // Update current question type based on module type
             const validTypes = getQuestionTypesByModule(testResponse.data.moduleType);
             setCurrentQuestion(prev => ({
@@ -189,14 +189,14 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [testId, sectionId]);
-  
+
   // Handle question input change
   const handleQuestionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'marks') {
       // Ensure marks is a positive number
       const numValue = Math.max(1, parseInt(value) || 1);
@@ -205,7 +205,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       setCurrentQuestion(prev => ({ ...prev, [name]: value }));
     }
   };
-  
+
   // Handle option changes
   const handleOptionChange = (index: number, value: string) => {
     setCurrentQuestion(prev => {
@@ -217,7 +217,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       };
     });
   };
-  
+
   // Add option to multiple choice question
   const addOption = () => {
     setCurrentQuestion(prev => ({
@@ -225,7 +225,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       options: [...prev.options, ""]
     }));
   };
-  
+
   // Remove option from multiple choice question
   const removeOption = (index: number) => {
     setCurrentQuestion(prev => {
@@ -233,7 +233,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         setError("Multiple choice questions must have at least 2 options");
         return prev;
       }
-      
+
       const updatedOptions = [...prev.options];
       updatedOptions.splice(index, 1);
       return {
@@ -242,14 +242,14 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       };
     });
   };
-  
+
   // Add question to section
   const addQuestion = async () => {
     if (!currentQuestion.questionText.trim()) {
       setError("Question text is required");
       return;
     }
-    
+
     // Validate based on question type
     if (currentQuestion.questionType === "MULTIPLE_CHOICE") {
       // Check if at least 2 options are filled
@@ -258,7 +258,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         setError("Multiple choice questions must have at least 2 options");
         return;
       }
-      
+
       // Check if correct answer is selected
       if (!currentQuestion.correctAnswer) {
         setError("Please select the correct answer");
@@ -289,7 +289,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         setError("Please provide either a passage or sentences");
         return;
       }
-      
+
     } else if (currentQuestion.questionType === "NAME_MATCHING") {
       if (Object.keys(currentQuestion.matchingPairs).length === 0) {
         setError("Please provide at least one matching pair");
@@ -305,7 +305,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         return;
       }
     } else if (
-      currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+      currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" ||
       currentQuestion.questionType === "YES_NO_NOT_GIVEN"
     ) {
       if (!currentQuestion.passage) {
@@ -330,7 +330,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         return;
       }
     } else if (
-      currentQuestion.questionType === "SPEAKING_TASK_1" || 
+      currentQuestion.questionType === "SPEAKING_TASK_1" ||
       currentQuestion.questionType === "SPEAKING_TASK_3"
     ) {
       if (currentQuestion.speakingPrompts.length === 0) {
@@ -348,16 +348,16 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         return;
       }
     }
-    
+
     setIsLoading(true);
     setError("");
-    
+
     try {
       // Prepare additional data based on question type
       let additionalData = {};
-      
+
       // Handle different question types
-      switch(currentQuestion.questionType) {
+      switch (currentQuestion.questionType) {
         case "MULTIPLE_CHOICE":
           additionalData = {
             options: JSON.stringify(currentQuestion.options.filter(opt => opt.trim()))
@@ -415,7 +415,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
           };
           break;
       }
-      
+
       // Prepare the question data with additional fields
       const questionData = {
         questionText: currentQuestion.questionText,
@@ -425,19 +425,19 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         order: questions.length + 1,
         ...additionalData
       };
-      
+
       console.log("Creating question with data:", JSON.stringify(questionData, null, 2));
-      
+
       // Create the question
       const response = await api.Tests.createQuestion(sectionId, questionData);
-      
+
       if (response.success) {
         setSuccessMessage("Question added successfully!");
-        
+
         // Refresh questions
         const updatedQuestions = [...questions, response.data];
         setQuestions(updatedQuestions);
-        
+
         // Reset form
         setCurrentQuestion({
           questionText: "",
@@ -458,7 +458,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
           headings: [],
           correctHeadings: []
         });
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSuccessMessage("");
@@ -473,17 +473,17 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       setIsLoading(false);
     }
   };
-  
+
   // Delete question
   const deleteQuestion = async (questionId: string) => {
     if (!confirm("Are you sure you want to delete this question?")) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const response = await api.Tests.deleteQuestion(questionId);
-      
+
       if (response.success) {
         // Remove the deleted question from the state
         setQuestions(prev => prev.filter(q => q.id !== questionId));
@@ -499,7 +499,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       setIsLoading(false);
     }
   };
-  
+
   if (isLoading && !test) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -510,7 +510,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
       </div>
     );
   }
-  
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -535,12 +535,12 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               <span className="ml-2 text-sm font-medium text-indigo-600">
-                {section?.title || "Section Questions"} 
+                {section?.title || "Section Questions"}
               </span>
             </li>
           </ol>
         </nav>
-        
+
         {/* Page header */}
         <div className="bg-white shadow-sm rounded-lg p-6 mb-8">
           <div className="md:flex md:items-center md:justify-between">
@@ -565,7 +565,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
             </div>
           </div>
         </div>
-        
+
         {/* Error and success messages */}
         {error && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md mb-6">
@@ -594,7 +594,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
             </div>
           </div>
         )}
-        
+
         {successMessage && (
           <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-md mb-6">
             <div className="flex">
@@ -609,7 +609,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
             </div>
           </div>
         )}
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Add question form */}
           <div className="lg:col-span-1">
@@ -635,7 +635,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label htmlFor="questionType" className="block text-sm font-medium text-gray-700">
                     Question Type
@@ -654,7 +654,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </select>
                   </div>
                 </div>
-                
+
                 <div>
                   <label htmlFor="marks" className="block text-sm font-medium text-gray-700">
                     Points
@@ -671,7 +671,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     />
                   </div>
                 </div>
-                
+
                 {/* Options for Multiple Choice questions */}
                 {currentQuestion.questionType === "MULTIPLE_CHOICE" && (
                   <div>
@@ -689,7 +689,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                         </svg>
                       </button>
                     </div>
-                    
+
                     {currentQuestion.options.map((option, index) => (
                       <div key={index} className="flex items-center mb-2 group">
                         <div className="mr-3">
@@ -727,7 +727,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     ))}
                   </div>
                 )}
-                
+
                 {/* True/False options */}
                 {currentQuestion.questionType === "TRUE_FALSE" && (
                   <div>
@@ -766,7 +766,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Short answer correct response */}
                 {currentQuestion.questionType === "SHORT_ANSWER" && (
                   <div>
@@ -786,30 +786,30 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Reading Passage for various question types */}
-                {(currentQuestion.questionType === "PARA_HEADINGS" || 
-                  currentQuestion.questionType === "COMPLETE_SENTENCE" || 
-                  currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+                {(currentQuestion.questionType === "PARA_HEADINGS" ||
+                  currentQuestion.questionType === "COMPLETE_SENTENCE" ||
+                  currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" ||
                   currentQuestion.questionType === "YES_NO_NOT_GIVEN") && (
-                  <div>
-                    <label htmlFor="passage" className="block text-sm font-medium text-gray-700">
-                      Reading Passage
-                    </label>
-                    <div className="mt-1">
-                      <textarea
-                        id="passage"
-                        name="passage"
-                        rows={4}
-                        value={currentQuestion.passage}
-                        onChange={handleQuestionChange}
-                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                        placeholder="Enter the reading passage"
-                      />
+                    <div>
+                      <label htmlFor="passage" className="block text-sm font-medium text-gray-700">
+                        Reading Passage
+                      </label>
+                      <div className="mt-1">
+                        <textarea
+                          id="passage"
+                          name="passage"
+                          rows={4}
+                          value={currentQuestion.passage}
+                          onChange={handleQuestionChange}
+                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                          placeholder="Enter the reading passage"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-                
+                  )}
+
                 {/* Paragraphs for paragraph headings */}
                 {currentQuestion.questionType === "PARA_HEADINGS" && (
                   <div className="mt-3">
@@ -837,7 +837,16 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                       value={currentQuestion.paragraphs ? currentQuestion.paragraphs.join('\n') : ''}
                       onChange={e => {
                         const paragraphs = e.target.value.split('\n').filter(p => p.trim() !== '');
-                        setCurrentQuestion(prev => ({ ...prev, paragraphs }));
+                        setCurrentQuestion(prev => {
+                          let correctHeadings = prev.correctHeadings || [];
+                          // Adjust correctHeadings to match paragraphs length
+                          if (paragraphs.length > correctHeadings.length) {
+                            correctHeadings = [...correctHeadings, ...Array(paragraphs.length - correctHeadings.length).fill('')];
+                          } else if (paragraphs.length < correctHeadings.length) {
+                            correctHeadings = correctHeadings.slice(0, paragraphs.length);
+                          }
+                          return { ...prev, paragraphs, correctHeadings };
+                        });
                       }}
                       className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                       placeholder="Enter each paragraph on a new line"
@@ -873,7 +882,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     )}
                   </div>
                 )}
-                
+
                 {/* Sentences for complete sentence questions */}
                 {currentQuestion.questionType === "COMPLETE_SENTENCE" && (
                   <div className="mt-3">
@@ -910,7 +919,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Name matching pairs */}
                 {currentQuestion.questionType === "NAME_MATCHING" && (
                   <div className="mt-3">
@@ -952,7 +961,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Fill in the blanks */}
                 {currentQuestion.questionType === "FILL_BLANK" && (
                   <div className="mt-3">
@@ -973,100 +982,100 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* True/False/Not Given and Yes/No/Not Given */}
-                {(currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+                {(currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" ||
                   currentQuestion.questionType === "YES_NO_NOT_GIVEN") && (
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Correct Answer
-                    </label>
-                    <div className="mt-1">
-                      <div className="flex space-x-4">
-                        {currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" ? (
-                          <>
-                            <div className="flex items-center">
-                              <input
-                                type="radio"
-                                id="true-option"
-                                name="correctAnswer"
-                                value="true"
-                                checked={currentQuestion.correctAnswer === "true"}
-                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                              />
-                              <label htmlFor="true-option" className="ml-2 block text-sm text-gray-700">True</label>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                type="radio"
-                                id="false-option"
-                                name="correctAnswer"
-                                value="false"
-                                checked={currentQuestion.correctAnswer === "false"}
-                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                              />
-                              <label htmlFor="false-option" className="ml-2 block text-sm text-gray-700">False</label>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                type="radio"
-                                id="not-given-option"
-                                name="correctAnswer"
-                                value="not-given"
-                                checked={currentQuestion.correctAnswer === "not-given"}
-                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                              />
-                              <label htmlFor="not-given-option" className="ml-2 block text-sm text-gray-700">Not Given</label>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center">
-                              <input
-                                type="radio"
-                                id="yes-option"
-                                name="correctAnswer"
-                                value="yes"
-                                checked={currentQuestion.correctAnswer === "yes"}
-                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                              />
-                              <label htmlFor="yes-option" className="ml-2 block text-sm text-gray-700">Yes</label>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                type="radio"
-                                id="no-option"
-                                name="correctAnswer"
-                                value="no"
-                                checked={currentQuestion.correctAnswer === "no"}
-                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                              />
-                              <label htmlFor="no-option" className="ml-2 block text-sm text-gray-700">No</label>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                type="radio"
-                                id="not-given-option"
-                                name="correctAnswer"
-                                value="not-given"
-                                checked={currentQuestion.correctAnswer === "not-given"}
-                                onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                              />
-                              <label htmlFor="not-given-option" className="ml-2 block text-sm text-gray-700">Not Given</label>
-                            </div>
-                          </>
-                        )}
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Correct Answer
+                      </label>
+                      <div className="mt-1">
+                        <div className="flex space-x-4">
+                          {currentQuestion.questionType === "TRUE_FALSE_NOT_GIVEN" ? (
+                            <>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="true-option"
+                                  name="correctAnswer"
+                                  value="true"
+                                  checked={currentQuestion.correctAnswer === "true"}
+                                  onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                />
+                                <label htmlFor="true-option" className="ml-2 block text-sm text-gray-700">True</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="false-option"
+                                  name="correctAnswer"
+                                  value="false"
+                                  checked={currentQuestion.correctAnswer === "false"}
+                                  onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                />
+                                <label htmlFor="false-option" className="ml-2 block text-sm text-gray-700">False</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="not-given-option"
+                                  name="correctAnswer"
+                                  value="not-given"
+                                  checked={currentQuestion.correctAnswer === "not-given"}
+                                  onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                />
+                                <label htmlFor="not-given-option" className="ml-2 block text-sm text-gray-700">Not Given</label>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="yes-option"
+                                  name="correctAnswer"
+                                  value="yes"
+                                  checked={currentQuestion.correctAnswer === "yes"}
+                                  onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                />
+                                <label htmlFor="yes-option" className="ml-2 block text-sm text-gray-700">Yes</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="no-option"
+                                  name="correctAnswer"
+                                  value="no"
+                                  checked={currentQuestion.correctAnswer === "no"}
+                                  onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                />
+                                <label htmlFor="no-option" className="ml-2 block text-sm text-gray-700">No</label>
+                              </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  id="not-given-option"
+                                  name="correctAnswer"
+                                  value="not-given"
+                                  checked={currentQuestion.correctAnswer === "not-given"}
+                                  onChange={(e) => setCurrentQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                                  className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                />
+                                <label htmlFor="not-given-option" className="ml-2 block text-sm text-gray-700">Not Given</label>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                
+                  )}
+
                 {/* Map question */}
                 {currentQuestion.questionType === "MAP" && (
                   <div className="mt-3">
@@ -1084,7 +1093,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                         placeholder="Enter URL to map image"
                       />
                     </div>
-                    
+
                     <div className="mt-3">
                       <label htmlFor="mapLabels" className="block text-sm font-medium text-gray-700">
                         Map Labels (one per line)
@@ -1104,7 +1113,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                         />
                       </div>
                     </div>
-                    
+
                     <div className="mt-3">
                       <label htmlFor="correctAnswer" className="block text-sm font-medium text-gray-700">
                         Correct Answer
@@ -1121,7 +1130,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Speaking Task 1 (Introduction) */}
                 {currentQuestion.questionType === "SPEAKING_TASK_1" && (
                   <div className="mt-3">
@@ -1144,7 +1153,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Speaking Task 2 (Cue Card) */}
                 {currentQuestion.questionType === "SPEAKING_TASK_2" && (
                   <div className="mt-3">
@@ -1162,7 +1171,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                         placeholder="Enter the cue card text"
                       />
                     </div>
-                    
+
                     <div className="mt-3">
                       <label htmlFor="speakingPrompts" className="block text-sm font-medium text-gray-700">
                         Additional Prompts (one per line, optional)
@@ -1184,7 +1193,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Speaking Task 3 (Discussion) */}
                 {currentQuestion.questionType === "SPEAKING_TASK_3" && (
                   <div className="mt-3">
@@ -1207,7 +1216,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 {/* Speaking Follow Ups */}
                 {currentQuestion.questionType === "SPEAKING_FOLLOW_UPS" && (
                   <div className="mt-3">
@@ -1230,7 +1239,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                     </div>
                   </div>
                 )}
-                
+
                 <div className="pt-3">
                   <button
                     type="button"
@@ -1259,7 +1268,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
               </div>
             </div>
           </div>
-          
+
           {/* Questions list */}
           <div className="lg:col-span-2">
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -1271,7 +1280,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                   </p>
                 </div>
               </div>
-              
+
               {questions.length === 0 ? (
                 <div className="p-6 text-center">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1292,7 +1301,7 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                         console.error("Error parsing options:", error);
                       }
                     }
-                    
+
                     return (
                       <li key={question.id} className="p-6 hover:bg-gray-50 transition-colors duration-150">
                         <div className="flex items-start">
@@ -1322,18 +1331,17 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                                 {question.marks} {question.marks === 1 ? 'point' : 'points'}
                               </span>
                             </div>
-                            
+
                             {/* Show options for MULTIPLE_CHOICE */}
                             {question.questionType === "MULTIPLE_CHOICE" && parsedOptions.length > 0 && (
                               <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
                                 <p className="text-xs font-medium text-gray-500 mb-2">Options:</p>
                                 <ul className="space-y-1">
                                   {parsedOptions.map((option: string, optIndex: number) => (
-                                    <li 
-                                      key={optIndex} 
-                                      className={`text-sm pl-2 py-1 ${
-                                        option === question.correctAnswer ? 'text-green-700 font-medium bg-green-50 border-l-2 border-green-500 rounded' : ''
-                                      }`}
+                                    <li
+                                      key={optIndex}
+                                      className={`text-sm pl-2 py-1 ${option === question.correctAnswer ? 'text-green-700 font-medium bg-green-50 border-l-2 border-green-500 rounded' : ''
+                                        }`}
                                     >
                                       {option} {option === question.correctAnswer && "✓"}
                                     </li>
@@ -1341,19 +1349,18 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                                 </ul>
                               </div>
                             )}
-                            
+
                             {/* Show TRUE_FALSE answer */}
                             {question.questionType === "TRUE_FALSE" && (
                               <div className="mt-3 text-sm text-gray-700">
                                 <span className="font-medium">Correct answer: </span>
-                                <span className={`${
-                                  question.correctAnswer === "true" ? "text-green-600" : "text-red-600"
-                                } font-medium`}>
+                                <span className={`${question.correctAnswer === "true" ? "text-green-600" : "text-red-600"
+                                  } font-medium`}>
                                   {question.correctAnswer}
                                 </span>
                               </div>
                             )}
-                            
+
                             {/* Show SHORT_ANSWER answer */}
                             {question.questionType === "SHORT_ANSWER" && (
                               <div className="mt-3 text-sm text-gray-700">
@@ -1470,24 +1477,24 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                             )}
 
                             {/* Show TRUE_FALSE_NOT_GIVEN and YES_NO_NOT_GIVEN */}
-                            {(question.questionType === "TRUE_FALSE_NOT_GIVEN" || 
+                            {(question.questionType === "TRUE_FALSE_NOT_GIVEN" ||
                               question.questionType === "YES_NO_NOT_GIVEN") && (
-                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
-                                <p className="text-xs font-medium text-gray-500 mb-2">
-                                  {question.questionType === "TRUE_FALSE_NOT_GIVEN" ? "True/False/Not Given:" : "Yes/No/Not Given:"}
-                                </p>
-                                {question.passage && (
+                                <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                  <p className="text-xs font-medium text-gray-500 mb-2">
+                                    {question.questionType === "TRUE_FALSE_NOT_GIVEN" ? "True/False/Not Given:" : "Yes/No/Not Given:"}
+                                  </p>
+                                  {question.passage && (
+                                    <div className="mt-2 text-sm text-gray-700">
+                                      <span className="font-medium">Passage:</span>
+                                      <div className="mt-1 italic text-gray-600 line-clamp-3">{question.passage}</div>
+                                    </div>
+                                  )}
                                   <div className="mt-2 text-sm text-gray-700">
-                                    <span className="font-medium">Passage:</span>
-                                    <div className="mt-1 italic text-gray-600 line-clamp-3">{question.passage}</div>
+                                    <span className="font-medium">Correct answer: </span>
+                                    <span className="italic">{question.correctAnswer}</span>
                                   </div>
-                                )}
-                                <div className="mt-2 text-sm text-gray-700">
-                                  <span className="font-medium">Correct answer: </span>
-                                  <span className="italic">{question.correctAnswer}</span>
                                 </div>
-                              </div>
-                            )}
+                              )}
 
                             {/* Show MAP */}
                             {question.questionType === "MAP" && (
@@ -1519,35 +1526,35 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                             )}
 
                             {/* Show SPEAKING Tasks */}
-                            {(question.questionType === "SPEAKING_TASK_1" || 
+                            {(question.questionType === "SPEAKING_TASK_1" ||
                               question.questionType === "SPEAKING_TASK_2" ||
                               question.questionType === "SPEAKING_TASK_3") && (
-                              <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
-                                <p className="text-xs font-medium text-gray-500 mb-2">
-                                  {question.questionType === "SPEAKING_TASK_1" ? "Speaking Introduction" : 
-                                   question.questionType === "SPEAKING_TASK_2" ? "Speaking Cue Card" : 
-                                   "Speaking Discussion"}
-                                </p>
-                                {question.cueCard && (
-                                  <div className="mt-2 text-sm text-gray-700">
-                                    <span className="font-medium">Cue card:</span>
-                                    <div className="mt-1 italic text-gray-600 line-clamp-3">{question.cueCard}</div>
-                                  </div>
-                                )}
-                                {question.speakingPrompts && (
-                                  <div className="mt-2 text-sm text-gray-700">
-                                    <span className="font-medium">Speaking prompts:</span>
-                                    <div className="mt-1 italic text-gray-600">
-                                      {typeof question.speakingPrompts === 'string' ? (
-                                        <div className="line-clamp-2">{JSON.parse(question.speakingPrompts).join(", ")}</div>
-                                      ) : (
-                                        <div>Multiple prompts</div>
-                                      )}
+                                <div className="mt-3 border border-gray-200 rounded-md p-3 bg-gray-50">
+                                  <p className="text-xs font-medium text-gray-500 mb-2">
+                                    {question.questionType === "SPEAKING_TASK_1" ? "Speaking Introduction" :
+                                      question.questionType === "SPEAKING_TASK_2" ? "Speaking Cue Card" :
+                                        "Speaking Discussion"}
+                                  </p>
+                                  {question.cueCard && (
+                                    <div className="mt-2 text-sm text-gray-700">
+                                      <span className="font-medium">Cue card:</span>
+                                      <div className="mt-1 italic text-gray-600 line-clamp-3">{question.cueCard}</div>
                                     </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  )}
+                                  {question.speakingPrompts && (
+                                    <div className="mt-2 text-sm text-gray-700">
+                                      <span className="font-medium">Speaking prompts:</span>
+                                      <div className="mt-1 italic text-gray-600">
+                                        {typeof question.speakingPrompts === 'string' ? (
+                                          <div className="line-clamp-2">{JSON.parse(question.speakingPrompts).join(", ")}</div>
+                                        ) : (
+                                          <div>Multiple prompts</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
 
                             {/* Show SPEAKING_FOLLOW_UPS */}
                             {question.questionType === "SPEAKING_FOLLOW_UPS" && (

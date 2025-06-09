@@ -10,6 +10,7 @@ import AudioPlayer from '@/components/AudioPlayer';
 
 // Types
 interface Question {
+  summaryWords: any[];
   id: string;
   questionText?: string;  // From backend
   text?: string;          // From admin panel  
@@ -180,31 +181,36 @@ export default function PracticeTestDetailPage() {
             questionType: "MULTIPLE_CHOICE",
             options: JSON.stringify(['Human activity', 'Natural cycles', 'Solar radiation', 'Volcanic eruptions']),
             order: 1,
-            passage: "Climate change is one of the most pressing issues facing our planet today. The scientific consensus is that human activities, particularly the burning of fossil fuels and deforestation, are the primary drivers of climate change. These activities release greenhouse gases into the atmosphere, which trap heat and lead to global warming."
+            passage: "Climate change is one of the most pressing issues facing our planet today. The scientific consensus is that human activities, particularly the burning of fossil fuels and deforestation, are the primary drivers of climate change. These activities release greenhouse gases into the atmosphere, which trap heat and lead to global warming.",
+            summaryWords: []
           },
           {
             id: `${id}-q2`,
             questionText: "The passage suggests that deforestation contributes to climate change.",
             questionType: "TRUE_FALSE",
-            order: 2
+            order: 2,
+            summaryWords: []
           },
           {
             id: `${id}-q3`,
             questionText: "Complete the sentence: Greenhouse gases in the atmosphere _________.",
             questionType: "FILL_BLANK",
-            order: 3
+            order: 3,
+            summaryWords: []
           },
           {
             id: `${id}-q4`,
             questionText: "What are two major contributors to climate change mentioned in the passage?",
             questionType: "SHORT_ANSWER",
-            order: 4
+            order: 4,
+            summaryWords: []
           },
           {
             id: `${id}-q5`,
             questionText: "Explain how human activities contribute to climate change based on the passage.",
             questionType: "ESSAY",
-            order: 5
+            order: 5,
+            summaryWords: []
           }
         ];
         break;
@@ -225,21 +231,24 @@ export default function PracticeTestDetailPage() {
             questionType: "MULTIPLE_CHOICE",
             options: JSON.stringify(['Travel plans', 'University courses', 'Housing options', 'Job opportunities']),
             order: 1,
-            audioFile: "https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3"
+            audioFile: "https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3",
+            summaryWords: []
           },
           {
             id: `${id}-q2`,
             questionText: "The speakers agree to meet at 5 PM.",
             questionType: "TRUE_FALSE",
             order: 2,
-            audioFile: "https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3"
+            audioFile: "https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3",
+            summaryWords: []
           },
           {
             id: `${id}-q3`,
             questionText: "What time did the speakers agree to meet?",
             questionType: "SHORT_ANSWER",
             order: 3,
-            audioFile: "https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3"
+            audioFile: "https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3",
+            summaryWords: []
           }
         ];
         break;
@@ -259,13 +268,15 @@ export default function PracticeTestDetailPage() {
             questionText: "The graph below shows the population of India and China since the year 2000 and projected to 2050. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
             questionType: "ESSAY",
             order: 1,
-            questionImage: "https://miro.medium.com/max/1400/1*3whP7XYRrVDDwY7ddqogTw.png"
+            questionImage: "https://miro.medium.com/max/1400/1*3whP7XYRrVDDwY7ddqogTw.png",
+            summaryWords: []
           },
           {
             id: `${id}-q2`,
             questionText: "Some people believe that technological innovations have made our lives more complicated rather than simpler. To what extent do you agree or disagree?",
             questionType: "ESSAY",
-            order: 2
+            order: 2,
+            summaryWords: []
           }
         ];
         break;
@@ -284,14 +295,16 @@ export default function PracticeTestDetailPage() {
             id: `${id}-q1`,
             questionText: "Let's talk about your hometown. Where is it and what is it known for?",
             questionType: "SPEAKING_TASK_1",
-            order: 1
+            order: 1,
+            summaryWords: []
           },
           {
             id: `${id}-q2`,
             questionText: "Describe a time when you helped someone. You should say: who you helped, how you helped them, why they needed help, and how you felt about helping them.",
             questionType: "SPEAKING_TASK_2",
             order: 2,
-            cueCard: "Describe a time when you helped someone"
+            cueCard: "Describe a time when you helped someone",
+            summaryWords: []
           },
           {
             id: `${id}-q3`,
@@ -302,7 +315,8 @@ export default function PracticeTestDetailPage() {
               "What are some reasons why people might hesitate to help others?",
               "Do you think technology has made it easier or harder for people to help each other?",
               "How can governments encourage people to volunteer more in their communities?"
-            ]
+            ],
+            summaryWords: []
           }
         ];
         break;
@@ -617,7 +631,7 @@ export default function PracticeTestDetailPage() {
     if (question.passage || sectionPassage) {
       return (
         <div className="space-y-6">
-         
+
 
           {questionType && renderQuestionByType(question, questionType, currentQuestion)}
         </div>
@@ -794,57 +808,119 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderSummaryCompletion = (question: Question, idx: number) => {
-    const text = question.text || '';
-    const blanks = (text.match(/_/g) || []).length;
-    return (
-      <div>
-        <div className="font-medium text-blue-800 mb-4">
-          Q{idx + 1}. {question.questionText || question.text}
+  const summaryWords: string[] = question.summaryWords || [];
+  const text = question.text || '';
+  const textParts = text.split('_');
+
+  return (
+    <div>
+      <div className="font-medium text-blue-800 mb-4">
+        Q{idx + 1}. {question.questionText || question.text}
+      </div>
+
+      {/* Summary Words as chips */}
+      {summaryWords.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {summaryWords.map((word, i) => (
+            <span
+              key={i}
+              className="inline-block border border-blue-400 bg-blue-50 rounded px-4 py-2 text-blue-700 font-semibold tracking-wide"
+              style={{ minWidth: 60, textAlign: 'center' }}
+            >
+              {word}
+            </span>
+          ))}
         </div>
-        <div className="mb-2">{text.split('_').map((part, i, arr) => (
-          <span key={i}>
-            {part}
+      )}
+
+      {/* Fill-in-the-blank sentence */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        {textParts.map((part, i, arr) => (
+          <span key={i} className="flex items-center">
+            <span className="text-gray-900">{part}</span>
             {i < arr.length - 1 && (
               <input
                 type="text"
                 value={responses[`${question.id}-${i}`] || ''}
                 onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-                className="border rounded px-2 py-1 mx-1"
+                className="border-b-2 border-blue-500 bg-white px-2 py-1 mx-2 rounded focus:outline-none focus:border-blue-700 transition"
                 placeholder={`Blank ${i + 1}`}
                 style={{ width: 120 }}
+                autoComplete="off"
               />
             )}
           </span>
-        ))}</div>
-        {question.wordLimit && <div className="text-sm text-gray-600 mb-2">{question.wordLimit}</div>}
+        ))}
       </div>
-    );
-  };
 
+      {question.wordLimit && (
+        <div className="text-sm text-gray-600 mb-2">
+          <span className="font-medium">Word Limit:</span> {question.wordLimit}
+        </div>
+      )}
+    </div>
+  );
+};
 
-  const renderDiagramLabelling = (question: Question) => {
-    const labels = question.diagramLabels || [];
-    return (
-      <div>
-        {question.diagramImage && (
-          <img src={question.diagramImage} alt="Diagram" className="mb-4 max-w-xs border rounded" />
+const renderDiagramLabelling = (question: Question) => {
+  const labels = question.diagramLabels || [];
+  const diagramImage = question.diagramImage;
+
+  return (
+    <div>
+      <div className="mb-4">
+        {diagramImage && (
+          <div className="relative inline-block border rounded-lg overflow-hidden shadow-md">
+            <img
+              src={diagramImage}
+              alt="Diagram"
+              className="max-w-full max-h-96 block"
+              style={{ minWidth: 200, minHeight: 200 }}
+            />
+            {/* Render label markers */}
+            {labels.map((label: any, i: number) => (
+              <div
+                key={label.id || i}
+                className="absolute z-10"
+                style={{
+                  left: `${label.x}%`,
+                  top: `${label.y}%`,
+                  transform: "translate(-50%, -100%)"
+                }}
+              >
+                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-base font-bold shadow-lg border-2 border-white">
+                  {String.fromCharCode(65 + i)}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
-        <div className="mb-2">{question.wordLimit && <span className="text-sm text-gray-600">{question.wordLimit}</span>}</div>
-        {labels.map((label, i) => (
-          <div key={i} className="mb-3 flex items-center">
-            <span className="mr-2 font-medium">{label}:</span>
+      </div>
+      <div className="mb-2">
+        {question.wordLimit && <span className="text-sm text-gray-600">{question.wordLimit}</span>}
+      </div>
+      <div className="space-y-4 mt-4">
+        {labels.map((label: any, i: number) => (
+          <div key={label.id || i} className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-base font-bold">
+              {String.fromCharCode(65 + i)}
+            </span>
+            <span className="text-gray-700 font-medium">
+              {label.text || `Label ${String.fromCharCode(65 + i)}`}
+            </span>
             <input
               type="text"
               value={responses[`${question.id}-${i}`] || ''}
               onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-              className="border rounded px-2 py-1 flex-1"
-              placeholder={`Label for ${label}`}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder={`Your answer for ${String.fromCharCode(65 + i)}`}
             />
           </div>
         ))}
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 
   const renderSentenceEndingsMatching = (question: Question, idx: number) => {
@@ -855,25 +931,51 @@ export default function PracticeTestDetailPage() {
         <div className="font-medium text-blue-800 mb-4">
           Q{idx + 1}. {question.questionText || question.text}
         </div>
-        <h4 className="font-medium mb-2">Sentence Endings</h4>
-        <ul className="mb-4">{endings.map((e, i) => <li key={i}>{String.fromCharCode(65 + i)}. {e}</li>)}</ul>
-        {beginnings.map((b, i) => (
-          <div key={i} className="mb-3">
-            <div className="mb-1">{b} ...</div>
-            <select
-              value={responses[`${question.id}-${i}`] || ''}
-              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-              className="border rounded px-2 py-1"
-            >
-              <option value="">Select ending</option>
-              {endings.map((_, idx) => (
-                <option key={idx} value={String.fromCharCode(65 + idx)}>
-                  {String.fromCharCode(65 + idx)}
-                </option>
+        <h4 className="font-medium mb-2 text-blue-800">Sentence Endings</h4>
+        <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-4 shadow-sm">
+          <ul className="space-y-2">
+            {endings.map((e, i) => (
+              <li key={i} className="flex items-start">
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-600 text-white font-semibold mr-3">
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <span className="text-gray-800">{e}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="space-y-6">
+            <h4 className="font-medium mb-2 text-blue-800">Match Beginnings to Endings</h4>
+            <div className="grid grid-cols-1 gap-4">
+              {beginnings.map((b, i) => (
+                <div
+                  key={i}
+                  className="flex items-center bg-white border border-blue-100 rounded-lg shadow-sm p-4 gap-4"
+                >
+                  <div className="flex-shrink-0 flex flex-row items-center mr-2">
+                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-lg">
+                      {i + 1}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-gray-800 font-medium">{b} ...</span>
+                  </div>
+                  <select
+                    value={responses[`${question.id}-${i}`] || ''}
+                    onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
+                    className="px-3 py-2 border border-blue-300 rounded-md text-blue-900 bg-blue-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition"
+                  >
+                    <option value="">Select ending</option>
+                    {endings.map((_, idx) => (
+                      <option key={idx} value={String.fromCharCode(65 + idx)}>
+                        {String.fromCharCode(65 + idx)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ))}
-            </select>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
     );
   };
@@ -887,26 +989,50 @@ export default function PracticeTestDetailPage() {
         <div className="font-medium text-blue-800 mb-4">
           Q{idx + 1}. {question.questionText || question.text}
         </div>
-        <h4 className="font-medium mb-2">Headings</h4>
-        <ul className="mb-4">{headings.map((h, i) => <li key={i}>{String.fromCharCode(65 + i)}. {h}</li>)}</ul>
-        <h4 className="font-medium mb-2">Paragraphs</h4>
-        {paragraphs.map((p, i) => (
-          <div key={i} className="mb-3">
-            <div className="mb-1">{p}</div>
-            <select
-              value={responses[`${question.id}-${i}`] || ''}
-              onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
-              className="border rounded px-2 py-1"
+        <h4 className="font-medium mb-2 text-blue-800">Headings</h4>
+        <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mb-4 shadow-sm">
+          <ul className="space-y-2">
+            {headings.map((h, i) => (
+              <li key={i} className="flex items-start">
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-600 text-white font-semibold mr-3">
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <span className="text-gray-800">{h}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <h4 className="font-medium mb-2 text-blue-800">Paragraphs</h4>
+        <div className="space-y-4">
+          {paragraphs.map((p, i) => (
+            <div
+              key={i}
+              className="bg-white border border-blue-100 rounded-lg shadow-sm p-4 flex items-start gap-4"
             >
-              <option value="">Select heading</option>
-              {headings.map((_, idx) => (
-                <option key={idx} value={String.fromCharCode(65 + idx)}>
-                  {String.fromCharCode(65 + idx)}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+              <div className="flex-shrink-0 flex flex-row items-center mr-2">
+                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-lg">
+                  {String.fromCharCode(65 + i)}
+                </span>
+
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-800 whitespace-pre-line">{p}</p>
+              </div>
+              <select
+                value={responses[`${question.id}-${i}`] || ''}
+                onChange={e => handleAnswerChange(`${question.id}-${i}`, e.target.value)}
+                className="mt-2 px-2 py-1 border border-blue-300 rounded-md text-blue-900 bg-blue-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition"
+              >
+                <option value="">Heading</option>
+                {headings.map((_, idx) => (
+                  <option key={idx} value={String.fromCharCode(65 + idx)}>
+                    {String.fromCharCode(65 + idx)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -989,7 +1115,7 @@ export default function PracticeTestDetailPage() {
   };
 
   const renderFillBlank = (question: Question, idx: number) => {
-     const questionText = question.questionText || question.text || "";
+    const questionText = question.questionText || question.text || "";
     // Count blanks
     const blanks = (questionText.match(/_/g) || []).length;
 
@@ -1016,7 +1142,8 @@ export default function PracticeTestDetailPage() {
           </div>
         </div>
       </div>
-    )};
+    )
+  };
 
   const renderMapQuestion = (question: Question) => {
     // Get normalized field values
@@ -1442,50 +1569,50 @@ export default function PracticeTestDetailPage() {
 
                 <h3 className="text-lg font-medium text-gray-900 mt-8">Test sections</h3>
                 <ul className="mt-3 space-y-4">
-  {test.sections
-    .filter(section => section.questions && section.questions.length > 0)
-    .map((section, index) => (
-      <li key={section.id} className="bg-gray-50 p-4 rounded-md">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-            <span className="text-sm font-medium text-white">{index + 1}</span>
-          </div>
-          <div className="ml-4">
-            <h4 className="text-base font-medium text-gray-900">{section.title}</h4>
-            <p className="text-sm text-gray-500 mt-1">
-              {section.timeLimit} minutes • {section.questions.length} questions
-            </p>
-            {section.instructions && (
-              <p className="text-sm text-gray-600 mt-2 italic">{section.instructions}</p>
-            )}
-          </div>
-        </div>
-      </li>
-    ))}
-</ul>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 px-4 py-5 sm:p-6 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <Link
-                  href="/practice"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Back to Tests
-                </Link>
-
-                <button
-                  onClick={startTest}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Start Test
-                </button>
+                  {test.sections
+                    .filter(section => section.questions && section.questions.length > 0)
+                    .map((section, index) => (
+                      <li key={section.id} className="bg-gray-50 p-4 rounded-md">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                            <span className="text-sm font-medium text-white">{index + 1}</span>
+                          </div>
+                          <div className="ml-4">
+                            <h4 className="text-base font-medium text-gray-900">{section.title}</h4>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {section.timeLimit} minutes • {section.questions.length} questions
+                            </p>
+                            {section.instructions && (
+                              <p className="text-sm text-gray-600 mt-2 italic">{section.instructions}</p>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
               </div>
             </div>
           </div>
+
+          <div className="bg-gray-50 px-4 py-5 sm:p-6 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <Link
+                href="/practice"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Back to Tests
+              </Link>
+
+              <button
+                onClick={startTest}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Start Test
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
     );
   }
 
@@ -1543,11 +1670,18 @@ export default function PracticeTestDetailPage() {
                 <h2 className="text-lg font-bold text-blue-700 tracking-wide">Reading Passage</h2>
               </div>
               <div className="flex-1 overflow-y-auto prose prose-blue prose-sm max-w-none bg-white rounded-lg p-4 border border-blue-100 shadow-inner">
-                {
-                  currentQuestionData.passage ||
-                  currentSectionData.passage ||
-                  <span className="text-gray-400">No passage for this section.</span>
-                }
+                {(() => {
+                  const passage = currentQuestionData.passage || currentSectionData.passage;
+                  if (!passage) {
+                    return <span className="text-gray-400">No passage for this section.</span>;
+                  }
+                  // Split by double newlines for paragraphs, ignore single newlines
+                  return passage
+                    .split(/\n{2,}/)
+                    .map((para, idx) => (
+                      <p key={idx} className="mb-4">{para.replace(/\n/g, ' ')}</p>
+                    ));
+                })()}
               </div>
             </div>
           </div>
@@ -1621,5 +1755,5 @@ export default function PracticeTestDetailPage() {
           </div>
         </div>
       </div>
-</div>)
+    </div>)
 }
