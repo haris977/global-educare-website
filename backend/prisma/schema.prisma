@@ -122,7 +122,136 @@ model TestAttempt {
   responses      Response[]
   test           Test          @relation(fields: [testId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
+
+  part1Response   Part1Response?
+  part2Response   Part2Response?
+  part3Response   Part3Response?
 }
+
+
+
+model Part1Response {
+  id             String        @id @default(cuid())
+  testAttemptId  String        @unique
+  startedAt      DateTime
+  completedAt    DateTime?
+  duration       Int?          // in seconds
+  score          Float?
+  band           String?
+  feedback       String?
+  testAttempt    TestAttempt   @relation(fields: [testAttemptId], references: [id])
+  questions      Part1Question[]
+  @@map("part1_responses")
+}
+
+model Part1Question {
+  id              String         @id @default(cuid())
+  part1ResponseId  String
+  category         String         // e.g., "family", "work", "studies", "interests"
+  questionText     String
+  askedAt          DateTime
+  audioUrl         String?        // URL to user's audio response
+  duration         Int?           // response duration in seconds
+  score            Float?
+  feedback         String?
+  part1Response    Part1Response  @relation(fields: [part1ResponseId], references: [id])
+  @@map("part1_questions")
+}
+
+model Part2Response {
+  id                String        @id @default(cuid())
+  testAttemptId     String        @unique
+  topicCard         Json          // Store the topic card details
+  preparationStart  DateTime
+  preparationEnd    DateTime?
+  speakingStart     DateTime?
+  speakingEnd       DateTime?
+  audioUrl          String?       // URL to user's audio response
+  duration          Int?          // speaking duration in seconds
+  score             Float?
+  band              String?
+  feedback          String?
+  notes             String?       // User's preparation notes
+  testAttempt       TestAttempt   @relation(fields: [testAttemptId], references: [id])
+  followUpQuestions Part2FollowUp[]
+  @@map("part2_responses")
+}
+
+model Part2FollowUp {
+  id              String        @id @default(cuid())
+  part2ResponseId String
+  questionText    String
+  askedAt         DateTime
+  audioUrl        String?       // URL to user's audio response
+  duration        Int?          // response duration in seconds
+  score           Float?
+  feedback        String?
+  part2Response   Part2Response @relation(fields: [part2ResponseId], references: [id])
+  @@map("part2_followup")
+}
+
+model Part3Response {
+  id             String        @id @default(cuid())
+  testAttemptId  String        @unique
+  startedAt      DateTime
+  completedAt    DateTime?
+  duration       Int?          // in seconds
+  score          Float?
+  band           String?
+  feedback       String?
+  testAttempt    TestAttempt   @relation(fields: [testAttemptId], references: [id])
+  questions      Part3Question[]
+  @@map("part3_responses")
+}
+
+model Part3Question {
+  id              String         @id @default(cuid())
+  part3ResponseId  String
+  questionText     String
+  questionType     String         // e.g., "opinion", "analysis", "speculation"
+  askedAt          DateTime
+  audioUrl         String?        // URL to user's audio response
+  duration         Int?           // response duration in seconds
+  score            Float?
+  feedback         String?
+  part3Response    Part3Response  @relation(fields: [part3ResponseId], references: [id])
+  @@map("part3_questions")
+}
+
+// --- Question Banks ---
+model Part1QuestionBank {
+  id           String @id @default(cuid())
+  category     String // e.g., "home", "family", "work", "studies", "interests"
+  questionText String
+  isActive     Boolean @default(true)
+  difficulty   String  @default("standard") // standard, challenging
+  createdAt    DateTime @default(now())
+  @@map("part1_question_bank")
+}
+
+model Part2TopicBank {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  points      Json   // Array of bullet points to cover
+  isActive    Boolean @default(true)
+  difficulty  String  @default("standard")
+  category    String  // e.g., "person", "place", "object", "event"
+  createdAt   DateTime @default(now())
+  @@map("part2_topic_bank")
+}
+
+model Part3QuestionBank {
+  id           String @id @default(cuid())
+  topicArea    String // Connected to Part 2 categories
+  questionText String
+  questionType String // "opinion", "analysis", "comparison", "speculation"
+  isActive     Boolean @default(true)
+  difficulty   String  @default("standard")
+  createdAt    DateTime @default(now())
+  @@map("part3_question_bank")
+}
+
 
 model Response {
   id             String       @id @default(uuid())

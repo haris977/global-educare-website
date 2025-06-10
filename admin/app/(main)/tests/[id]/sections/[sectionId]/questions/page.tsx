@@ -31,6 +31,7 @@ interface Section {
   title: string;
   instructions: string;
   order: number;
+  
   timeLimit: number;
   testId: string;
 }

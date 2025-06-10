@@ -775,6 +775,11 @@ const validateQuestionFields = (questionType: string, questionData: any): boolea
   }
 };
 
+
+
+
+
+
 // Update question
 export const updateQuestion = async (req: AuthenticatedRequest, res: Response) => {
   try {

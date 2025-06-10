@@ -1021,21 +1021,17 @@ export default function CreateTestPage() {
 
                   {currentQuestion.type === "TABLE_COMPLETION" && (
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-800 mb-1">
-                        Table Completion Title
-                      </label>
-                      <input
+                        {/* Table Completion Title (use question text instead) */}
+                        <label className="block text-sm font-medium text-gray-800 mb-1">
+                        Table Completion Question
+                        </label>
+                        <input
                         type="text"
-                        value={""}
-                        onChange={e => setCurrentQuestion(prev => ({ ...prev, title: e.target.value }))}
+                        value={currentQuestion.text || ""}
+                        onChange={e => setCurrentQuestion(prev => ({ ...prev, text: e.target.value }))}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark mb-2"
                         placeholder="e.g., Early methods of producing flat glass"
-                      />
-
-                      
-
-                     
-                      {/* Table Builder */}
+                        />
                       <div className="mb-4">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-medium text-gray-800">Table Structure</span>
