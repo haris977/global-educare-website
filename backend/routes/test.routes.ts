@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware, checkRole } from '../middleware/auth.middleware';
+import { authenticateToken, checkRole } from '../middleware/auth.middleware';
 
 // Import test management controllers
 import {
@@ -57,11 +57,11 @@ router.post('/:testId/attempts', startTestAttempt as any); // No auth for starti
 router.get('/attempts/:attemptId', getTestAttempt as any); // No auth for accessing test attempts
 router.post('/attempts/:attemptId/save', saveTestProgress as any); // No auth for saving progress
 router.post('/attempts/:attemptId/submit', submitTestAttempt as any); // No auth for submitting tests
-router.get('/history', authMiddleware as any, getUserTestHistory as any);
+router.get('/history', authenticateToken as any, getUserTestHistory as any);
 
 // Response scoring routes (admin only)
 router.put('/responses/:responseId/score', 
-  authMiddleware as any, 
+  authenticateToken as any, 
   checkRole(['ADMIN', 'SUPER_ADMIN', 'DOUBTS_SOLVING_ADMIN'] as const) as any, 
   updateResponseScoring as any
 );

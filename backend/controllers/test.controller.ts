@@ -48,28 +48,12 @@ export const createTest = async (req: AuthenticatedRequest, res: Response) => {
 
     console.log("Test created successfully:", newTest.id);
 
-    // Automatically create a default section for the test
-    await prisma.section.create({
-      data: {
-        testId: newTest.id,
-        title: "Section 1",
-        instructions: "Default section for the test",
-        order: 1,
-        timeLimit: totalTime
-      }
+    // Get the test without sections
+    const testWithoutSection = await prisma.test.findUnique({
+      where: { id: newTest.id }
     });
 
-    console.log("Default section created for test:", newTest.id);
-
-    // Get the updated test with the new section
-    const testWithSection = await prisma.test.findUnique({
-      where: { id: newTest.id },
-      include: {
-        sections: true
-      }
-    });
-
-    return sendSuccessResponse(res, testWithSection, 'Test created successfully with default section', 201);
+    return sendSuccessResponse(res, testWithoutSection, 'Test created successfully', 201);
   } catch (error) {
     console.error("Error creating test:", error);
     return sendErrorResponse(res, 'Error creating test', 500, error);
@@ -182,9 +166,21 @@ export const getTestById = async (req: Request, res: Response) => {
     // add it to the section directly for easier access in the frontend
     const processedTest = {
       ...test,
-      sections: test.sections.map(section => {
+      sections: test.sections.map((section: any) => {
+        // Ensure all question.options are arrays
+        const questionsWithArrayOptions = section.questions.map((q: any) => {
+          let options = q.options;
+          if (typeof options === 'string') {
+            try {
+              options = JSON.parse(options);
+            } catch {
+              options = options.split(',');
+            }
+          }
+          return { ...q, options };
+        });
         // Find the passage question (order 0) if it exists
-        const passageQuestion = section.questions.find(q => q.order === 0);
+        const passageQuestion = questionsWithArrayOptions.find((q: any) => q.order === 0);
 
         // Add the passage to the section if found
         if (passageQuestion && passageQuestion.passage) {
@@ -192,11 +188,14 @@ export const getTestById = async (req: Request, res: Response) => {
             ...section,
             passage: passageQuestion.passage,
             // Filter out the passage question from the questions array
-            questions: section.questions.filter(q => q.order > 0)
+            questions: questionsWithArrayOptions.filter((q: any) => q.order > 0)
           };
         }
 
-        return section;
+        return {
+          ...section,
+          questions: questionsWithArrayOptions
+        };
       })
     };
     console.log("Processed test with sections and questions:", JSON.stringify(processedTest, null, 2));

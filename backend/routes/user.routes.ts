@@ -11,7 +11,7 @@ import {
   updateUser,
   validateToken,
 } from "../controllers/user.controller";
-import { authMiddleware, checkRole } from "../middleware/auth.middleware";
+import { authenticateToken, checkRole } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -20,22 +20,22 @@ router.post("/register", createUser as any);
 router.post("/login", loginUser as any);
 
 // Token validation route
-router.get("/validate-token", authMiddleware as any, validateToken as any);
+router.get("/validate-token", authenticateToken as any, validateToken as any);
 
 // Protected routes
 router.get(
   "/",
-  authMiddleware as any,
+  authenticateToken as any,
   checkRole(["ADMIN", "SUPER_ADMIN"]) as any,
   getAllUsers as any
 );
-router.get("/:id", authMiddleware as any, getUserById as any);
-router.put("/:id", authMiddleware as any, updateUser as any);
-router.delete("/:id", authMiddleware as any, deleteUser as any);
+router.get("/:id", authenticateToken as any, getUserById as any);
+router.put("/:id", authenticateToken as any, updateUser as any);
+router.delete("/:id", authenticateToken as any, deleteUser as any);
 
 // Subscription related routes
-router.post("/trial", authMiddleware as any, startFreeTrial as any);
-router.post("/subscribe", authMiddleware as any, subscribeUser as any);
-router.post("/refund", authMiddleware as any, requestRefund as any);
+router.post("/trial", authenticateToken as any, startFreeTrial as any);
+router.post("/subscribe", authenticateToken as any, subscribeUser as any);
+router.post("/refund", authenticateToken as any, requestRefund as any);
 
 export default router;
