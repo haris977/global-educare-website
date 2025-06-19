@@ -82,11 +82,16 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
       if (response.success && response.data) {
         setTest(response.data);
         setEditForm({
-          title: response.data.title,
+          id: response.data.id,
+          title: response.data.title || "",
           description: response.data.description || "",
-          totalTime: response.data.totalTime || 0,
+          moduleType: response.data.moduleType || "READING",
+          difficulty: response.data.difficulty || "MEDIUM",
+          totalTime: response.data.totalTime || 60,
+          totalQuestions: response.data.totalQuestions || 0,
           clbScore: response.data.clbScore || 1,
           isPublished: response.data.isPublished || false,
+          createdAt: response.data.createdAt || new Date().toISOString(),
           sections: response.data.sections || []
         } as Test);
       } else {
@@ -135,8 +140,18 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
         throw new Error(response.message || "Failed to update test");
       }
       
-      setTest(response.data);
-      setEditForm(JSON.parse(JSON.stringify(response.data)));
+      // Create a complete test object with all required fields
+      const updatedTestData = {
+        ...response.data,
+        sections: response.data.sections || [],
+        moduleType: response.data.moduleType || test.moduleType,
+        difficulty: response.data.difficulty || test.difficulty,
+        totalQuestions: response.data.totalQuestions || test.totalQuestions,
+        createdAt: response.data.createdAt || test.createdAt
+      };
+      
+      setTest(updatedTestData);
+      setEditForm(JSON.parse(JSON.stringify(updatedTestData)));
     } catch (err: any) {
       console.error("Error toggling publish status:", err);
       alert(err.message || "Error updating test");
@@ -573,9 +588,17 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
               <div className="overflow-hidden">
                 {test.sections.map((section) => (
                   <div key={section.id} className="border-b border-gray-200 last:border-b-0">
-                    <div className="bg-gray-50 px-4 py-3">
-                      <h3 className="text-sm font-semibold text-gray-900">{section.title}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{section.instructions || 'No instructions provided'}</p>
+                    <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-xs text-gray-500 mt-1">{section.instructions || 'No instructions provided'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteSection(section.id)}
+                        className="ml-4 text-xs text-red-600 hover:text-red-800 font-medium border border-red-200 rounded px-2 py-1"
+                      >
+                        Delete Section
+                      </button>
                     </div>
                     
                     {section.questions.length === 0 ? (
@@ -619,9 +642,23 @@ export default function TestDetailPage({ params }: { params: Promise<{ id: strin
                                     
                                     {/* Show additional details based on question type */}
                                     {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
-                                      <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-purple-50 text-purple-800">
-                                        {JSON.parse(question.options).length || 0} options
-                                      </span>
+                                      (() => {
+                                        let parsedOptions = [];
+                                        if (typeof question.options === 'string') {
+                                          try {
+                                            parsedOptions = JSON.parse(question.options);
+                                          } catch (error) {
+                                            parsedOptions = question.options.split(',');
+                                          }
+                                        } else if (Array.isArray(question.options)) {
+                                          parsedOptions = question.options;
+                                        }
+                                        return (
+                                          <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-purple-50 text-purple-800">
+                                            {parsedOptions.length || 0} options
+                                          </span>
+                                        );
+                                      })()
                                     )}
                                     
                                     {question.passage && (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { TestsAPI } from '@/services/api';
+import { TestsAPI } from "@/services/api";
 import AudioPlayer from '@/components/AudioPlayer';
 
 // Types
@@ -1674,26 +1674,46 @@ export default function PracticeTestDetailPage() {
           {/* Passage on the left */}
           <div className="md:w-1/2 mb-8 md:mb-0 h-full">
             <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-xl shadow-lg p-6 h-full flex flex-col">
-              <div className="flex items-center mb-4">
-                <svg className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 17l4 4 4-4m0-5V3m-8 4h8" />
-                </svg>
-                <h2 className="text-lg font-bold text-blue-700 tracking-wide">Reading Passage</h2>
-              </div>
-              <div className="flex-1 overflow-y-auto prose prose-blue prose-sm max-w-none bg-white rounded-lg p-4 border border-blue-100 shadow-inner">
-                {(() => {
-                  const passage = currentQuestionData.passage || currentSectionData.passage;
-                  if (!passage) {
-                    return <span className="text-gray-400">No passage for this section.</span>;
-                  }
-                  // Split by double newlines for paragraphs, ignore single newlines
-                  return passage
-                    .split(/\n{2,}/)
-                    .map((para, idx) => (
-                      <p key={idx} className="mb-4">{para.replace(/\n/g, ' ')}</p>
-                    ));
-                })()}
-              </div>
+              {test.moduleType === "LISTENING" ? (
+                <>
+                  <div className="flex items-center mb-4">
+                    <svg className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 17l4 4 4-4m0-5V3m-8 4h8" />
+                    </svg>
+                    <h2 className="text-lg font-bold text-blue-700 tracking-wide">Listening Audio</h2>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    {currentQuestionData.audioFile ? (
+                      <AudioPlayer src={currentQuestionData.audioFile} />
+                    ) : (
+                      <span className="text-gray-400">No audio for this question.</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center mb-4">
+                    <svg className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 17l4 4 4-4m0-5V3m-8 4h8" />
+                    </svg>
+                    <h2 className="text-lg font-bold text-blue-700 tracking-wide">Reading Passage</h2>
+                  </div>
+                  <div className="flex-1 overflow-y-auto prose prose-blue prose-sm max-w-none bg-white rounded-lg p-4 border border-blue-100 shadow-inner">
+                    {(() => {
+                      const passage = currentQuestionData.passage || currentSectionData.passage;
+                      if (!passage) {
+                        return <span className="text-gray-400">No passage for this section.</span>;
+                      }
+                      // Split by double newlines for paragraphs, ignore single newlines
+                      return passage
+                        .split(/\n{2,}/)
+                        .map((para, idx) => (
+                          <p key={idx} className="mb-4">{para.replace(/\n/g, ' ')}</p>
+                        ));
+                    })()}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           {/* Questions on the right */}

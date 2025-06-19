@@ -73,34 +73,18 @@ const generatePracticeExercise = (moduleId, contentId) => {
       },
       {
         id: 2,
-        type: 'multiple-choice',
-        question: `Sample practice question 2 focusing on ${topic.split('-').join(' ')}?`,
-        options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: 'Option D',
-        ...(isListeningModule && { audioFile: sampleAudioUrls[1] }),
-      },
-      {
-        id: 3,
         type: 'text-input',
         question: `${isListeningModule ? 'Listen and complete the following sentence' : 'Write a short response'} related to ${topic.split('-').join(' ')}:`,
         prompt: `Sample ${moduleId} prompt for ${topic.split('-').join(' ')} practice.`,
         correctAnswer: 'Sample model answer. In a real app, this would be evaluated by a tutor or AI.',
-        ...(isListeningModule && { audioFile: sampleAudioUrls[2] }),
+        ...(isListeningModule && { audioFile: sampleAudioUrls[1] }),
       },
       {
-        id: 4,
+        id: 3,
         type: 'true-false',
         question: `True or False: Sample statement related to ${topic.split('-').join(' ')}.`,
         correctAnswer: 'True',
         ...(isListeningModule && { audioFile: sampleAudioUrls[0] }),
-      },
-      {
-        id: 5,
-        type: 'multiple-choice',
-        question: `Final practice question about ${topic.split('-').join(' ')}?`,
-        options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: 'Option B',
-        ...(isListeningModule && { audioFile: sampleAudioUrls[1] }),
       }
     ]
   };

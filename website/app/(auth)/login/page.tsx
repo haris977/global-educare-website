@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/app/contexts/AuthContext";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 
@@ -9,13 +10,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { login, error: authError, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
 
     try {
       // Frontend validation
@@ -23,21 +21,11 @@ export default function LoginPage() {
         throw new Error("Please fill in all fields");
       }
 
-      // In a real app, you would connect to an API here
-      // This is just a mock implementation
-      console.log("Login credentials:", { email, password, rememberMe });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Redirect to dashboard (will be implemented when backend is created)
-      // For now, just show success in the UI
-      alert("Login successful! Redirecting to dashboard...");
+      await login(email, password);
       
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      // Error is handled by the auth context
+      console.error("Login error:", err);
     }
   };
 
@@ -64,9 +52,9 @@ export default function LoginPage() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-200">
-            {error && (
+            {authError && (
               <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4">
-                <p className="text-red-700">{error}</p>
+                <p className="text-red-700">{authError}</p>
               </div>
             )}
 
@@ -132,12 +120,12 @@ export default function LoginPage() {
               <div>
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={loading}
                   className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                    isLoading ? "opacity-75 cursor-not-allowed" : ""
+                    loading ? "opacity-75 cursor-not-allowed" : ""
                   }`}
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
               </div>
             </form>

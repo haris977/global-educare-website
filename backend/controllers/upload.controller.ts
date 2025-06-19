@@ -19,11 +19,15 @@ console.log('baseUploadDir:', baseUploadDir);
 export const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     try {
-      // If this is a listening module upload, save in uploads/listening/<testName>
+      // If this is a listening module upload, save in uploads/listening/<testId>
       const moduleType = req.body.moduleType || req.query.moduleType;
       if (moduleType === 'LISTENING') {
-        const testName = req.body.testName || req.query.testName || 'untitled-test';
-        const listeningDir = path.join(process.cwd(), 'uploads', 'listening', testName);
+        const testId = req.body.testId || req.query.testId;
+        if (!testId) {
+          cb(new Error('Test ID is required for listening module uploads'), '');
+          return;
+        }
+        const listeningDir = path.join(process.cwd(), 'uploads', 'listening', testId);
         if (!fs.existsSync(listeningDir)) {
           fs.mkdirSync(listeningDir, { recursive: true });
         }
@@ -38,10 +42,15 @@ export const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     try {
-      // Generate a unique filename to prevent collisions
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      cb(null, `${path.basename(file.originalname, ext)}-${uniqueSuffix}${ext}`);
+      // Use the original filename if it starts with 'audio_' (our new naming convention)
+      if (file.originalname.startsWith('audio_')) {
+        cb(null, file.originalname);
+      } else {
+        // Generate a unique filename to prevent collisions
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, `audio_${uniqueSuffix}${ext}`);
+      }
     } catch (error) {
       cb(error as Error, '');
     }
@@ -88,8 +97,12 @@ export const uploadAudio = async (req: AuthenticatedRequest, res: Response): Pro
     let relativePath, fileUrl;
     const moduleType = req.body.moduleType || req.query.moduleType;
     if (moduleType === 'LISTENING') {
-      const testName = req.body.testName || req.query.testName || 'untitled-test';
-      relativePath = path.join('listening', testName, req.file.filename);
+      const testId = req.body.testId || req.query.testId;
+      if (!testId) {
+        sendErrorResponse(res, 'Test ID is required for listening module uploads', 400);
+        return;
+      }
+      relativePath = path.join('listening', testId, req.file.filename);
       fileUrl = `/uploads/${relativePath.replace(/\\/g, '/')}`;
     } else {
       relativePath = path.join('audio', req.file.filename);

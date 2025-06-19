@@ -6,15 +6,32 @@ interface AudioPlayerProps {
   src: string;
   title?: string;
   autoPlay?: boolean;
+  onPlay?: () => void;
+  onEnded?: () => void;
+  onPause?: () => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onError?: () => void;
+  disabled?: boolean;
 }
 
-export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlayerProps) {
+export default function AudioPlayer({ 
+  src, 
+  title, 
+  autoPlay = false,
+  onPlay,
+  onEnded,
+  onPause,
+  onTimeUpdate,
+  onError,
+  disabled = false 
+}: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [volume, setVolume] = useState(0.8); // Default to 80% volume
 
   // Better reliable audio sources with spoken content (CORS-friendly)
@@ -22,8 +39,7 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
     'https://www.cambridgeenglish.org/Images/153113-listening-sample-part-1.mp3',
     'https://www.cambridgeenglish.org/Images/153114-listening-sample-part-2.mp3',
     'https://www.cambridgeenglish.org/Images/153115-listening-sample-part-3.mp3',
-    'https://www.cambridgeenglish.org/Images/153116-listening-sample-part-4.mp3',
-    'https://www.examenglish.com/IELTS/IELTS_listening_part1_2.mp3'
+    'https://www.cambridgeenglish.org/Images/153116-listening-sample-part-4.mp3'
   ];
 
   useEffect(() => {
@@ -32,6 +48,7 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
     setCurrentTime(0);
     setLoading(true);
     setError(false);
+    setErrorMessage('');
     
     // Create a new audio element on each source change to avoid caching issues
     const audio = new Audio();
@@ -52,10 +69,10 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
       }
     }
     
-    // Try the provided source first, but be ready to fall back
+    // Try the provided source first
     audio.src = processedSrc;
     
-    audio.addEventListener('canplaythrough', () => {
+    const handleCanPlayThrough = () => {
       setLoading(false);
       setDuration(audio.duration);
       
@@ -65,8 +82,39 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
           console.warn('Auto-play prevented by browser:', err);
         });
       }
-    });
-    
+    };
+
+    const handleError = (e: Event) => {
+      const audioElement = e.target as HTMLAudioElement;
+      let errorMsg = 'Failed to load audio';
+      
+      if (audioElement.error) {
+        switch (audioElement.error.code) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            errorMsg = 'Audio playback was aborted';
+            break;
+          case MediaError.MEDIA_ERR_NETWORK:
+            errorMsg = 'Network error occurred while loading audio';
+            break;
+          case MediaError.MEDIA_ERR_DECODE:
+            errorMsg = 'Audio decoding failed';
+            break;
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMsg = 'Audio format not supported';
+            break;
+          default:
+            errorMsg = 'Unknown error occurred';
+        }
+      }
+      
+      console.error('Audio error:', errorMsg);
+      setError(true);
+      setErrorMessage(errorMsg);
+      setLoading(false);
+      onError?.();
+    };
+
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
     audio.addEventListener('error', handleError);
     audio.volume = volume;
     audioRef.current = audio;
@@ -75,34 +123,48 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
     audio.load();
     
     return () => {
-      audio.removeEventListener('canplaythrough', () => {});
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.removeEventListener('error', handleError);
       audio.pause();
+      audio.src = ''; // Clear the source to stop loading
     };
-  }, [src, autoPlay]);
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
+  }, [src, autoPlay, onError]);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (audio) {
-      audio.addEventListener('timeupdate', handleTimeUpdate);
-      audio.addEventListener('ended', () => setIsPlaying(false));
-      audio.addEventListener('pause', () => setIsPlaying(false));
-      audio.addEventListener('play', () => setIsPlaying(true));
-      
-      return () => {
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
-        audio.removeEventListener('ended', () => {});
-        audio.removeEventListener('pause', () => {});
-        audio.removeEventListener('play', () => {});
-      };
-    }
-  }, [audioRef.current]);
+    if (!audio) return;
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      onTimeUpdate?.(audio.currentTime, audio.duration);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      onEnded?.();
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+      onPause?.();
+    };
+
+    const handlePlay = () => {
+      setIsPlaying(true);
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('play', handlePlay);
+    
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('play', handlePlay);
+    };
+  }, [src, autoPlay, onError, onPause]);
 
   // Update volume when it changes
   useEffect(() => {
@@ -111,26 +173,28 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
     }
   }, [volume]);
 
-  const handlePlayPause = () => {
-    if (audioRef.current) {
+  const handlePlayPause = async () => {
+    if (!audioRef.current || disabled) return;
+
+    try {
       if (isPlaying) {
         audioRef.current.pause();
+        setIsPlaying(false);
       } else {
-        // Use the play-promise pattern for better browser compatibility
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              setIsPlaying(true);
-            })
-            .catch(err => {
-              console.error('Error playing audio:', err);
-              setError(true);
-              // Try to recover by switching to a reliable source
-              useReliableAudioSource();
-            });
+        // Reset the audio to the beginning if it has ended
+        if (audioRef.current.ended) {
+          audioRef.current.currentTime = 0;
         }
+        
+        // Use await to ensure the play promise is handled properly
+        await audioRef.current.play();
+        setIsPlaying(true);
+        onPlay?.();
       }
+    } catch (error) {
+      console.error('Error handling play/pause:', error);
+      setError(true);
+      onError?.();
     }
   };
 
@@ -156,14 +220,6 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Use a fallback src if the provided one fails
-  const handleError = () => {
-    console.log("Audio error occurred, using fallback");
-    setError(true);
-    setLoading(false);
-    useReliableAudioSource();
   };
 
   // Switch to a reliable audio source
@@ -217,12 +273,24 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
           <p className="mt-2 text-gray-600 font-medium">Loading audio...</p>
         </div>
+      ) : error ? (
+        <div className="flex flex-col justify-center items-center h-24 bg-red-50 rounded-md">
+          <p className="text-red-600 font-medium">{errorMessage}</p>
+          <p className="text-sm text-red-500 mt-1">Please try again later</p>
+        </div>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             <button
               onClick={handlePlayPause}
-              className={`rounded-full ${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'} text-white p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+              disabled={disabled}
+              className={`rounded-full ${
+                disabled 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : isPlaying 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+              } text-white p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
               aria-label={isPlaying ? "Pause" : "Play"}
               title={isPlaying ? "Pause" : "Play"}
             >
@@ -290,15 +358,6 @@ export default function AudioPlayer({ src, title, autoPlay = false }: AudioPlaye
               aria-label="Volume control"
             />
           </div>
-          
-          {error && (
-            <div className="flex items-center p-3 bg-yellow-50 text-sm text-yellow-800 rounded-md border border-yellow-200">
-              <svg className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p>Using IELTS sample audio. Press play to listen.</p>
-            </div>
-          )}
         </div>
       )}
     </div>

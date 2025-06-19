@@ -1,5 +1,77 @@
 // API base URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Type definitions
+interface Test {
+  id: string;
+  title: string;
+  description: string;
+  moduleType: string;
+  difficulty: string;
+  totalTime: number;
+  totalQuestions: number;
+  clbScore: number;
+  isPublished: boolean;
+  sections: Section[];
+  createdAt?: string;
+}
+
+interface Section {
+  id: string;
+  title: string;
+  instructions: string;
+  timeLimit: number;
+  order: number;
+  questions: Question[];
+}
+
+interface Question {
+  id: string;
+  sectionId: string;
+  questionText?: string;
+  text?: string;
+  questionType?: string;
+  type?: string;
+  order: number;
+  marks: number;
+  options?: string[];
+  correctAnswer?: string;
+  passage?: string;
+  audioFile?: string;
+}
+
+interface TestAttempt {
+  id: string;
+  testId: string;
+  userId: string;
+  startedAt: string;
+  status: string;
+  currentSection: number;
+  responses: Record<string, any>;
+  timeRemaining: number;
+  test: Test;
+}
+
+interface TestResult extends TestAttempt {
+  score: number;
+  maxScore: number;
+  percentageScore: number;
+  bandScore: number;
+  feedback: string;
+  completedAt: string;
+  sectionResults: Array<{
+    sectionId: string;
+    score: number;
+    maxScore: number;
+    percentageScore: number;
+  }>;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
 
 // Control fallback data usage - environment variable takes priority
 const USE_FALLBACKS = process.env.NEXT_PUBLIC_DISABLE_FALLBACKS === 'true' 
@@ -12,9 +84,52 @@ const ALLOW_ANONYMOUS_TEST_ATTEMPTS = true;
 // Anonymous user ID (for development only)
 const ANONYMOUS_USER_ID = 'anonymous-user-' + Math.random().toString(36).substring(2, 10);
 
+// Helper functions for development/fallback mode
+const createGenericTest = (testId: string): Test => ({
+  id: testId,
+  title: "Generic Test",
+  description: "A generic test for development purposes",
+  moduleType: "LISTENING",
+  difficulty: "MEDIUM",
+  totalTime: 60,
+  totalQuestions: 5,
+  clbScore: 7,
+  isPublished: true,
+  sections: [
+    {
+      id: "section-1",
+      title: "Section 1",
+      instructions: "Listen to the audio and answer the questions",
+      timeLimit: 30,
+      order: 1,
+      questions: generateMockQuestionsForSection("section-1", "LISTENING")
+    }
+  ]
+});
+
+const generateMockQuestionsForSection = (sectionId: string, moduleType: string): Question[] => {
+  const questions: Question[] = [];
+  const questionTypes = ['MULTIPLE_CHOICE', 'TRUE_FALSE', 'SHORT_ANSWER', 'FILL_BLANK'];
+  
+  for (let i = 1; i <= 5; i++) {
+    questions.push({
+      id: `${sectionId}-q${i}`,
+      sectionId,
+      questionText: `Question ${i}`,
+      questionType: questionTypes[i % questionTypes.length],
+      order: i,
+      marks: 1,
+      options: ['Option A', 'Option B', 'Option C', 'Option D'],
+      correctAnswer: 'Option A'
+    });
+  }
+  
+  return questions;
+};
+
 // Generic fetch function with error handling
-async function fetchData<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_URL}${endpoint}`;
+async function fetchData<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${endpoint}`;
   
   // Get token from localStorage if available (client-side only)
   let token = '';
@@ -64,7 +179,7 @@ async function fetchData<T>(endpoint: string, options: RequestInit = {}): Promis
           let testData;
           try {
             // Direct fetch to avoid recursive calls to fetchData
-            const testResponse = await fetch(`${API_URL}/tests/${testId}`, {
+            const testResponse = await fetch(`${API_BASE_URL}/api/tests/${testId}`, {
               headers: {
                 'Content-Type': 'application/json'
               }
@@ -104,7 +219,7 @@ async function fetchData<T>(endpoint: string, options: RequestInit = {}): Promis
             success: true,
             message: "Test attempt started (anonymous mode)",
             data: attemptData
-          } as any as T;
+          } as any as ApiResponse<T>;
         }
       }
     }
@@ -112,10 +227,18 @@ async function fetchData<T>(endpoint: string, options: RequestInit = {}): Promis
     // Handle non-2xx responses normally
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      // Return empty data instead of throwing for test not found errors
+      if (errorData.message === "Test not found") {
+        return {
+          success: true,
+          message: "No tests found",
+          data: []
+        } as ApiResponse<T>;
+      }
       throw new Error(errorData.message || `API Error: ${response.status}`);
     }
     
-    return await response.json() as T;
+    return await response.json() as ApiResponse<T>;
   } catch (error) {
     console.error('API request failed:', error);
     throw error;
@@ -123,44 +246,66 @@ async function fetchData<T>(endpoint: string, options: RequestInit = {}): Promis
 }
 
 // Authentication API calls
-export const AuthAPI = {
-  login: async (email: string, password: string) => {
-    return fetchData<{success: boolean; message: string; data: {token: string; user: any}}>('/users/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+const AuthAPI = {
+  login: async (email: string, password: string): Promise<ApiResponse<{token: string}>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('token', data.data.token);
+      }
+      return data;
+    } catch (error) {
+      console.error('Error logging in:', error);
+      return { success: false, message: 'Error logging in', data: { token: '' } };
+    }
   },
   
-  register: async (userData: {name: string; email: string; password: string; phone?: string}) => {
+  register: async (userData: {name: string; email: string; password: string; phone?: string}): Promise<ApiResponse<any>> => {
     return fetchData<{success: boolean; message: string; data: any}>('/users/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   },
   
-  startTrial: async () => {
+  startTrial: async (): Promise<ApiResponse<any>> => {
     return fetchData<{success: boolean; message: string; data: any}>('/users/trial', {
       method: 'POST',
     });
   },
   
-  subscribe: async (subscriptionPlan: string) => {
+  subscribe: async (subscriptionPlan: string): Promise<ApiResponse<any>> => {
     return fetchData<{success: boolean; message: string; data: any}>('/users/subscribe', {
       method: 'POST',
       body: JSON.stringify({ subscriptionPlan }),
     });
   },
   
-  requestRefund: async () => {
+  requestRefund: async (): Promise<ApiResponse<any>> => {
     return fetchData<{success: boolean; message: string; data: any}>('/users/refund', {
       method: 'POST',
     });
   },
   
-  getProfile: async () => {
-    return fetchData<{success: boolean; message: string; data: any}>('/users/profile', {
-      method: 'GET',
-    });
+  getProfile: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return { success: false, message: 'Error fetching profile', data: null };
+    }
   },
 };
 
@@ -280,7 +425,7 @@ const calculateIeltsBand = (percentageScore: number): number => {
 // Tests API
 export const TestsAPI = {
   // Get all published tests
-  getAllTests: async ({isPublished = true} = {}) => {
+  getAllTests: async ({isPublished = true} = {}): Promise<ApiResponse<Test[]>> => {
     try {
       // Make sure we're only getting published tests
       const queryParams = new URLSearchParams();
@@ -288,7 +433,7 @@ export const TestsAPI = {
         queryParams.append('isPublished', 'true');
       }
       
-      const response = await fetchData<{success: boolean; message: string; data: any[]}>(`/tests?${queryParams.toString()}`);
+      const response = await fetchData<Test[]>(`/tests?${queryParams.toString()}`);
       
       // Only use real tests if they exist and not fallback tests
       if (response.success && response.data && response.data.length > 0) {
@@ -333,7 +478,7 @@ export const TestsAPI = {
         return {
           success: true,
           message: "Using fallback tests data",
-          data: fallbackTests
+          data: fallbackTests as Test[]
         };
       }
       
@@ -351,7 +496,7 @@ export const TestsAPI = {
         return {
           success: true,
           message: "Using fallback tests data",
-          data: fallbackTests
+          data: fallbackTests as Test[]
         };
       }
       
@@ -360,9 +505,10 @@ export const TestsAPI = {
   },
   
   // Get tests by module type
-  getTestsByModule: async (moduleType: string) => {
+  getTestsByModule: async (moduleType: string): Promise<ApiResponse<Test[]>> => {
     try {
-      return await fetchData<{success: boolean; message: string; data: any[]}>(`/tests?moduleType=${moduleType}&isPublished=true`);
+      const response = await fetchData<Test[]>(`/tests?moduleType=${moduleType}&isPublished=true`);
+      return response;
     } catch (error) {
       console.error(`Error fetching ${moduleType} tests:`, error);
       
@@ -372,7 +518,7 @@ export const TestsAPI = {
         return {
           success: true,
           message: `Using fallback ${moduleType} tests data`,
-          data: filteredTests
+          data: filteredTests as Test[]
         };
       }
       
@@ -381,181 +527,45 @@ export const TestsAPI = {
   },
   
   // Get a single test by ID
-  getTestById: async (id: string) => {
+  getTestById: async (id: string): Promise<ApiResponse<Test>> => {
     try {
-      console.log(`Fetching test by ID: ${id}`);
-      
-      // Check if this is a fallback test
-      if (id.startsWith('fallback-test-') && USE_FALLBACKS) {
-        const test = fallbackTests.find(t => t.id === id);
-        
-        if (test) {
-          console.log("Returning fallback test");
-          return {
-            success: true,
-            message: "Using fallback test data",
-            data: test
-          };
-        }
-      }
-      
-      const response = await fetchData<{success: boolean; message: string; data: any}>(`/tests/${id}`);
-      
-      // Special handling for reading tests to ensure questions are present
-      if (response.success && response.data && response.data.moduleType === 'READING') {
-        console.log("Processing reading test data");
-        
-        // Check if sections have questions
-        let allSectionsHaveQuestions = true;
-        let hasAtLeastOneSection = false;
-        
-        if (response.data.sections) {
-          for (const section of response.data.sections) {
-            if (section.questions && section.questions.length > 0) {
-              hasAtLeastOneSection = true;
-            } else {
-              allSectionsHaveQuestions = false;
-              console.warn(`Section ${section.id} has no questions!`);
-            }
-          }
-        }
-        
-        // If we have at least one section with questions, we can proceed
-        // Only try to fetch additional section details if all sections have no questions
-        if (!hasAtLeastOneSection) {
-          console.log("No sections have questions, trying to fetch them directly");
-          
-          try {
-            // Fetch detailed sections with questions
-            const sectionsPromises = response.data.sections.map(async (section) => {
-              try {
-                console.log(`Attempting to fetch section details for ${section.id}`);
-                const sectionResponse = await fetchData<{success: boolean; message: string; data: any}>(`/tests/sections/${section.id}`);
-                if (sectionResponse.success && sectionResponse.data) {
-                  return {
-                    ...section,
-                    questions: sectionResponse.data.questions || []
-                  };
-                }
-                return section;
-              } catch (err) {
-                console.warn(`Failed to fetch section details for ${section.id}:`, err);
-                // If we can't fetch section details, generate mock questions
-                return {
-                  ...section,
-                  questions: generateMockQuestionsForSection(section.id, response.data.moduleType)
-                };
-              }
-            });
-            
-            const updatedSections = await Promise.all(sectionsPromises);
-            response.data.sections = updatedSections;
-          } catch (err) {
-            console.error("Failed to fetch detailed section data:", err);
-            // Generate mock questions for all sections as a fallback
-            response.data.sections = response.data.sections.map(section => ({
-              ...section,
-              questions: section.questions && section.questions.length > 0 
-                ? section.questions 
-                : generateMockQuestionsForSection(section.id, response.data.moduleType)
-            }));
-          }
-        }
-      }
-      
+      const response = await fetchData<Test>(`/tests/${id}`);
       return response;
     } catch (error) {
-      console.error(`Error fetching test ${id}:`, error);
-      
-      // Return a fallback test if enabled
-      if (USE_FALLBACKS) {
-        // First try to find an exact ID match
-        let test = fallbackTests.find(t => t.id === id);
-        
-        // If no exact match, return the first test of the right type if we can extract type from ID
-        if (!test && id.includes('-')) {
-          const potentialModuleType = id.split('-')[0].toUpperCase();
-          if (['READING', 'LISTENING', 'WRITING', 'SPEAKING'].includes(potentialModuleType)) {
-            test = fallbackTests.find(t => t.moduleType === potentialModuleType);
-          }
-        }
-        
-        // Use first test as last resort
-        if (!test) {
-          test = fallbackTests[0];
-        }
-        
-        return {
-          success: true,
-          message: "Using fallback test data",
-          data: test
-        };
-      }
-      
-      throw error;
+      console.error('Error fetching test:', error);
+      return { 
+        success: false, 
+        message: 'Error fetching test',
+        data: createGenericTest(id)
+      };
     }
   },
   
   // Start a new test attempt - Fixed to ensure proper handling of tests created in the admin panel
-  startTestAttempt: async (testId: string) => {
+  startTestAttempt: async (testId: string): Promise<ApiResponse<TestAttempt>> => {
     console.log(`Attempting to start test attempt for: ${testId}`);
     
     // Check for token first - only try API if we have a token
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
     // First try to get the test details to ensure we have valid information
-    let testData;
+    let testData: Test | undefined;
     try {
-      const testResponse = await fetch(`${API_URL}/tests/${testId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-      });
-      
-      if (testResponse.ok) {
-        const testResult = await testResponse.json();
-        if (testResult.success && testResult.data) {
-          testData = testResult.data;
-          console.log("Retrieved test data for attempt:", testData);
-          
-          // Normalize question fields for frontend compatibility
-          if (testData.sections) {
-            testData.sections.forEach(section => {
-              if (section.questions) {
-                section.questions.forEach(question => {
-                  // Ensure both field naming conventions are available
-                  if (question.questionText && !question.text) {
-                    question.text = question.questionText;
-                  }
-                  if (question.text && !question.questionText) {
-                    question.questionText = question.text;
-                  }
-                  if (question.questionType && !question.type) {
-                    question.type = question.questionType;
-                  }
-                  if (question.type && !question.questionType) {
-                    question.questionType = question.type;
-                  }
-                });
-              }
-            });
-          }
-        }
+      const testResponse = await fetchData<Test>(`/tests/${testId}`);
+      if (testResponse.success && testResponse.data) {
+        testData = testResponse.data;
+        console.log("Retrieved test data for attempt:", testData);
       }
     } catch (error) {
       console.warn("Could not fetch test details:", error);
-      // Continue execution - we'll generate a generic test if needed
     }
     
-    // If no token and anonymous mode is enabled, immediately create local attempt without trying the API
+    // If no token and anonymous mode is enabled, immediately create local attempt
     if (!token && ALLOW_ANONYMOUS_TEST_ATTEMPTS) {
       console.log("No authentication token found, creating anonymous test attempt without API call");
       
-      // Create anonymous attempt
-      const attemptId = `local-attempt-${Date.now()}`;
-      const attemptData = {
-        id: attemptId,
+      const attemptData: TestAttempt = {
+        id: `local-attempt-${Date.now()}`,
         testId,
         userId: ANONYMOUS_USER_ID,
         startedAt: new Date().toISOString(),
@@ -568,7 +578,7 @@ export const TestsAPI = {
       
       // Store in localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
+        localStorage.setItem(`test-attempt-${attemptData.id}`, JSON.stringify(attemptData));
       }
       
       return {
@@ -578,101 +588,21 @@ export const TestsAPI = {
       };
     }
     
-    // Always use the anonymous approach for reading tests to avoid any backend issues
-    if (testData?.moduleType === 'READING') {
-      console.log("Using local attempt for reading module for better reliability");
-      
-      // Create local attempt
-      const attemptId = `local-attempt-${Date.now()}`;
-      
-      // Ensure we have the complete test data with questions
-      const testDataWithQuestions = {
-        ...testData,
-        sections: testData.sections.map(section => {
-          // Check if section has questions
-          if (!section.questions || section.questions.length === 0) {
-            console.log(`Adding mock questions to section ${section.id}`);
-            return {
-              ...section,
-              questions: generateMockQuestionsForSection(section.id, testData.moduleType)
-            };
-          }
-          return {
-            ...section,
-            questions: section.questions
-          };
-        })
-      };
-      
-      const attemptData = {
-        id: attemptId,
-        testId,
-        userId: token ? 'authenticated-user' : ANONYMOUS_USER_ID,
-        startedAt: new Date().toISOString(),
-        status: 'IN_PROGRESS',
-        currentSection: 0,
-        responses: {},
-        timeRemaining: testData?.sections?.[0]?.timeLimit * 60 || 3600, // Default 1 hour if not specified
-        test: testDataWithQuestions
-      };
-      
-      // Store in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
-      }
-      
-      return {
-        success: true,
-        message: "Reading test attempt started (local mode)",
-        data: attemptData
-      };
-    }
-    
-    // If we have a token, try the regular API for non-reading tests
+    // If we have a token, try the regular API
     if (token) {
       try {
-        const response = await fetchData<{success: boolean; message: string; data: any}>(`/tests/${testId}/attempts`, {
+        const response = await fetchData<TestAttempt>(`/tests/${testId}/attempts`, {
           method: 'POST',
         });
-        
-        if (response.success && response.data) {
-          // Normalize question fields for frontend compatibility
-          if (response.data.test && response.data.test.sections) {
-            response.data.test.sections.forEach(section => {
-              if (section.questions) {
-                section.questions.forEach(question => {
-                  // Ensure both field naming conventions are available
-                  if (question.questionText && !question.text) {
-                    question.text = question.questionText;
-                  }
-                  if (question.text && !question.questionText) {
-                    question.questionText = question.text;
-                  }
-                  if (question.questionType && !question.type) {
-                    question.type = question.questionType;
-                  }
-                  if (question.type && !question.questionType) {
-                    question.questionType = question.type;
-                  }
-                });
-              }
-            });
-          }
-        }
-        
         return response;
       } catch (error) {
         console.error(`Failed to start test attempt for ${testId}:`, error);
         
-        // Always fall back to local mode regardless of ALLOW_ANONYMOUS_TEST_ATTEMPTS setting
-        console.log("API call failed, falling back to local test attempt");
-        
-        // Create local attempt
-        const attemptId = `local-attempt-${Date.now()}`;
-        const attemptData = {
-          id: attemptId,
+        // Fall back to local mode
+        const attemptData: TestAttempt = {
+          id: `local-attempt-${Date.now()}`,
           testId,
-          userId: 'authenticated-user', // Use a placeholder for authenticated users
+          userId: 'authenticated-user',
           startedAt: new Date().toISOString(),
           status: 'IN_PROGRESS',
           currentSection: 0,
@@ -683,7 +613,7 @@ export const TestsAPI = {
         
         // Store in localStorage
         if (typeof window !== 'undefined') {
-          localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
+          localStorage.setItem(`test-attempt-${attemptData.id}`, JSON.stringify(attemptData));
         }
         
         return {
@@ -695,12 +625,8 @@ export const TestsAPI = {
     }
     
     // If neither token exists nor anonymous mode is enabled, use local test mode
-    console.log("No authentication, using local test mode");
-    
-    // Create local attempt
-    const attemptId = `local-attempt-${Date.now()}`;
-    const attemptData = {
-      id: attemptId,
+    const attemptData: TestAttempt = {
+      id: `local-attempt-${Date.now()}`,
       testId,
       userId: ANONYMOUS_USER_ID,
       startedAt: new Date().toISOString(),
@@ -713,7 +639,7 @@ export const TestsAPI = {
     
     // Store in localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
+      localStorage.setItem(`test-attempt-${attemptData.id}`, JSON.stringify(attemptData));
     }
     
     return {
@@ -724,7 +650,7 @@ export const TestsAPI = {
   },
   
   // Get a specific test attempt - Modified to support anonymous attempts
-  getTestAttempt: async (attemptId: string) => {
+  getTestAttempt: async (attemptId: string): Promise<ApiResponse<TestAttempt>> => {
     try {
       console.log(`Attempting to get test attempt: ${attemptId}`);
       
@@ -736,12 +662,13 @@ export const TestsAPI = {
           return {
             success: true,
             message: "Retrieved anonymous attempt",
-            data: JSON.parse(savedAttempt)
+            data: JSON.parse(savedAttempt) as TestAttempt
           };
         }
       }
       
-      return await fetchData<{success: boolean; message: string; data: any}>(`/tests/attempts/${attemptId}`);
+      const response = await fetchData<TestAttempt>(`/tests/attempts/${attemptId}`);
+      return response;
     } catch (error) {
       console.error(`Failed to get test attempt: ${attemptId}`, error);
       
@@ -756,13 +683,12 @@ export const TestsAPI = {
             return {
               success: true,
               message: "Retrieved offline attempt",
-              data: JSON.parse(savedAttempt)
+              data: JSON.parse(savedAttempt) as TestAttempt
             };
           }
         }
       }
       
-      // If fallbacks are disabled or it's not an offline attempt, propagate the error
       throw error;
     }
   },
@@ -776,7 +702,7 @@ export const TestsAPI = {
     }>;
     currentSection: number;
     timeRemaining: number;
-  }) => {
+  }): Promise<ApiResponse<TestAttempt>> => {
     try {
       console.log(`Attempting to save test progress for: ${attemptId}`);
       
@@ -786,27 +712,29 @@ export const TestsAPI = {
         
         // Get the existing attempt
         const existingData = localStorage.getItem(`test-attempt-${attemptId}`);
-        let attemptData = existingData ? JSON.parse(existingData) : { id: attemptId };
+        let attemptData: TestAttempt = existingData ? JSON.parse(existingData) : {
+          id: attemptId,
+          testId: '',
+          userId: ANONYMOUS_USER_ID,
+          startedAt: new Date().toISOString(),
+          status: 'IN_PROGRESS',
+          currentSection: 0,
+          responses: {},
+          timeRemaining: 3600,
+          test: createGenericTest('')
+        };
         
-        // Convert responses array to object format if needed
-        const responsesObj: Record<string, string> = {};
-        if (Array.isArray(data.responses)) {
-          data.responses.forEach(response => {
-            if (response.questionId) {
-              responsesObj[response.questionId] = response.userAnswer || '';
-            }
-          });
-        }
-        
-        // Update attempt data
+        // Update the attempt data
         attemptData = {
           ...attemptData,
           currentSection: data.currentSection,
           timeRemaining: data.timeRemaining,
-          lastSavedAt: new Date().toISOString(),
           responses: {
             ...attemptData.responses,
-            ...responsesObj
+            ...data.responses.reduce((acc, response) => ({
+              ...acc,
+              [response.questionId]: response
+            }), {})
           }
         };
         
@@ -815,78 +743,24 @@ export const TestsAPI = {
         
         return {
           success: true,
-          message: "Saved anonymous progress locally",
+          message: "Progress saved locally",
           data: attemptData
         };
       }
       
-      return await fetchData<{success: boolean; message: string; data: any}>(`/tests/attempts/${attemptId}/save`, {
+      const response = await fetchData<TestAttempt>(`/tests/attempts/${attemptId}/save`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       });
+      return response;
     } catch (error) {
-      console.warn("Failed to save test progress to server:", error);
-      
-      // Support anonymous mode first
-      if (attemptId.startsWith('local-attempt-') && typeof window !== 'undefined') {
-        console.log("Falling back to local save for anonymous attempt");
-        
-        // Convert responses array to object format
-        const responsesObj: Record<string, string> = {};
-        if (Array.isArray(data.responses)) {
-          data.responses.forEach(response => {
-            if (response.questionId) {
-              responsesObj[response.questionId] = response.userAnswer || '';
-            }
-          });
-        }
-        
-        // Get any existing data
-        const existingData = localStorage.getItem(`test-attempt-${attemptId}`);
-        const attemptData = {
-          id: attemptId,
-          currentSection: data.currentSection,
-          timeRemaining: data.timeRemaining,
-          lastSavedAt: new Date().toISOString(),
-          responses: responsesObj,
-          ...(existingData ? JSON.parse(existingData) : {})
-        };
-        
-        localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
-        
-        return {
-          success: true,
-          message: "Saved anonymous progress locally",
-          data: attemptData
-        };
-      }
-      
-      // Only use fallbacks if enabled and it's an offline attempt ID
-      if (USE_FALLBACKS && attemptId.startsWith('offline-attempt-') && typeof window !== 'undefined') {
-        console.log("Saving test progress locally");
-        
-        const attemptData = {
-          id: attemptId,
-          ...data,
-          lastSavedAt: new Date().toISOString()
-        };
-        
-        localStorage.setItem(`test-attempt-${attemptId}`, JSON.stringify(attemptData));
-        
-        return {
-          success: true,
-          message: "Saved offline progress",
-          data: attemptData
-        };
-      }
-      
-      // If fallbacks are disabled or it's not an offline attempt, propagate the error
+      console.error(`Failed to save test progress for ${attemptId}:`, error);
       throw error;
     }
   },
   
   // Submit a test for scoring - Modified to support anonymous attempts
-  submitTest: async (attemptId: string) => {
+  submitTest: async (attemptId: string): Promise<ApiResponse<TestAttempt>> => {
     try {
       console.log(`Attempting to submit test: ${attemptId}`);
       
@@ -1082,7 +956,7 @@ export const TestsAPI = {
   },
   
   // Get test result details - Modified to support anonymous attempts
-  getTestResult: async (attemptId: string) => {
+  getTestResult: async (attemptId: string): Promise<ApiResponse<TestResult>> => {
     try {
       console.log(`Attempting to get test results for: ${attemptId}`);
       
@@ -1240,23 +1114,96 @@ export const TestsAPI = {
   },
   
   // Get user's test history - FIX: Using correct endpoint /tests/history instead of /api/tests/history
-  getUserTestHistory: async (filters?: {
+  getUserTestHistory: async (filters: {
     moduleType?: string;
     status?: string;
-  }) => {
+  } = {}): Promise<ApiResponse<Test[]>> => {
     try {
       const queryParams = new URLSearchParams();
+      if (filters.moduleType) queryParams.append('moduleType', filters.moduleType);
+      if (filters.status) queryParams.append('status', filters.status);
       
-      if (filters?.moduleType) queryParams.append('moduleType', filters.moduleType);
-      if (filters?.status) queryParams.append('status', filters.status);
-      
-      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-      
-      console.log(`Attempting to get user test history from: ${API_URL}/tests/history${queryString}`);
-      return await fetchData<{success: boolean; message: string; data: any[]}>(`/tests/history${queryString}`);
+      const response = await fetchData<Test[]>(`/tests/history?${queryParams.toString()}`);
+      return response;
     } catch (error) {
-      console.error("Error fetching user test history:", error);
-      throw error;
+      console.error('Error fetching test history:', error);
+      return {
+        success: false,
+        message: 'Error fetching test history',
+        data: []
+      };
+    }
+  },
+  
+  submitTestAnswers: async (testId: string, answers: Record<string, string>): Promise<ApiResponse<TestResult>> => {
+    try {
+      const response = await fetchData<TestResult>(`/tests/${testId}/submit`, {
+        method: 'POST',
+        body: JSON.stringify({ answers })
+      });
+      return response;
+    } catch (error) {
+      console.error('Error submitting test:', error);
+      return {
+        success: false,
+        message: 'Error submitting test',
+        data: {
+          id: `local-attempt-${Date.now()}`,
+          testId,
+          userId: ANONYMOUS_USER_ID,
+          startedAt: new Date().toISOString(),
+          status: 'COMPLETED',
+          currentSection: 0,
+          responses: answers,
+          timeRemaining: 0,
+          test: createGenericTest(testId),
+          score: 0,
+          maxScore: 0,
+          percentageScore: 0,
+          bandScore: 0,
+          feedback: 'Test submission failed',
+          completedAt: new Date().toISOString(),
+          sectionResults: []
+        } as TestResult
+      };
+    }
+  },
+  
+  getTestResult: async (attemptId: string): Promise<ApiResponse<TestResult>> => {
+    try {
+      const response = await fetchData<TestResult>(`/tests/attempts/${attemptId}/result`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching test result:', error);
+      return {
+        success: false,
+        message: 'Error fetching test result',
+        data: {
+          id: attemptId,
+          testId: '',
+          userId: ANONYMOUS_USER_ID,
+          startedAt: new Date().toISOString(),
+          status: 'COMPLETED',
+          currentSection: 0,
+          responses: {},
+          timeRemaining: 0,
+          test: createGenericTest(''),
+          score: 0,
+          maxScore: 0,
+          percentageScore: 0,
+          bandScore: 0,
+          feedback: 'Failed to fetch test result',
+          completedAt: new Date().toISOString(),
+          sectionResults: []
+        } as TestResult
+      };
     }
   },
 };
+
+const api = {
+  Tests: TestsAPI,
+  Auth: AuthAPI
+};
+
+export default api;

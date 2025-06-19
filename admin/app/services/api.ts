@@ -19,16 +19,22 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
     let token = '';
     if (typeof window !== 'undefined') {
       token = localStorage.getItem('adminToken') || '';
+      console.log('Token available:', !!token); // Log if token exists
     }
     
     // Set headers with auth token if available
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...options.headers as Record<string, string>,
-    };
+    const headers: Record<string, string> = {};
+    
+    // Only set Content-Type for non-FormData requests
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
     
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      console.log('Authorization header set:', headers['Authorization'].substring(0, 20) + '...');
+    } else {
+      console.warn('No token found in localStorage');
     }
     
     // Add timeout to fetch request
@@ -49,45 +55,20 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
     
     // Clear timeout
     clearTimeout(timeoutId);
+
+    // Log response status
+    console.log('Response status:', response.status);
     
-    // Handle non-success responses
     if (!response.ok) {
-      // Try to get error details from response
-      try {
-        const errorResponse = await response.clone().text();
-        console.error(`Server Error (${response.status}):`, errorResponse);
-        
-        // Try to parse as JSON, if possible
-        try {
-          const errorData = JSON.parse(errorResponse);
-          throw new Error(errorData.message || `HTTP error ${response.status}`);
-        } catch (jsonParseError) {
-          // If not valid JSON, use the raw text
-          throw new Error(`HTTP error ${response.status}: ${errorResponse.substring(0, 100)}`);
-        }
-      } catch (responseError) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
     
-    // Parse JSON response
-    const text = await response.text();
-    if (!text) return {} as T;
-    
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.error("Failed to parse JSON response:", e);
-      return {} as T;
-    }
-  } catch (error: any) {
-    // Check if it's an AbortController timeout
-    if (error.name === 'AbortError') {
-      console.error('API request timed out');
-      throw new Error('Connection to server timed out. Please try again later.');
-    }
-    
-    console.error('API request failed:', error);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Fetch error:', error);
     throw error;
   }
 }
@@ -123,7 +104,7 @@ const AuthAPI = {
 };
 
 // Tests API
-const TestsAPI = {
+export const TestsAPI = {
   getAllTests: async (filters?: Record<string, any>) => {
     try {
       // Build query string from filters
@@ -342,11 +323,61 @@ const UsersAPI = {
   },
 };
 
+// Upload API
+const UploadAPI = {
+  uploadAudio: async (formData: FormData) => {
+    try {
+      console.log('API Base URL:', API_BASE_URL);
+      console.log('Uploading audio file...');
+      
+      // Log the form data contents for debugging
+      for (const pair of formData.entries()) {
+        console.log('Form data:', pair[0], pair[1]);
+      }
+      
+      const response = await fetchWithAuth<{success: boolean; message: string; data: any}>('/upload/audio', {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header, let the browser set it with the boundary for multipart/form-data
+        headers: {
+          // Remove Content-Type header to let the browser set it automatically
+        }
+      });
+
+      console.log('Upload response:', response);
+
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to upload audio');
+      }
+
+      return {
+        success: true,
+        message: 'Audio uploaded successfully',
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      return {
+        success: false,
+        message: error.message || 'Failed to upload audio',
+        data: null
+      };
+    }
+  }
+};
+
+// Export all APIs
 const api = {
   baseUrl: API_BASE_URL,
   Auth: AuthAPI,
   Tests: TestsAPI,
   Users: UsersAPI,
+  Upload: UploadAPI
 };
 
 export default api; 

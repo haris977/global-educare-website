@@ -39,6 +39,7 @@ interface Section {
 interface Test {
   id: string;
   title: string;
+  moduleType: string;
 }
 
 // Function to get valid question types based on module type
@@ -136,11 +137,16 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     speakingPrompts: [] as string[],
     followUpQuestions: [] as string[],
     headings: [] as string[],
-    correctHeadings: [] as string[] // Array of selected headings for each paragraph
+    correctHeadings: [] as string[], // Array of selected headings for each paragraph
+    audioFile: ""
   });
 
   // Add state for moduleType
   const [moduleType, setModuleType] = useState<string>("READING");
+
+  // Add state for audio upload
+  const [audioUploading, setAudioUploading] = useState(false);
+  const [audioUploadError, setAudioUploadError] = useState("");
 
   // Fetch test, section and questions data
   useEffect(() => {
@@ -153,7 +159,8 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
         if (testResponse.success && testResponse.data) {
           setTest({
             id: testResponse.data.id,
-            title: testResponse.data.title
+            title: testResponse.data.title,
+            moduleType: testResponse.data.moduleType
           });
 
           // Store the module type
@@ -457,7 +464,8 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
           speakingPrompts: [],
           followUpQuestions: [],
           headings: [],
-          correctHeadings: []
+          correctHeadings: [],
+          audioFile: ""
         });
 
         // Clear success message after 3 seconds
@@ -499,6 +507,50 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle audio file upload
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !test?.id) return;
+    setAudioUploading(true);
+    setAudioUploadError("");
+    try {
+      // Get file extension
+      const fileExtension = file.name.split('.').pop();
+      
+      // Create a new file with the desired name format
+      const renamedFile = new File(
+        [file],
+        `audio_${test.id}_${Date.now()}.${fileExtension}`,
+        { type: file.type }
+      );
+      
+      const formData = new FormData();
+      formData.append("audio", renamedFile);
+      formData.append("moduleType", "LISTENING");
+      formData.append("testId", test.id);
+      formData.append("testName", test.title || "untitled-test");
+      
+      const response = await api.Upload.uploadAudio(formData);
+      if (response.success && response.data?.url) {
+        // Extract the audio file name or ID from the URL
+        const urlParts = response.data.url.split('/');
+        const audioId = urlParts[urlParts.length - 1];
+        setCurrentQuestion(prev => ({ ...prev, audioFile: audioId }));
+      } else {
+        setAudioUploadError(response.message || "Failed to upload audio");
+      }
+    } catch (err: any) {
+      setAudioUploadError(err.message || "Error uploading audio");
+    } finally {
+      setAudioUploading(false);
+    }
+  };
+
+  // Handle audio remove
+  const handleRemoveAudio = () => {
+    setCurrentQuestion(prev => ({ ...prev, audioFile: "" }));
   };
 
   if (isLoading && !test) {
@@ -1238,6 +1290,53 @@ export default function QuestionsPage({ params }: { params: { id: string; sectio
                         placeholder="Enter each follow-up question on a new line"
                       />
                     </div>
+                  </div>
+                )}
+
+                {/* Audio upload for listening questions */}
+                {moduleType === "LISTENING" && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Audio File
+                    </label>
+                    {currentQuestion.audioFile ? (
+                      <div className="flex flex-col gap-2">
+                        <audio controls src={`/uploads/audio/${currentQuestion.audioFile}`} className="w-full">
+                          Your browser does not support the audio element.
+                        </audio>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={handleRemoveAudio}
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                          >
+                            Remove Audio
+                          </button>
+                          <label className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs cursor-pointer">
+                            Replace Audio
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              onChange={handleAudioUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleAudioUpload}
+                        className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    )}
+                    {audioUploading && (
+                      <div className="text-xs text-blue-600 mt-1">Uploading...</div>
+                    )}
+                    {audioUploadError && (
+                      <div className="text-xs text-red-600 mt-1">{audioUploadError}</div>
+                    )}
                   </div>
                 )}
 

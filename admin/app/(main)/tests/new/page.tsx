@@ -67,6 +67,7 @@ interface Question {
   fillBlankAnswers?: string[]; // For FILL_BLANK: answers for each blank
   summaryWords?: string[];
   summaryBlankAnswers?: string[];
+  audioFile?: string; // For listening questions
 }
 
 interface TableCell {
@@ -103,7 +104,116 @@ interface TestForm {
   moduleType: string;
   difficulty: string;
   clbScore: number;
+  audioFile?: string; // Add this for listening tests
 }
+
+// Add this after the StyleJSX component
+const AudioUploader = ({ onAudioUpload, audioUrl }: { onAudioUpload: (file: File) => void, audioUrl?: string }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('audio/')) {
+      setError("Please upload an audio file (MP3, WAV, or OGG)");
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File size should be less than 10MB");
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setError("");
+    setIsVerified(false);
+  };
+
+  const handleVerify = async () => {
+    if (!selectedFile) return;
+    setIsUploading(true);
+    setError("");
+    try {
+      await onAudioUpload(selectedFile);
+      setIsVerified(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to upload audio file");
+      setIsVerified(false);
+      console.error('Upload error:', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center space-x-4">
+        <label className="block">
+          <span className="text-gray-700">Audio File</span>
+          <input
+            type="file"
+            accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg"
+            onChange={handleFileChange}
+            disabled={isUploading}
+            className="mt-1 block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-semibold
+              file:bg-blue-50 file:text-blue-700
+              hover:file:bg-blue-100"
+          />
+        </label>
+      </div>
+      {error && (
+        <div className="text-red-500 text-sm bg-red-50 p-2 rounded">
+          {error}
+        </div>
+      )}
+      {isUploading && (
+        <div className="text-blue-500 text-sm bg-blue-50 p-2 rounded">
+          Uploading audio file...
+        </div>
+      )}
+      {(previewUrl || audioUrl) && (
+        <div className="mt-4 space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Audio Preview</h3>
+            <div className="space-y-4">
+              <audio controls className="w-full">
+                <source src={previewUrl || audioUrl} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+              {!isVerified ? (
+                <button
+                  onClick={handleVerify}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  disabled={isUploading || !selectedFile}
+                >
+                  Verify & Upload Audio
+                </button>
+              ) : (
+                <div className="flex items-center text-green-600">
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Audio verified & uploaded</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function CreateTestPage() {
   const router = useRouter();
@@ -207,7 +317,8 @@ export default function CreateTestPage() {
     }],
     moduleType: moduleTypeParam || "READING",
     difficulty: "MEDIUM",
-    clbScore: 7
+    clbScore: 7,
+    audioFile: ""
   });
 
   // Update form if moduleType changes in URL
@@ -476,9 +587,49 @@ export default function CreateTestPage() {
     });
   };
 
+  // Add this function after the existing functions
+  const handleAudioUpload = async (file: File) => {
+    try {
+      console.log('Starting file upload...');
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+
+      const formData = new FormData();
+      formData.append('audio', file);
+      formData.append('testName', form.title || 'untitled-test');
+      
+      // Log form data contents
+      console.log('Form data contents:');
+      for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      
+      // Use the API service instead of direct fetch
+      console.log('Calling upload API...');
+      const response = await api.Upload.uploadAudio(formData);
+      console.log('Upload response:', response);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to upload audio');
+      }
+
+      setForm(prev => ({
+        ...prev,
+        audioFile: response.data.url
+      }));
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      throw error;
+    }
+  };
+
   // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setLoading(true);
     setError("");
 
@@ -507,12 +658,6 @@ export default function CreateTestPage() {
 
       const testId = testResponse.data.id;
 
-      // Delete the default section that was created automatically
-      if (testResponse.data.sections && testResponse.data.sections.length > 0) {
-        const defaultSectionId = testResponse.data.sections[0].id;
-        await api.Tests.deleteSection(defaultSectionId);
-      }
-
       // Create each section
       for (const [index, section] of form.sections.entries()) {
         const sectionResponse = await api.Tests.createSection(testId, {
@@ -535,85 +680,96 @@ export default function CreateTestPage() {
             options: question.options && question.options.length > 0 ? question.options : undefined,
             correctAnswer: question.correctAnswer || undefined,
             fillBlankAnswers: question.type === "FILL_BLANK" ? question.fillBlankAnswers : undefined
-
           };
+
+          // Add audio file for listening questions if provided
+          if (form.moduleType === "LISTENING" && question.audioFile) {
+            questionData.audioFile = question.audioFile;
+          }
 
           // Add passage if provided (for reading sections)
           if (form.moduleType === "READING" && section.passage) {
             questionData.passage = section.passage;
           }
 
-          // Add other type-specific fields
-          if (question.type === "PARA_HEADINGS" && question.paragraphs) {
-            questionData.paragraphs = question.paragraphs;
-            questionData.headings = question.headings;
-            questionData.correctHeadings = question.correctHeadings;
-          }
-          else if (question.type === "DIAGRAM_LABELLING") {
-            questionData.diagramImage = question.diagramImage;
-            questionData.diagramLabels = question.diagramLabels;
-          }
-          else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
-            questionData.sentences = question.sentences;
-            questionData.completeSentenceAnswers = question.completeSentenceAnswers;
-
-          }
-
-          else if (question.type === "SUMMARY") {
-            questionData.summaryWords = question.summaryWords;
-            questionData.summaryBlankAnswers = question.summaryBlankAnswers;
-            questionData.paragraphs = question.paragraphs;
-            questionData.fillBlankSentence = question.text;
-            questionData.fillBlankAnswers = question.fillBlankAnswers;
-            questionData.wordLimit = question.wordLimit;
-          }
-          else if (question.type === "FILL_BLANK") {
-            questionData.fillBlankAnswers = question.fillBlankAnswers;
-          }
-          else if (question.type === "SENTENCE_ENDINGS_MATCHING" && question.sentenceBeginnings && question.sentenceEndings) {
-            questionData.sentenceBeginnings = question.sentenceBeginnings;
-            questionData.sentenceEndings = question.sentenceEndings;
-            questionData.correctHeadings = question.correctHeadings;
-          }
-          else if (question.type === "COMPLETE_SENTENCE" && question.sentences) {
-            questionData.sentences = question.sentences;
-            questionData.completeSentenceAnswers = question.completeSentenceAnswers;
-          }
-          else if (question.type === "NAME_MATCHING" && question.sentenceBeginnings && question.sentenceEndings) {
-            questionData.sentenceBeginnings = question.sentenceBeginnings;
-            questionData.sentenceEndings = question.sentenceEndings;
-            questionData.correctHeadings = question.correctHeadings;
-          } else if (question.type === "MAP" && question.mapLabels) {
-            questionData.mapLabels = question.mapLabels;
-          } else if (question.type === "SPEAKING_TASK_2" && question.cueCard) {
-            questionData.cueCard = question.cueCard;
-          } else if (["SPEAKING_TASK_1", "SPEAKING_TASK_3"].includes(question.type) && question.speakingPrompts) {
-            questionData.speakingPrompts = question.speakingPrompts;
-          } else if (question.type === "SPEAKING_FOLLOW_UPS" && question.followUpQuestions) {
-            questionData.followUpQuestions = question.followUpQuestions;
-          }
-          else if (question.type === "TABLE_COMPLETION" && question.tableData) {
-  questionData.tableData = question.tableData;
-}
-
           await api.Tests.createQuestion(sectionId, questionData);
         }
       }
 
-      setSuccessMessage("Test created successfully!");
-
-      // Navigate to the test list page
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
-
-    } catch (error) {
-      console.error("Error creating test:", error);
-      setError("Failed to create test. Please try again.");
+      // Redirect to test detail page
+      router.push(`/tests/${testId}`);
+    } catch (err: any) {
+      console.error("Error creating test:", err);
+      setError(err.message || "Failed to create test");
     } finally {
       setLoading(false);
     }
   };
+
+  const renderBasicInfo = () => (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Title</label>
+        <input
+          type="text"
+          name="title"
+          value={form.title}
+          onChange={handleInputChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Description</label>
+        <textarea
+          name="description"
+          value={form.description}
+          onChange={handleInputChange}
+          rows={3}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Total Time (minutes)</label>
+          <input
+            type="number"
+            name="totalTime"
+            value={form.totalTime}
+            onChange={handleInputChange}
+            min={1}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Difficulty</label>
+          <select
+            name="difficulty"
+            value={form.difficulty}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          >
+            {difficultyLevels.map((level) => (
+              <option key={level} value={level}>
+                {level.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {form.moduleType === "LISTENING" && (
+        <AudioUploader 
+          onAudioUpload={handleAudioUpload}
+          audioUrl={form.audioFile}
+        />
+      )}
+    </div>
+  );
 
   // UI component for test creation
   return (
@@ -643,51 +799,9 @@ export default function CreateTestPage() {
         <div className={`border rounded-lg p-6 shadow-sm bg-white ${currentStep === 1 ? 'block' : 'hidden'}`}>
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Test Information</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">Test Title</label>
-              <input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={handleInputChange}
-                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${inputStyle}`}
-                required
-                placeholder="Enter test title"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">Module Type</label>
-              <select
-                name="moduleType"
-                value={form.moduleType}
-                onChange={handleInputChange}
-                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${selectStyle}`}
-                required
-              >
-                {moduleTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          {renderBasicInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">Difficulty Level</label>
-              <select
-                name="difficulty"
-                value={form.difficulty}
-                onChange={handleInputChange}
-                className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${selectStyle}`}
-              >
-                {difficultyLevels.map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
-              </select>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">CLB Score (1-12)</label>
               <input
@@ -699,34 +813,6 @@ export default function CreateTestPage() {
                 max="12"
                 className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${inputStyle}`}
                 placeholder="Enter CLB score (1-12)"
-              />
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-800 mb-1">Description</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleInputChange}
-              className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${inputStyle}`}
-              rows={3}
-              placeholder="Describe the test content and purpose"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">Total Test Time (minutes)</label>
-              <input
-                type="number"
-                name="totalTime"
-                value={form.totalTime}
-                onChange={handleInputChange}
-                min="1"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 input-dark"
-                required
-                placeholder="Enter time in minutes"
               />
             </div>
 

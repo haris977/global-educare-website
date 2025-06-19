@@ -138,8 +138,12 @@ export default function PracticeTestsPage() {
             console.log("No test history found or empty response");
             setUserHistory([]);
           }
-        } catch (historyError) {
+        } catch (historyError: any) {
           console.log("Could not fetch test history:", historyError);
+          // Only show error if it's not an authentication error
+          if (historyError.message !== "Test not found" && !historyError.message.includes("401")) {
+            console.error("Error fetching test history:", historyError);
+          }
           setUserHistory([]);
           // Don't change apiStatus for history errors since it's secondary
         }
